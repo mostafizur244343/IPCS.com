@@ -1,0 +1,82 @@
+<div class="expiry-container animate-fade-in">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Expiry Management</h1>
+      <p>Monitor medicines near expiration to ensure safety and minimize loss.</p>
+    </div>
+    <div class="filter-section">
+      <label>Show items expiring within:</label>
+      <select [(ngModel)]="monthsThreshold" (change)="loadExpiringItems()">
+        <option [value]="3">3 Months</option>
+        <option [value]="6">6 Months</option>
+        <option [value]="12">1 Year</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Expiry Table Card -->
+  <div class="card table-card">
+    <div *ngIf="isLoading" class="loading-state">
+      <div class="spinner-blue"></div>
+    </div>
+
+    <table *ngIf="!isLoading" class="data-table">
+      <thead>
+        <tr>
+          <th>Medicine Name</th>
+          <th>Lot Number</th>
+          <th>Batch / Lot Date</th>
+          <th>Expiry Date</th>
+          <th>Status</th>
+          <th class="text-right">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of expiredItems">
+          <td><strong>{{ item.product?.productName }}</strong></td>
+          <td><code>{{ item.lotNumber }}</code></td>
+          <td>{{ item.manufacturingDate | date:'mediumDate' }}</td>
+          <td>
+            <span class="date-badge" [class.expired]="isExpired(item.expiryDate)">
+              {{ item.expiryDate | date:'mediumDate' }}
+            </span>
+          </td>
+          <td>
+            <span class="status-pill" [class.danger]="isExpired(item.expiryDate)" [class.warning]="!isExpired(item.expiryDate)">
+              {{ isExpired(item.expiryDate) ? 'EXPIRED' : 'Near Expiry' }}
+            </span>
+          </td>
+          <td class="text-right">
+            <button class="btn btn-secondary btn-sm" [routerLink]="['/dashboard/inventory/edit', item.productId]">
+              View Product
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Empty State -->
+    <div *ngIf="!isLoading && expiredItems.length === 0" class="empty-state">
+      <p>No medicines found near expiration for the selected period.</p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .expiry-container { padding-bottom: 40px; }
+  .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+  
+  .filter-section { display: flex; align-items: center; gap: 12px; }
+  .filter-section select { padding: 8px 16px; border-radius: 8px; border: 1px solid #e2e8f0; outline: none; background: white; }
+
+  .date-badge { padding: 4px 8px; border-radius: 6px; font-weight: 600; background: #f1f5f9; }
+  .date-badge.expired { background: #fee2e2; color: #ef4444; }
+
+  .status-pill { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+  .status-pill.danger { background: #ef4444; color: white; }
+  .status-pill.warning { background: #f59e0b; color: white; }
+
+  .empty-state { padding: 60px; text-align: center; color: #64748b; font-style: italic; }
+  .text-right { text-align: right; }
+</style>

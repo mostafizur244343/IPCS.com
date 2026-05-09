@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="IPCS-API/IPCS-API.csproj" />
+  <Project Path="IPCS-Model/IPCS-Model.csproj" />
+  <Project Path="IPCS-Repo/IPCS-Repo.csproj" />
+  <Project Path="IPCS-Service/IPCS-Service.csproj" />
+</Solution>

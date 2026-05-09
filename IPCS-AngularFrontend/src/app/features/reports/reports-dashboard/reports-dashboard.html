@@ -1,0 +1,152 @@
+<div class="reports-container animate-fade-in">
+  <!-- Page header with title and date filters -->
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Analytics & Reports</h1>
+      <p>Analyze sales performance, inventory health, and financial summaries.</p>
+    </div>
+    <div class="filter-controls">
+      <select [(ngModel)]="selectedMonth" (change)="loadMonthlyReport()">
+        <option *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]" [value]="m">{{ getMonthName(m) }}</option>
+      </select>
+      <select [(ngModel)]="selectedYear" (change)="loadMonthlyReport()">
+        <option [value]="2026">2026</option>
+        <option [value]="2025">2025</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Summary Cards Row -->
+  <div class="summary-grid">
+    <div class="card stat-box blue">
+      <div class="icon">📈</div>
+      <div class="content">
+        <span class="label">Total Products</span>
+        <span class="value">{{ inventoryStats.totalItems }}</span>
+      </div>
+    </div>
+    <div class="card stat-box orange">
+      <div class="icon">⚠️</div>
+      <div class="content">
+        <span class="label">Low Stock Items</span>
+        <span class="value">{{ inventoryStats.lowStock }}</span>
+      </div>
+    </div>
+    <div class="card stat-box red">
+      <div class="icon">🚫</div>
+      <div class="content">
+        <span class="label">Out of Stock</span>
+        <span class="value">{{ inventoryStats.outOfStock }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Performance Table -->
+  <div class="main-report-grid">
+    <div class="card report-card">
+      <div class="card-header">
+        <h3>Daily Performance ({{ getMonthName(selectedMonth) }} {{ selectedYear }})</h3>
+        <button class="btn btn-secondary btn-sm" (click)="exportToCSV()">Export CSV</button>
+      </div>
+      
+      <div *ngIf="isLoading" class="loading-state">
+        <div class="spinner-blue"></div>
+      </div>
+
+      <table *ngIf="!isLoading" class="report-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Total Sales</th>
+            <th>Total Purchase</th>
+            <th>Expense</th>
+            <th>Net Profit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let day of monthlyStats">
+            <td>{{ day.summaryDate | date:'mediumDate' }}</td>
+            <td>৳{{ day.totalSales | number:'1.2-2' }}</td>
+            <td>৳{{ day.totalPurchase | number:'1.2-2' }}</td>
+            <td>৳{{ day.totalExpense | number:'1.2-2' }}</td>
+            <td [class.profit]="day.netProfit > 0" [class.loss]="day.netProfit < 0">
+              <strong>৳{{ day.netProfit | number:'1.2-2' }}</strong>
+            </td>
+          </tr>
+          <!-- Empty state if no data for the month -->
+          <tr *ngIf="monthlyStats.length === 0">
+            <td colspan="5" class="empty-msg">No data available for the selected month.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="side-panel">
+      <!-- Quick Alerts Section -->
+      <div class="card alert-card">
+        <h3>Quick Alerts</h3>
+        <div class="alert-list">
+          <div *ngIf="inventoryStats.lowStock > 0" class="alert-item warning">
+             <span class="dot"></span>
+             <span>{{ inventoryStats.lowStock }} items are below reorder level.</span>
+          </div>
+          <div *ngIf="inventoryStats.outOfStock > 0" class="alert-item danger">
+             <span class="dot"></span>
+             <span>{{ inventoryStats.outOfStock }} items are currently out of stock.</span>
+          </div>
+          <div class="alert-item info" *ngIf="inventoryStats.lowStock === 0 && inventoryStats.outOfStock === 0">
+             <span class="dot"></span>
+             <span>Inventory levels are healthy.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* 
+    Reports Dashboard Specific Styles (CSS)
+    Visualizing analytics with cards and tables.
+  */
+  .reports-container { padding-bottom: 40px; }
+
+  .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+  .filter-controls { display: flex; gap: 12px; }
+  .filter-controls select { padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; outline: none; }
+
+  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; }
+  .stat-box { display: flex; align-items: center; gap: 20px; padding: 24px; }
+  .stat-box .icon { font-size: 32px; width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+  
+  .stat-box.blue .icon { background: #e0f2fe; }
+  .stat-box.orange .icon { background: #ffedd5; }
+  .stat-box.red .icon { background: #fee2e2; }
+
+  .stat-box .content { display: flex; flex-direction: column; }
+  .stat-box .label { font-size: 14px; color: var(--text-muted); }
+  .stat-box .value { font-size: 24px; font-weight: 700; }
+
+  .main-report-grid { display: grid; grid-template-columns: 1fr 300px; gap: 24px; }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  .report-table { width: 100%; border-collapse: collapse; }
+  .report-table th { text-align: left; padding: 12px; font-size: 13px; color: var(--text-muted); border-bottom: 1px solid #f1f5f9; }
+  .report-table td { padding: 14px 12px; font-size: 14px; border-bottom: 1px solid #f8fafc; }
+
+  .profit { color: #16a34a; }
+  .loss { color: #dc2626; }
+
+  .alert-card h3 { font-size: 16px; margin-bottom: 16px; }
+  .alert-list { display: flex; flex-direction: column; gap: 12px; }
+  .alert-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 10px; font-size: 13px; }
+  .alert-item.warning { background: #fffbeb; color: #92400e; }
+  .alert-item.danger { background: #fef2f2; color: #b91c1c; }
+  .alert-item.info { background: #f0fdf4; color: #166534; }
+  .alert-item .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+  .loading-state { padding: 60px; text-align: center; }
+  .spinner-blue { width: 32px; height: 32px; border: 3px solid rgba(15, 118, 110, 0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>

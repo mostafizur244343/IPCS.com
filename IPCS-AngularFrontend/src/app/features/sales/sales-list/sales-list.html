@@ -1,0 +1,214 @@
+<div class="sales-container animate-fade-in">
+  <!-- Page header with title and New Sale button -->
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Sales Transactions</h1>
+      <p>Track and manage all customer sales and invoices.</p>
+    </div>
+    <div class="action-section">
+      <button class="btn btn-primary" routerLink="/dashboard/sales/new">
+        <span class="icon">+</span> New POS Sale
+      </button>
+    </div>
+  </div>
+
+  <!-- Search and filter section -->
+  <div class="card filter-card">
+    <div class="search-box">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input 
+        type="text" 
+        placeholder="Search by invoice or customer..." 
+        [(ngModel)]="searchTerm"
+        (input)="onSearch()"
+      >
+    </div>
+    <div class="filters">
+       <!-- Dropdownbox for filtering by payment status -->
+       <select class="filter-select">
+         <option value="">All Status</option>
+         <option value="Paid">Paid</option>
+         <option value="Partial">Partial</option>
+         <option value="Due">Due</option>
+       </select>
+    </div>
+  </div>
+
+  <!-- Sales Data Table -->
+  <div class="card table-card">
+    <div *ngIf="isLoading" class="loading-state">
+      <div class="spinner-blue"></div>
+      <p>Loading Sales Data...</p>
+    </div>
+
+    <table *ngIf="!isLoading" class="data-table">
+      <thead>
+        <tr>
+          <th>Invoice No</th>
+          <th>Date</th>
+          <th>Customer</th>
+          <th>Total Amount</th>
+          <th>Paid</th>
+          <th>Due</th>
+          <th>Status</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let sale of filteredSales">
+          <td><strong>{{ sale.invoiceNo }}</strong></td>
+          <td>{{ sale.salesDate | date:'mediumDate' }}</td>
+          <td>{{ sale.customerName }}</td>
+          <td>৳{{ sale.netAmount | number:'1.2-2' }}</td>
+          <td class="text-success">৳{{ sale.paidAmount | number:'1.2-2' }}</td>
+          <td class="text-error">৳{{ sale.dueAmount | number:'1.2-2' }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="sale.paymentStatus.toLowerCase()">
+              {{ sale.paymentStatus }}
+            </span>
+          </td>
+          <td class="text-right">
+            <div class="action-buttons">
+              <!-- View Invoice Detail Button -->
+              <button class="icon-btn" title="View Details">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+              <!-- Print Invoice Button -->
+              <button class="icon-btn" title="Print Invoice">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+              </button>
+              <!-- Delete/Cancel Sale Button -->
+              <button class="icon-btn delete" (click)="deleteSale(sale.salesId)" title="Delete/Cancel">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Displayed when no data matches search criteria -->
+    <div *ngIf="!isLoading && filteredSales.length === 0" class="empty-state">
+      <p>No sales records found.</p>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* 
+    Sales List Specific Styles (CSS)
+    Specific styles for the sales module data grid.
+  */
+  .sales-container {
+    padding-bottom: 40px;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .filter-card {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 24px;
+    padding: 16px 24px;
+    align-items: center;
+  }
+
+  .search-box {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: #f1f5f9;
+    padding: 10px 16px;
+    border-radius: 10px;
+    gap: 12px;
+  }
+
+  .search-box input {
+    background: none;
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 14px;
+  }
+
+  .filter-select {
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    font-family: inherit;
+    color: var(--text-muted);
+  }
+
+  /* Status Badge Styles (Paid/Due/Partial) */
+  .status-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: capitalize;
+  }
+
+  .status-badge.paid { background: #dcfce7; color: #15803d; }
+  .status-badge.partial { background: #fef9c3; color: #854d0e; }
+  .status-badge.due { background: #fee2e2; color: #ef4444; }
+
+  .text-success { color: #16a34a; }
+  .text-error { color: #dc2626; }
+  .text-right { text-align: right; }
+
+  .action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-muted);
+  }
+
+  .icon-btn:hover {
+    background: #f8fafc;
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+
+  .icon-btn.delete:hover {
+    background: #fef2f2;
+    color: #ef4444;
+    border-color: #ef4444;
+  }
+
+  .loading-state {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-muted);
+  }
+
+  .spinner-blue {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(15, 118, 110, 0.1);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>

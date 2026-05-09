@@ -1,0 +1,140 @@
+/* 
+  Global Stylesheet for PharmaCare Inventory System
+  Defines the design system including colors, typography, and layout.
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Design Tokens / Colors (Modern HSL-based palette) */
+  --primary: #0f766e; /* Main Brand Color (Teal) */
+  --primary-dark: #134e4a; 
+  --primary-light: #2dd4bf; 
+  --secondary: #0ea5e9; /* Secondary Color (Sky Blue) */
+  --accent: #f59e0b; /* For warnings or highlights */
+  --background: #f8fafc; /* Global background color */
+  --surface: #ffffff; /* Card or container background */
+  --text-main: #0f172a; /* Main text color */
+  --text-muted: #64748b; /* Muted/Secondary text color */
+  --error: #ef4444;
+  --success: #22c55e;
+  
+  /* Layout Dimensions */
+  --sidebar-width: 260px; /* Width of the sidebar */
+  --header-height: 70px; /* Height of the top header */
+  --radius: 12px; /* Standard border radius for rounded corners */
+  
+  /* Shadows (For depth and layering) */
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  /* Using 'Outfit' Google Font for a clean and modern appearance */
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--background);
+  color: var(--text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* Glassmorphism Effect - For frosted glass or semi-transparent backgrounds */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Common Button Styles - Universal styles for all application buttons */
+.btn {
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  outline: none;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px); /* Slight lift on hover */
+  box-shadow: 0 10px 20px -10px var(--primary);
+}
+
+.btn-secondary {
+  background-color: var(--surface);
+  color: var(--text-main);
+  border: 1px solid #e2e8f0;
+}
+
+/* Card Style - Used to containerize data or sections */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid #f1f5f9;
+}
+
+/* Form Input Styles */
+.input-group {
+  margin-bottom: 20px;
+}
+
+.input-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--text-muted);
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  transition: all 0.2s;
+  font-family: inherit;
+  font-size: 15px;
+}
+
+.input-group input:focus {
+  border-color: var(--primary);
+  background: white;
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.1);
+  outline: none;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}

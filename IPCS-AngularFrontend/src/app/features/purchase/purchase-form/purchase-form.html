@@ -1,0 +1,171 @@
+<div class="purchase-form-container animate-fade-in">
+  <!-- Page header -->
+  <div class="page-header">
+    <div class="title-section">
+      <button class="back-btn" routerLink="/dashboard/purchase">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      </button>
+      <h1>New Stock Purchase</h1>
+    </div>
+  </div>
+
+  <div class="purchase-grid">
+    <!-- Main Form Section (Items) -->
+    <div class="main-form">
+      <div class="card header-card">
+        <div class="form-row">
+          <div class="input-group">
+            <label>Supplier Invoice No *</label>
+            <input type="text" [(ngModel)]="purchase.supplierInvoiceNo" placeholder="INV-12345" required>
+          </div>
+          <div class="input-group">
+            <label>Purchase Date *</label>
+            <input type="date" [(ngModel)]="purchase.purchaseDate" required>
+          </div>
+          <div class="input-group">
+            <label>Supplier *</label>
+            <select [(ngModel)]="purchase.supplierId" required>
+              <option [ngValue]="null">Select Supplier</option>
+              <option *ngFor="let s of suppliers" [value]="s.supplierId">{{ s.supplierName }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card product-selection-card">
+        <div class="search-wrapper">
+          <input 
+            type="text" 
+            placeholder="Search products to add..." 
+            [(ngModel)]="searchTerm"
+            (input)="searchProduct()"
+          >
+          <!-- Search results dropdown -->
+          <div class="search-dropdown" *ngIf="searchResults.length > 0">
+            <div *ngFor="let p of searchResults" class="item" (click)="addProduct(p)">
+              <span>{{ p.productName }}</span>
+              <small>{{ p.sku }}</small>
+            </div>
+          </div>
+        </div>
+
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th width="120">Batch No</th>
+              <th width="130">Expiry</th>
+              <th width="80">Qty</th>
+              <th width="80">Free</th>
+              <th width="120">P.Price</th>
+              <th width="120">Total</th>
+              <th width="40"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of purchase.purchaseDetails; let i = index">
+              <td>{{ item.productName }}</td>
+              <td><input type="text" [(ngModel)]="item.batchNo" class="table-input"></td>
+              <td><input type="date" [(ngModel)]="item.expiryDate" class="table-input"></td>
+              <td><input type="number" [(ngModel)]="item.qty" (change)="calculateLineTotal(item)" class="table-input"></td>
+              <td><input type="number" [(ngModel)]="item.freeQty" class="table-input"></td>
+              <td><input type="number" [(ngModel)]="item.purchasePrice" (change)="calculateLineTotal(item)" class="table-input"></td>
+              <td><strong>৳{{ item.lineTotal | number:'1.2-2' }}</strong></td>
+              <td><button class="remove-btn" (click)="removeItem(i)">&times;</button></td>
+            </tr>
+            <tr *ngIf="purchase.purchaseDetails.length === 0">
+              <td colspan="8" class="empty-msg">Add items to start the purchase.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Sidebar Section (Totals and Actions) -->
+    <div class="sidebar-form">
+      <div class="card total-card">
+        <div class="line"><span>Subtotal</span> <span>৳{{ purchase.totalAmount | number:'1.2-2' }}</span></div>
+        <div class="line">
+          <span>Discount</span> 
+          <input type="number" [(ngModel)]="purchase.discountAmount" (change)="calculateTotals()" class="small-input">
+        </div>
+        <hr>
+        <div class="line grand"><span>Net Total</span> <span>৳{{ purchase.netAmount | number:'1.2-2' }}</span></div>
+        
+        <div class="payment-box">
+          <div class="input-group">
+            <label>Payment Method</label>
+            <select [(ngModel)]="purchase.methodId">
+              <option *ngFor="let m of paymentMethods" [value]="m.paymentMethodId">{{ m.paymentMethodName }}</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Paid Amount</label>
+            <input type="number" [(ngModel)]="purchase.paidAmount" (input)="calculateTotals()">
+          </div>
+          <div class="due-display" [class.active]="purchase.dueAmount > 0">
+            Due: ৳{{ purchase.dueAmount | number:'1.2-2' }}
+          </div>
+        </div>
+
+        <div class="shipment-option">
+           <label class="checkbox-container">
+             <input type="checkbox" [(ngModel)]="purchase.isShipment">
+             <span class="checkmark"></span>
+             Mark as Shipment (In Transit)
+           </label>
+        </div>
+
+        <button class="btn btn-primary submit-btn" (click)="onSubmit()" [disabled]="isLoading">
+          <span *ngIf="!isLoading">Save Purchase</span>
+          <span *ngIf="isLoading" class="spinner"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* 
+    Purchase Form Specific Styles (CSS)
+    Grid layout for purchase management.
+  */
+  .purchase-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 24px;
+  }
+
+  .header-card { padding: 20px; margin-bottom: 24px; }
+  .form-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+  .product-selection-card { padding: 0; min-height: 400px; }
+  .search-wrapper { padding: 20px; position: relative; border-bottom: 1px solid #f1f5f9; }
+  .search-wrapper input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; outline: none; }
+  
+  .search-dropdown { position: absolute; top: 100%; left: 20px; right: 20px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: var(--shadow-lg); z-index: 10; }
+  .search-dropdown .item { padding: 12px; border-bottom: 1px solid #f8fafc; cursor: pointer; display: flex; flex-direction: column; }
+  .search-dropdown .item:hover { background: #f8fafc; }
+
+  .items-table { width: 100%; border-collapse: collapse; }
+  .items-table th { background: #f8fafc; padding: 12px 16px; text-align: left; font-size: 13px; color: var(--text-muted); }
+  .items-table td { padding: 12px 16px; border-bottom: 1px solid #f8fafc; font-size: 14px; }
+  .table-input { width: 100%; padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px; outline: none; }
+
+  .remove-btn { background: #fee2e2; color: #ef4444; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; }
+
+  .total-card { padding: 24px; position: sticky; top: 20px; }
+  .total-card .line { display: flex; justify-content: space-between; margin-bottom: 12px; }
+  .total-card .grand { font-size: 20px; font-weight: 700; color: var(--primary); }
+  .small-input { width: 80px; text-align: right; border: none; border-bottom: 1px solid #e2e8f0; outline: none; }
+
+  .payment-box { margin-top: 24px; background: #f8fafc; padding: 16px; border-radius: 12px; }
+  .due-display { margin-top: 12px; font-weight: 600; text-align: center; color: #64748b; }
+  .due-display.active { color: #ef4444; }
+
+  .submit-btn { width: 100%; margin-top: 24px; padding: 16px; }
+
+  .checkbox-container { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-top: 16px; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>

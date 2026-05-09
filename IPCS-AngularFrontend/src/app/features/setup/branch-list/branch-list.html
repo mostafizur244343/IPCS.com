@@ -1,0 +1,60 @@
+<div class="setup-container animate-fade-in">
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Branch Management</h1>
+      <p>Manage multiple pharmacy locations and their contact details.</p>
+    </div>
+  </div>
+
+  <div class="setup-grid">
+    <div class="card form-card">
+      <h3>Add Branch</h3>
+      <div class="input-group">
+        <label>Branch Name *</label>
+        <input type="text" [(ngModel)]="newBranch.branchName" placeholder="e.g. Uttara Branch">
+      </div>
+      <div class="input-group">
+        <label>Address</label>
+        <input type="text" [(ngModel)]="newBranch.address" placeholder="Physical location">
+      </div>
+      <div class="input-group">
+        <label>Phone</label>
+        <input type="text" [(ngModel)]="newBranch.phone" placeholder="Contact number">
+      </div>
+      <button class="btn btn-primary w-full" (click)="addBranch()" [disabled]="isLoading">
+        <span *ngIf="!isLoading">Save Branch</span>
+      </button>
+    </div>
+
+    <div class="card table-card">
+      <div *ngIf="isLoading" class="loading-state"><div class="spinner-blue"></div></div>
+      <table *ngIf="!isLoading" class="data-table">
+        <thead>
+          <tr>
+            <th>Branch Name</th>
+            <th>Address</th>
+            <th>Phone</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let b of branches">
+            <td><strong>{{ b.branchName }}</strong></td>
+            <td>{{ b.address || '-' }}</td>
+            <td>{{ b.phone || '-' }}</td>
+            <td class="text-right">
+              <button class="icon-btn delete" (click)="deleteBranch(b.branchId)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<style>
+  .setup-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
+  .text-right { text-align: right; }
+</style>

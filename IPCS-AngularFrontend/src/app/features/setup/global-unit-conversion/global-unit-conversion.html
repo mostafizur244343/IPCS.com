@@ -1,0 +1,77 @@
+<div class="setup-container animate-fade-in">
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Global Unit Conversions</h1>
+      <p>Setup standard universal conversions (e.g., 1 KG = 1000 Gram, 1 Liter = 1000 ML)</p>
+    </div>
+  </div>
+
+  <div class="setup-grid">
+    <!-- Form Card -->
+    <div class="card form-card">
+      <h3>Add Universal Rule</h3>
+      
+      <div class="input-group">
+        <label>From Unit (Large) *</label>
+        <select [(ngModel)]="newConversion.fromUnitId">
+          <option *ngFor="let u of units" [value]="u.uomId">{{ u.uomName }}</option>
+        </select>
+      </div>
+      
+      <div class="input-group">
+        <label>To Unit (Small) *</label>
+        <select [(ngModel)]="newConversion.toUnitId">
+          <option *ngFor="let u of units" [value]="u.uomId">{{ u.uomName }}</option>
+        </select>
+      </div>
+      
+      <div class="input-group">
+        <label>Factor (Multiplier) *</label>
+        <input type="number" [(ngModel)]="newConversion.conversionFactor" placeholder="e.g. 1000">
+      </div>
+      
+      <button class="btn btn-primary w-full" (click)="addConversion()" [disabled]="isLoading">
+        <span *ngIf="!isLoading">Save Rule</span>
+        <span *ngIf="isLoading" class="spinner"></span>
+      </button>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card table-card">
+      <div *ngIf="isLoading" class="loading-state"><div class="spinner-blue"></div></div>
+      
+      <table *ngIf="!isLoading" class="data-table">
+        <thead>
+          <tr>
+            <th>From Unit</th>
+            <th>Equals To</th>
+            <th>To Unit</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of conversions">
+            <td>1 <strong>{{ c.fromUnitName }}</strong></td>
+            <td>= {{ c.conversionFactor }}</td>
+            <td><strong>{{ c.toUnitName }}</strong></td>
+            <td class="text-right">
+              <button class="icon-btn delete" (click)="deleteConversion(c.id)" title="Delete Rule">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <div *ngIf="!isLoading && conversions.length === 0" class="empty-state">
+        <p>No global conversion rules defined yet.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .setup-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
+  .text-right { text-align: right; }
+  .empty-state { padding: 40px; text-align: center; color: #64748b; font-style: italic; }
+</style>

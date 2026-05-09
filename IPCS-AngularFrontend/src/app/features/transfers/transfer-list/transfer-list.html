@@ -1,0 +1,112 @@
+<div class="transfer-container animate-fade-in">
+  <!-- Page header with title and New Transfer button -->
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Stock Transfers</h1>
+      <p>Transfer products between branches and monitor transit status.</p>
+    </div>
+    <div class="action-section">
+      <button class="btn btn-primary" routerLink="/dashboard/transfers/new">
+        <span class="icon">+</span> Initiate Transfer
+      </button>
+    </div>
+  </div>
+
+  <!-- Transfer Data Table -->
+  <div class="card table-card">
+    <div *ngIf="isLoading" class="loading-state">
+      <div class="spinner-blue"></div>
+      <p>Loading Transfers...</p>
+    </div>
+
+    <table *ngIf="!isLoading" class="data-table">
+      <thead>
+        <tr>
+          <th>Transfer ID</th>
+          <th>Date</th>
+          <th>From Branch</th>
+          <th>To Branch</th>
+          <th>Total Items</th>
+          <th>Status</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let t of transfers">
+          <td><strong>#TR-{{ t.transferId }}</strong></td>
+          <td>{{ t.transferDate | date:'mediumDate' }}</td>
+          <td>{{ t.fromBranchName }}</td>
+          <td>{{ t.toBranchName }}</td>
+          <td>{{ t.itemCount }} Items</td>
+          <td>
+            <span class="status-badge" [ngClass]="t.status.toLowerCase()">
+              {{ t.status }}
+            </span>
+          </td>
+          <td class="text-right">
+            <div class="action-buttons">
+              <!-- Confirm Receive Button (visible for In-Transit status) -->
+              <button 
+                *ngIf="t.status === 'In-Transit'" 
+                class="icon-btn success" 
+                (click)="confirmReceive(t.transferId)"
+                title="Confirm Goods Received"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </button>
+              <!-- View Details Button -->
+              <button class="icon-btn" title="View Details">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+              <!-- Cancel Transfer Button (visible for Pending status) -->
+              <button 
+                *ngIf="t.status === 'Pending'" 
+                class="icon-btn delete" 
+                (click)="cancelTransfer(t.transferId)"
+                title="Cancel Transfer"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="transfers.length === 0">
+          <td colspan="7" class="empty-msg">No stock transfers found.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+  /* 
+    Transfer List Specific Styles (CSS)
+    Styling for the transfer tracking module.
+  */
+  .transfer-container { padding-bottom: 40px; }
+  .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+
+  /* Status Badge Styles for Transfers */
+  .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+  .status-badge.pending { background: #fef9c3; color: #854d0e; }
+  .status-badge.in-transit { background: #e0f2fe; color: #0369a1; }
+  .status-badge.received { background: #dcfce7; color: #15803d; }
+  .status-badge.canceled { background: #fee2e2; color: #ef4444; }
+
+  .text-right { text-align: right; }
+  .action-buttons { display: flex; gap: 8px; justify-content: flex-end; }
+
+  .icon-btn {
+    width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e8f0;
+    background: white; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s; color: var(--text-muted);
+  }
+
+  .icon-btn:hover { background: #f8fafc; color: var(--primary); border-color: var(--primary); }
+  .icon-btn.success:hover { background: #dcfce7; color: #16a34a; border-color: #16a34a; }
+  .icon-btn.delete:hover { background: #fef2f2; color: #ef4444; border-color: #ef4444; }
+
+  .loading-state { padding: 40px; text-align: center; color: var(--text-muted); }
+  .spinner-blue { width: 32px; height: 32px; border: 3px solid rgba(15, 118, 110, 0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>

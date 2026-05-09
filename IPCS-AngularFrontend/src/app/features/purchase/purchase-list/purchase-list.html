@@ -1,0 +1,236 @@
+<div class="purchase-container animate-fade-in">
+  <!-- Page header with title and New Purchase button -->
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Purchase Records</h1>
+      <p>Manage stock procurement from suppliers and track shipments.</p>
+    </div>
+    <div class="action-section">
+      <button class="btn btn-primary" routerLink="/dashboard/purchase/new">
+        <span class="icon">+</span> New Purchase
+      </button>
+    </div>
+  </div>
+
+  <!-- Search and filter section -->
+  <div class="card filter-card">
+    <div class="search-box">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input 
+        type="text" 
+        placeholder="Search by invoice or supplier..." 
+        [(ngModel)]="searchTerm"
+        (input)="onSearch()"
+      >
+    </div>
+    <div class="filters">
+       <!-- Dropdownbox for shipment status filtering -->
+       <select class="filter-select">
+         <option value="">All Status</option>
+         <option value="Shipment">Shipment</option>
+         <option value="Received">Received</option>
+       </select>
+    </div>
+  </div>
+
+  <!-- Purchase Data Table -->
+  <div class="card table-card">
+    <div *ngIf="isLoading" class="loading-state">
+      <div class="spinner-blue"></div>
+      <p>Loading Purchase Records...</p>
+    </div>
+
+    <table *ngIf="!isLoading" class="data-table">
+      <thead>
+        <tr>
+          <th>Invoice No</th>
+          <th>Date</th>
+          <th>Supplier</th>
+          <th>Total Amount</th>
+          <th>Status</th>
+          <th>Shipment</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of filteredPurchases">
+          <td><strong>{{ p.supplierInvoiceNo }}</strong></td>
+          <td>{{ p.purchaseDate | date:'mediumDate' }}</td>
+          <td>{{ p.supplierName }}</td>
+          <td>৳{{ p.netAmount | number:'1.2-2' }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="p.paymentStatus.toLowerCase()">
+              {{ p.paymentStatus }}
+            </span>
+          </td>
+          <td>
+            <span class="shipment-tag" [class.received]="!p.isShipment">
+              {{ p.isShipment ? 'In Transit' : 'Received' }}
+            </span>
+          </td>
+          <td class="text-right">
+            <div class="action-buttons">
+              <!-- Receive Shipment Button (only if status is Shipment) -->
+              <button 
+                *ngIf="p.isShipment" 
+                class="icon-btn success" 
+                (click)="receiveShipment(p.purchaseId)"
+                title="Mark as Received"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              </button>
+              <!-- View Details Button -->
+              <button class="icon-btn" title="View Details">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+              <!-- Delete Purchase Button -->
+              <button class="icon-btn delete" (click)="deletePurchase(p.purchaseId)" title="Delete">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="!isLoading && filteredPurchases.length === 0" class="empty-state">
+      <p>No purchase records found.</p>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* 
+    Purchase List Specific Styles (CSS)
+    Styling for the purchase module data grid.
+  */
+  .purchase-container {
+    padding-bottom: 40px;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .filter-card {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 24px;
+    padding: 16px 24px;
+    align-items: center;
+  }
+
+  .search-box {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: #f1f5f9;
+    padding: 10px 16px;
+    border-radius: 10px;
+    gap: 12px;
+  }
+
+  .search-box input {
+    background: none;
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 14px;
+  }
+
+  .filter-select {
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    font-family: inherit;
+    color: var(--text-muted);
+  }
+
+  /* Status Badge Styles */
+  .status-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .status-badge.paid { background: #dcfce7; color: #15803d; }
+  .status-badge.due { background: #fee2e2; color: #ef4444; }
+
+  /* Shipment Tag Styles */
+  .shipment-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #e0f2fe;
+    color: #0369a1;
+  }
+
+  .shipment-tag.received {
+    background: #f1f5f9;
+    color: #64748b;
+  }
+
+  .text-right { text-align: right; }
+
+  .action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-muted);
+  }
+
+  .icon-btn:hover {
+    background: #f8fafc;
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+
+  .icon-btn.success:hover {
+    background: #dcfce7;
+    color: #16a34a;
+    border-color: #16a34a;
+  }
+
+  .icon-btn.delete:hover {
+    background: #fef2f2;
+    color: #ef4444;
+    border-color: #ef4444;
+  }
+
+  .loading-state {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-muted);
+  }
+
+  .spinner-blue {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(15, 118, 110, 0.1);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>

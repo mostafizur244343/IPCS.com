@@ -1,0 +1,232 @@
+<div class="form-container animate-fade-in">
+  <!-- Page header and back button -->
+  <div class="page-header">
+    <div class="title-section">
+      <button class="back-btn" routerLink="/dashboard/inventory">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      </button>
+      <h1>{{ isEditMode ? 'Edit Product' : 'Add New Product' }}</h1>
+    </div>
+  </div>
+
+  <div class="card form-card">
+    <div *ngIf="isLoading" class="loading-overlay">
+      <div class="spinner-blue"></div>
+    </div>
+
+    <form (ngSubmit)="onSubmit()" #productForm="ngForm">
+      <!-- General Information Section -->
+      <div class="form-section">
+        <h3>General Information</h3>
+        <div class="form-grid">
+          <div class="input-group">
+            <label>Product Name *</label>
+            <input type="text" name="productName" [(ngModel)]="product.productName" required placeholder="e.g. Napa Extend 665mg">
+          </div>
+          <div class="input-group">
+            <label>SKU / Barcode</label>
+            <input type="text" name="sku" [(ngModel)]="product.sku" placeholder="e.g. PH-00123">
+          </div>
+          <div class="input-group">
+            <label>Strength</label>
+            <input type="text" name="strength" [(ngModel)]="product.strength" placeholder="e.g. 500mg / 5ml">
+          </div>
+          <!-- Dropdownbox for Generic Name selection -->
+          <div class="input-group">
+            <label>Generic Name</label>
+            <select name="genericId" [(ngModel)]="product.genericId">
+              <option [ngValue]="null">Select Generic</option>
+              <option *ngFor="let g of generics" [value]="g.genericId">{{ g.genericName }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Categorization Section -->
+      <div class="form-section">
+        <h3>Categorization</h3>
+        <div class="form-grid">
+          <div class="input-group">
+            <label>Category *</label>
+            <select name="categoryId" [(ngModel)]="product.categoryId" required>
+              <option [ngValue]="null">Select Category</option>
+              <option *ngFor="let c of categories" [value]="c.categoryId">{{ c.categoryName }}</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Manufacturer / Brand</label>
+            <select name="brandId" [(ngModel)]="product.brandId">
+              <option [ngValue]="null">Select Manufacturer</option>
+              <option *ngFor="let m of manufacturers" [value]="m.manufacturerId">{{ m.manufacturerName }}</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Storage Location</label>
+            <select name="locationId" [(ngModel)]="product.locationId">
+              <option [ngValue]="null">Select Location</option>
+              <option *ngFor="let l of locations" [value]="l.locationId">{{ l.locationName }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pricing and Initial Stock Section -->
+      <div class="form-section">
+        <h3>Pricing & Initial Stock</h3>
+        <div class="form-grid">
+          <div class="input-group">
+            <label>Base Unit (UOM) *</label>
+            <select name="uomId" [(ngModel)]="product.uomId" required>
+              <option [ngValue]="null">Select Unit</option>
+              <option *ngFor="let u of units" [value]="u.uomId">{{ u.uomName }}</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>MRP (Per Unit)</label>
+            <input type="number" name="mrp" [(ngModel)]="product.mrp">
+          </div>
+          <div class="input-group">
+            <label>Sales Price *</label>
+            <input type="number" name="salesPrice" [(ngModel)]="product.salesPrice" required>
+          </div>
+          <div class="input-group" *ngIf="!isEditMode">
+            <label>Opening Quantity</label>
+            <input type="number" name="openingQuantity" [(ngModel)]="product.openingQuantity">
+          </div>
+          <div class="input-group" *ngIf="!isEditMode">
+            <label>Opening Cost Price</label>
+            <input type="number" name="openingCostPrice" [(ngModel)]="product.openingCostPrice">
+          </div>
+          <div class="input-group">
+            <label>Reorder Level</label>
+            <input type="number" name="reorderLevel" [(ngModel)]="product.reorderLevel">
+          </div>
+        </div>
+      </div>
+
+      <!-- Action buttons for Save and Cancel -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" routerLink="/dashboard/inventory">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="!productForm.valid || isLoading">
+          {{ isEditMode ? 'Update Product' : 'Save Product' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  /* 
+    Product Form Specific Styles (CSS)
+    Styling for the form layout and input fields.
+  */
+  .form-container {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .page-header {
+    margin-bottom: 24px;
+  }
+
+  .title-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.2s;
+  }
+
+  .back-btn:hover {
+    background: #f1f5f9;
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+
+  .form-card {
+    position: relative;
+    padding: 32px;
+  }
+
+  .form-section {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .form-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 16px;
+  }
+
+  .form-section h3 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: var(--primary);
+  }
+
+  /* Three-column grid layout */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  /* Dropdownbox (Select box) styling */
+  select {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    border: 1.5px solid #e2e8f0;
+    background: #f8fafc;
+    transition: all 0.2s;
+    font-family: inherit;
+    font-size: 15px;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+
+  select:focus {
+    border-color: var(--primary);
+    background-color: white;
+  }
+
+  .loading-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.7);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius);
+  }
+
+  @media (max-width: 768px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

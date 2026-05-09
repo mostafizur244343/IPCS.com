@@ -1,0 +1,243 @@
+<!-- 
+  Dashboard Home Screen 
+  Displays a summary of key metrics and recent data for the user.
+-->
+<div class="home-container animate-fade-in">
+  <!-- Welcome Section -->
+  <div class="welcome-header">
+    <h1>Welcome back, Admin!</h1>
+    <p>Here is what's happening in your pharmacy today.</p>
+  </div>
+
+  <!-- Grid of 4 Status Cards -->
+  <div class="stats-grid">
+    <div *ngFor="let stat of stats" class="stat-card" [ngClass]="stat.color">
+      <div class="stat-icon">
+        <!-- Icons rendered conditionally based on stat type -->
+        <svg *ngIf="stat.icon === 'trending-up'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+        <svg *ngIf="stat.icon === 'shopping-bag'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+        <svg *ngIf="stat.icon === 'package'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        <svg *ngIf="stat.icon === 'alert-triangle'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      </div>
+      <div class="stat-info">
+        <h3>{{ stat.name }}</h3>
+        <p class="value">{{ stat.value }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Grid: Data table on the left and Quick Actions on the right -->
+  <div class="main-grid">
+    <!-- Recent Sales Table Card -->
+    <div class="card recent-transactions">
+      <div class="card-header">
+        <h3>Recent Sales</h3>
+        <button class="btn btn-secondary">View All</button>
+      </div>
+      <!-- Data Table -->
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Invoice</th>
+            <th>Customer</th>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let tx of recentTransactions">
+            <td><strong>{{ tx.id }}</strong></td>
+            <td>{{ tx.customer }}</td>
+            <td>{{ tx.date }}</td>
+            <td>{{ tx.amount }}</td>
+            <td>
+              <span class="status-badge" [class.paid]="tx.status === 'Paid'">{{ tx.status }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Quick Action Button List -->
+    <div class="card quick-actions">
+      <h3>Quick Actions</h3>
+      <div class="actions-list">
+        <button class="action-btn">
+          <span class="icon">+</span>
+          <span>New Sale</span>
+        </button>
+        <button class="action-btn">
+          <span class="icon">+</span>
+          <span>New Purchase</span>
+        </button>
+        <button class="action-btn">
+          <span class="icon">+</span>
+          <span>Add Product</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* 
+    Component Specific Styles (CSS)
+    Styling for the dashboard home grid and tables.
+  */
+  .home-container {
+    max-width: 1200px;
+  }
+
+  .welcome-header {
+    margin-bottom: 32px;
+  }
+
+  .welcome-header h1 {
+    font-size: 32px;
+    margin-bottom: 4px;
+  }
+
+  .welcome-header p {
+    color: var(--text-muted);
+  }
+
+  /* Grid to display 4 cards side-by-side */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  .stat-card {
+    background: white;
+    padding: 24px;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: var(--shadow);
+    border-left: 4px solid var(--primary); /* Left colored border accent */
+  }
+
+  /* Individual card colors */
+  .stat-card.blue { border-left-color: #0ea5e9; }
+  .stat-card.teal { border-left-color: #14b8a6; }
+  .stat-card.amber { border-left-color: #f59e0b; }
+  .stat-card.red { border-left-color: #ef4444; }
+
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    background: #f8fafc;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+  }
+
+  .stat-info h3 {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  .stat-info .value {
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  /* Two-column layout (Table + Quick Actions) */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 24px;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  /* Data Table styling */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .data-table th {
+    text-align: left;
+    padding: 12px;
+    font-size: 13px;
+    color: var(--text-muted);
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .data-table td {
+    padding: 16px 12px;
+    font-size: 14px;
+    border-bottom: 1px solid #f8fafc;
+  }
+
+  /* Status Badge styling (e.g., Paid/Pending) */
+  .status-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    background: #f1f5f9;
+    color: #64748b;
+  }
+
+  .status-badge.paid {
+    background: #dcfce7;
+    color: #15803d;
+  }
+
+  .quick-actions h3 {
+    margin-bottom: 20px;
+  }
+
+  .actions-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  /* Quick action button styling */
+  .action-btn {
+    width: 100%;
+    padding: 16px;
+    border-radius: var(--radius);
+    border: 1px solid #e2e8f0;
+    background: white;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+    text-align: left;
+  }
+
+  .action-btn:hover {
+    background: #f8fafc;
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateX(4px);
+  }
+
+  .action-btn .icon {
+    width: 24px;
+    height: 24px;
+    background: rgba(15, 118, 110, 0.1);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+</style>

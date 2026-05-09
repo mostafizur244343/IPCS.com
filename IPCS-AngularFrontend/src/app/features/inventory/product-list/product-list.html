@@ -1,0 +1,115 @@
+<div class="inventory-container animate-fade-in">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Product Inventory</h1>
+      <p>Manage your pharmacy items, stock levels and pricing.</p>
+    </div>
+    <div class="action-section">
+      <!-- Only users with Create permission can see the Add button -->
+      <button 
+        *ngIf="permService.hasPermission('Permissions.Inventory.Create')" 
+        class="btn btn-primary" 
+        routerLink="/dashboard/inventory/add"
+      >
+        <span class="icon">+</span> Add New Product
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter Card -->
+  <div class="card filter-card">
+    <div class="search-box">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input 
+        type="text" 
+        placeholder="Search by name or SKU..." 
+        [(ngModel)]="searchTerm"
+        (input)="onSearch()"
+      >
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="card table-card">
+    <div *ngIf="isLoading" class="loading-state">
+      <div class="spinner-blue"></div>
+      <p>Loading Products...</p>
+    </div>
+
+    <table *ngIf="!isLoading" class="data-table">
+      <thead>
+        <tr>
+          <th>Product Name</th>
+          <th>SKU</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Stock</th>
+          <th>Status</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let product of filteredProducts">
+          <td>{{ product.productName }}</td>
+          <td>{{ product.sku }}</td>
+          <td>{{ product.categoryName }}</td>
+          <td>৳{{ product.salesPrice | number:'1.2-2' }}</td>
+          <td>
+            <span class="stock-badge" [class.low]="product.currentStock <= product.reorderLevel">
+              {{ product.currentStock }}
+            </span>
+          </td>
+          <td>
+            <span class="status-indicator" [class.active]="product.isActive">
+              {{ product.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+          <td class="text-right">
+            <div class="action-buttons">
+              <!-- Edit button hidden if no permission -->
+              <button 
+                *ngIf="permService.hasPermission('Permissions.Inventory.Edit')" 
+                class="icon-btn edit" 
+                [routerLink]="['/dashboard/inventory/edit', product.productId]"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              </button>
+              <!-- Delete button hidden if no permission -->
+              <button 
+                *ngIf="permService.hasPermission('Permissions.Inventory.Delete')" 
+                class="icon-btn delete" 
+                (click)="deleteProduct(product.productId)"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+  /* 
+    Product List Specific Styles (CSS)
+  */
+  .inventory-container { padding-bottom: 40px; }
+  .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .filter-card { margin-bottom: 24px; padding: 16px 24px; }
+  .search-box { display: flex; align-items: center; background: #f1f5f9; padding: 10px 16px; border-radius: 10px; gap: 12px; }
+  .search-box input { background: none; border: none; outline: none; width: 100%; font-size: 14px; }
+  .stock-badge { padding: 4px 10px; border-radius: 6px; background: #f1f5f9; font-weight: 500; }
+  .stock-badge.low { background: #fee2e2; color: #ef4444; }
+  .status-indicator { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+  .status-indicator::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; }
+  .status-indicator.active::before { background: var(--success); }
+  .action-buttons { display: flex; gap: 8px; justify-content: flex-end; }
+  .icon-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+  .icon-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .icon-btn.delete:hover { border-color: var(--error); color: var(--error); background: #fef2f2; }
+  .loading-state { padding: 40px; text-align: center; color: var(--text-muted); }
+  .spinner-blue { width: 32px; height: 32px; border: 3px solid rgba(15, 118, 110, 0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>

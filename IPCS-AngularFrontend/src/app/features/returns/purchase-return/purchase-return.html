@@ -1,0 +1,133 @@
+<div class="return-container animate-fade-in">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="title-section">
+      <button class="back-btn" routerLink="/dashboard/purchase">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      </button>
+      <h1>Purchase Return (Debit Note)</h1>
+    </div>
+  </div>
+
+  <!-- Step 1: Find Purchase Invoice -->
+  <div class="card search-card" *ngIf="!originalPurchase">
+    <div class="search-form">
+      <div class="input-group">
+        <label>Enter Supplier Invoice Number *</label>
+        <div class="search-bar">
+          <input type="text" [(ngModel)]="purchaseSearch" placeholder="e.g. SUP-INV-101">
+          <button class="btn btn-primary" (click)="findPurchase()" [disabled]="isLoading">
+            <span *ngIf="!isLoading">Find Purchase</span>
+            <span *ngIf="isLoading" class="spinner"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Select Items for Return -->
+  <div class="return-layout" *ngIf="originalPurchase">
+    <div class="items-column">
+      <div class="card info-card">
+        <div class="info-grid">
+           <div><span class="label">Supplier:</span> <strong>{{ originalPurchase.supplierName }}</strong></div>
+           <div><span class="label">Our Invoice:</span> <strong>{{ originalPurchase.supplierInvoiceNo }}</strong></div>
+           <div><span class="label">Date:</span> {{ originalPurchase.purchaseDate | date }}</div>
+        </div>
+      </div>
+
+      <div class="card table-card">
+        <table class="return-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th width="100">Stock Qty</th>
+              <th width="120">Return Qty</th>
+              <th width="120">P.Price</th>
+              <th width="120">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of returnMaster.returnDetails">
+              <td>
+                <div class="name">{{ item.productName }}</div>
+                <small>Lot: {{ item.lotId }}</small>
+              </td>
+              <td>{{ item.originalQty }}</td>
+              <td>
+                <input type="number" [(ngModel)]="item.quantity" (change)="calculateLineTotal(item)" class="table-input" min="0">
+              </td>
+              <td>৳{{ item.purchasePrice | number:'1.2-2' }}</td>
+              <td><strong>৳{{ item.lineTotal | number:'1.2-2' }}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Step 3: Refund Summary and Confirmation -->
+    <div class="sidebar-column">
+      <div class="card summary-card">
+        <h3>Return Summary</h3>
+        <div class="line"><span>Total Return</span> <span>৳{{ returnMaster.totalAmount | number:'1.2-2' }}</span></div>
+        <hr>
+        
+        <div class="input-group">
+          <label>Refund Adjustment</label>
+          <select [(ngModel)]="returnMaster.refundType">
+            <option value="Cash">Cash Received</option>
+            <option value="Adjustment">Supplier Credit</option>
+          </select>
+        </div>
+
+        <div class="input-group" *ngIf="returnMaster.refundType === 'Cash'">
+          <label>Refund Method</label>
+          <select [(ngModel)]="returnMaster.paymentMethodId">
+            <option *ngFor="let m of paymentMethods" [value]="m.paymentMethodId">{{ m.paymentMethodName }}</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label>Reason for Return *</label>
+          <textarea [(ngModel)]="returnMaster.reason" placeholder="e.g. Near expiry, Damage upon arrival"></textarea>
+        </div>
+
+        <button class="btn btn-primary submit-btn" (click)="onSubmit()" [disabled]="isLoading">
+           <span *ngIf="!isLoading">Save Return</span>
+           <span *ngIf="isLoading" class="spinner"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* 
+    Purchase Return Specific Styles (CSS)
+    Styling for the supplier return workflow.
+  */
+  .return-container { padding-bottom: 40px; }
+  .search-card { max-width: 600px; margin: 40px auto; padding: 40px; }
+  .search-bar { display: flex; gap: 12px; margin-top: 10px; }
+  .search-bar input { flex: 1; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; outline: none; font-size: 16px; }
+
+  .return-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; margin-top: 24px; }
+  .info-card { padding: 20px; margin-bottom: 24px; }
+  .info-grid { display: flex; gap: 40px; font-size: 14px; }
+  .info-grid .label { color: var(--text-muted); margin-right: 8px; }
+
+  .return-table { width: 100%; border-collapse: collapse; }
+  .return-table th { background: #f8fafc; padding: 12px; text-align: left; font-size: 13px; color: var(--text-muted); }
+  .return-table td { padding: 12px; border-bottom: 1px solid #f8fafc; }
+  .table-input { width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; outline: none; }
+
+  .summary-card { padding: 24px; }
+  .summary-card h3 { font-size: 18px; margin-bottom: 20px; }
+  .summary-card .line { display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 15px; }
+
+  textarea { width: 100%; height: 100px; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; outline: none; font-family: inherit; }
+  .submit-btn { width: 100%; margin-top: 24px; padding: 16px; font-weight: 700; background: #e11d48; border-color: #e11d48; } /* Using a reddish button for returns */
+  .submit-btn:hover { background: #be123c; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>

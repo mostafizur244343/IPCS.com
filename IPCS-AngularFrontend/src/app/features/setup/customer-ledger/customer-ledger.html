@@ -1,0 +1,82 @@
+<div class="ledger-container animate-fade-in">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="title-section">
+      <button class="back-btn" routerLink="/dashboard/setup/customers">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      </button>
+      <h1>Customer Statement</h1>
+      <p *ngIf="customer">Transaction history for <strong>{{ customer.name }}</strong></p>
+    </div>
+    <div class="summary-cards" *ngIf="customer">
+      <div class="stat-card">
+        <span class="label">Total Due</span>
+        <span class="value text-danger">৳{{ getTotalDue() | number:'1.2-2' }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="label">Advance / Wallet</span>
+        <span class="value text-success">৳{{ customer.advanceBalance | number:'1.2-2' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ledger Card -->
+  <div class="card table-card">
+    <div *ngIf="isLoading" class="loading-state">
+      <div class="spinner-blue"></div>
+    </div>
+
+    <table *ngIf="!isLoading" class="data-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Invoice No</th>
+          <th class="text-right">Net Amount</th>
+          <th class="text-right">Paid</th>
+          <th class="text-right">Due</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let sale of salesHistory">
+          <td>{{ sale.salesDate | date:'mediumDate' }}</td>
+          <td><code>{{ sale.invoiceNo }}</code></td>
+          <td class="text-right">৳{{ sale.netAmount | number:'1.2-2' }}</td>
+          <td class="text-right text-success">৳{{ sale.paidAmount | number:'1.2-2' }}</td>
+          <td class="text-right text-danger">৳{{ sale.dueAmount | number:'1.2-2' }}</td>
+          <td>
+            <span class="status-pill" [ngClass]="sale.paymentStatus?.toLowerCase()">
+              {{ sale.paymentStatus }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="!isLoading && (!salesHistory || salesHistory.length === 0)" class="empty-state">
+      <p>No sales history found for this customer.</p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .ledger-container { padding-bottom: 40px; }
+  .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
+  .title-section { display: flex; align-items: center; gap: 16px; }
+  
+  .summary-cards { display: flex; gap: 16px; }
+  .stat-card { background: white; padding: 16px 24px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 4px; min-width: 150px; }
+  .stat-card .label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+  .stat-card .value { font-size: 20px; font-weight: 700; }
+
+  .text-danger { color: #ef4444; }
+  .text-success { color: #10b981; }
+  .text-right { text-align: right; }
+
+  .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+  .status-pill.paid { background: #dcfce7; color: #166534; }
+  .status-pill.partial { background: #fef08a; color: #854d0e; }
+  .status-pill.due { background: #fee2e2; color: #991b1b; }
+
+  .empty-state { padding: 60px; text-align: center; color: #64748b; font-style: italic; }
+</style>

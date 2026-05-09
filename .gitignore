@@ -1,0 +1,47 @@
+## .gitignore for InventoryPharmaCareSystem (.NET + Angular)
+
+# ===== .NET / C# =====
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.log
+*.sqlite
+*.db
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ASP.NET
+appsettings.json
+appsettings.Development.json
+appsettings.Production.json
+
+# Logs
+Logs/
+*.txt
+
+# ===== Angular / Node =====
+node_modules/
+dist/
+.angular/
+npm-debug.log
+yarn-error.log
+
+# ===== IDE / OS =====
+.idea/
+.vscode/
+*.DS_Store
+Thumbs.db
+
+# ===== Build output =====
+build_output.txt
+err.txt

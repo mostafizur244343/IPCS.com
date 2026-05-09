@@ -1,0 +1,386 @@
+<div class="pos-container animate-fade-in">
+  <!-- POS Header Section -->
+  <div class="pos-header">
+    <div class="left">
+      <button class="back-btn" routerLink="/dashboard/sales">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      </button>
+      <h1>New POS Sale</h1>
+    </div>
+    <div class="right">
+      <span class="date-badge">{{ sale.salesDate | date:'fullDate' }}</span>
+    </div>
+  </div>
+
+  <div class="pos-content">
+    <!-- Left Column: Product Search and Item Table -->
+    <div class="items-column">
+      <div class="card search-card">
+        <div class="search-input-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input 
+            type="text" 
+            placeholder="Scan Barcode or Search Product Name..." 
+            [(ngModel)]="searchTerm"
+            (input)="searchProduct()"
+            class="pos-search-input"
+          >
+          <!-- Search Results Dropdown -->
+          <div class="search-results-dropdown" *ngIf="searchResults.length > 0">
+            <div 
+              *ngFor="let p of searchResults" 
+              class="search-result-item"
+              (click)="addProduct(p)"
+            >
+              <div class="info">
+                <span class="name">{{ p.productName }}</span>
+                <span class="meta">{{ p.sku }} | Stock: {{ p.currentStock }}</span>
+              </div>
+              <span class="price">৳{{ p.salesPrice }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Invoice Items Table -->
+      <div class="card table-card items-card">
+        <table class="pos-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th width="120">Qty</th>
+              <th width="120">Price</th>
+              <th width="120">Disc/Unit</th>
+              <th width="120">Total</th>
+              <th width="50"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of sale.salesDetails; let i = index">
+              <td>
+                <div class="p-name">{{ item.productName }}</div>
+                <small>{{ item.sku }}</small>
+              </td>
+              <td>
+                <input type="number" [(ngModel)]="item.quantity" (change)="calculateLineTotal(item)" class="table-input">
+              </td>
+              <td>
+                <input type="number" [(ngModel)]="item.unitPrice" (change)="calculateLineTotal(item)" class="table-input">
+              </td>
+              <td>
+                <input type="number" [(ngModel)]="item.discountPerUnit" (change)="calculateLineTotal(item)" class="table-input">
+              </td>
+              <td><strong>৳{{ item.lineTotal | number:'1.2-2' }}</strong></td>
+              <td>
+                <button class="delete-row" (click)="removeItem(i)">&times;</button>
+              </td>
+            </tr>
+            <!-- Empty state for the table -->
+            <tr *ngIf="sale.salesDetails.length === 0">
+              <td colspan="6" class="empty-items-msg">
+                No products added yet. Use the search bar above to add items.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Right Column: Customer and Checkout -->
+    <div class="checkout-column">
+      <!-- Customer Selection Card -->
+      <div class="card checkout-card">
+        <h3>Customer Details</h3>
+        <div class="input-group">
+          <label>Select Customer</label>
+          <select [(ngModel)]="sale.customerId">
+            <option [ngValue]="null">Walk-in Customer</option>
+            <option *ngFor="let c of customers" [value]="c.customerId">{{ c.customerName }} - {{ c.mobile }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Financial Summary and Payment Card -->
+      <div class="card checkout-card summary-card">
+        <div class="summary-line">
+          <span>Subtotal</span>
+          <span>৳{{ sale.totalAmount | number:'1.2-2' }}</span>
+        </div>
+        <div class="summary-line">
+          <span>Discount</span>
+          <input type="number" [(ngModel)]="sale.discountAmount" (change)="calculateTotals()" class="inline-input">
+        </div>
+        <hr>
+        <div class="summary-line grand-total">
+          <span>Net Total</span>
+          <span>৳{{ sale.netAmount | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="payment-section">
+          <div class="input-group">
+            <label>Paid Amount</label>
+            <input type="number" [(ngModel)]="sale.paidAmount" (input)="updatePaymentInfo()" class="paid-input">
+          </div>
+
+          <div class="due-change-row">
+            <div class="stat-box" [class.danger]="sale.dueAmount > 0">
+              <span class="label">Due</span>
+              <span class="val">৳{{ sale.dueAmount | number:'1.2-2' }}</span>
+            </div>
+            <div class="stat-box success" [class.active]="sale.changeAmount > 0">
+              <span class="label">Change</span>
+              <span class="val">৳{{ sale.changeAmount | number:'1.2-2' }}</span>
+            </div>
+          </div>
+          
+          <!-- Logic for handling overpayment (if any) -->
+          <div class="change-options" *ngIf="sale.changeAmount > 0">
+             <label class="checkbox-container">
+               <input type="checkbox" [(ngModel)]="sale.isChangeConvertedToCredit">
+               <span class="checkmark"></span>
+               Add Change to Customer Credit
+             </label>
+          </div>
+        </div>
+
+        <!-- Checkout Button -->
+        <button 
+          class="btn btn-primary checkout-btn" 
+          (click)="onSubmit()"
+          [disabled]="sale.salesDetails.length === 0 || isLoading"
+        >
+          <span *ngIf="!isLoading">Complete Sale (F10)</span>
+          <span *ngIf="isLoading" class="spinner"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* 
+    POS Specific Styles (CSS)
+    Specialized layout for high-speed point-of-sale interaction.
+  */
+  .pos-container {
+    height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .pos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .pos-header .left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .pos-header h1 { font-size: 24px; }
+
+  .date-badge {
+    padding: 6px 12px;
+    background: white;
+    border-radius: 20px;
+    font-size: 14px;
+    color: var(--text-muted);
+    border: 1px solid #e2e8f0;
+  }
+
+  .pos-content {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 20px;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .items-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow: hidden;
+  }
+
+  .search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f1f5f9;
+    padding: 12px 20px;
+    border-radius: 12px;
+  }
+
+  .pos-search-input {
+    background: none;
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 16px;
+  }
+
+  /* Dropdown box for showing search results */
+  .search-results-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0; right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+  }
+
+  .search-result-item {
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    border-bottom: 1px solid #f8fafc;
+  }
+
+  .search-result-item:hover { background: #f8fafc; }
+  .search-result-item .name { display: block; font-weight: 600; }
+  .search-result-item .meta { font-size: 12px; color: var(--text-muted); }
+  .search-result-item .price { font-weight: 700; color: var(--primary); }
+
+  .items-card { flex: 1; overflow-y: auto; padding: 0; }
+
+  /* POS Item Table Styles */
+  .pos-table { width: 100%; border-collapse: collapse; }
+  .pos-table th {
+    background: #f8fafc;
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text-muted);
+    border-bottom: 1px solid #e2e8f0;
+    position: sticky; top: 0;
+  }
+  .pos-table td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; }
+
+  .table-input {
+    width: 100%;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    outline: none;
+  }
+
+  .delete-row {
+    background: #fee2e2;
+    color: #ef4444;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .empty-items-msg {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .checkout-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .checkout-card { padding: 24px; }
+  .checkout-card h3 { margin-bottom: 20px; font-size: 18px; }
+
+  /* Financial Summary Styling */
+  .summary-line {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 15px;
+  }
+
+  .grand-total {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 16px 0;
+  }
+
+  .inline-input {
+    width: 100px;
+    text-align: right;
+    border: none;
+    border-bottom: 1px dashed var(--text-muted);
+    outline: none;
+    font-weight: 600;
+  }
+
+  .paid-input {
+    width: 100%;
+    font-size: 24px;
+    font-weight: 700;
+    text-align: center;
+    padding: 16px;
+    border-radius: 12px;
+    border: 2px solid #e2e8f0;
+    color: var(--primary);
+  }
+
+  .due-change-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .stat-box {
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .stat-box .label { font-size: 12px; color: var(--text-muted); }
+  .stat-box .val { font-size: 18px; font-weight: 700; }
+  .stat-box.danger .val { color: #ef4444; }
+  .stat-box.success.active { background: #dcfce7; }
+  .stat-box.success.active .val { color: #15803d; }
+
+  .checkout-btn {
+    width: 100%;
+    padding: 20px;
+    font-size: 18px;
+    font-weight: 700;
+    margin-top: 24px;
+    box-shadow: 0 10px 15px -3px rgba(15, 118, 110, 0.3);
+  }
+
+  .checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-muted);
+    cursor: pointer;
+    margin-top: 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>

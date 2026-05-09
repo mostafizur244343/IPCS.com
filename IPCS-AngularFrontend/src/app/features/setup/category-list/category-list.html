@@ -1,0 +1,74 @@
+<div class="setup-container animate-fade-in">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Product Categories</h1>
+      <p>Define types of products available in the pharmacy.</p>
+    </div>
+  </div>
+
+  <div class="setup-grid">
+    <!-- Left: Add New Category -->
+    <div class="card form-card">
+      <h3>Quick Add</h3>
+      <div class="input-group">
+        <label>Category Name *</label>
+        <input type="text" [(ngModel)]="newCategory.categoryName" placeholder="e.g. Tablets">
+      </div>
+      <div class="input-group">
+        <label>Description</label>
+        <textarea [(ngModel)]="newCategory.description" placeholder="Optional notes..."></textarea>
+      </div>
+      <button class="btn btn-primary w-full" (click)="addCategory()" [disabled]="isLoading">
+        <span *ngIf="!isLoading">Add Category</span>
+        <span *ngIf="isLoading" class="spinner"></span>
+      </button>
+    </div>
+
+    <!-- Right: Categories Table -->
+    <div class="card table-card">
+      <div *ngIf="isLoading" class="loading-state">
+        <div class="spinner-blue"></div>
+      </div>
+
+      <table *ngIf="!isLoading" class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let cat of categories">
+            <td><strong>{{ cat.categoryName }}</strong></td>
+            <td>{{ cat.description || 'No description' }}</td>
+            <td class="text-right">
+              <div class="action-buttons">
+                <button class="icon-btn delete" (click)="deleteCategory(cat.categoryId)" title="Delete">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* 
+    Category Setup Specific Styles (CSS)
+  */
+  .setup-container { padding-bottom: 40px; }
+  .setup-grid { display: grid; grid-template-columns: 300px 1fr; gap: 24px; }
+  .form-card { padding: 24px; height: fit-content; }
+  .form-card h3 { font-size: 16px; margin-bottom: 16px; }
+  .w-full { width: 100%; }
+  textarea { width: 100%; height: 80px; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; outline: none; font-family: inherit; }
+  .text-right { text-align: right; }
+  .action-buttons { display: flex; gap: 8px; justify-content: flex-end; }
+  
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
