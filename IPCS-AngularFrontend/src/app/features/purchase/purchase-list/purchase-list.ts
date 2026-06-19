@@ -20,7 +20,26 @@ export class PurchaseListComponent implements OnInit {
   searchTerm: string = '';
   isLoading = false;
 
+  // Details state
+  selectedPurchaseForDetails: any = null;
+
   constructor(private api: ApiService) {}
+
+  showDetails(purchase: any) {
+    this.api.get<any>(`Purchase/${purchase.purchaseId}`).subscribe({
+      next: (fullData) => {
+        this.selectedPurchaseForDetails = fullData;
+      },
+      error: (err) => {
+        console.error('Error loading purchase details', err);
+        this.selectedPurchaseForDetails = purchase;
+      }
+    });
+  }
+
+  closeDetails() {
+    this.selectedPurchaseForDetails = null;
+  }
 
   ngOnInit() {
     this.loadPurchases();

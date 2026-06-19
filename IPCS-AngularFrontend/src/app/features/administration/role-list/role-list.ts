@@ -4,10 +4,6 @@ import { RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
 
-/**
- * RoleListComponent
- * Allows administrators to manage system roles (e.g., Admin, Staff, Manager).
- */
 @Component({
   selector: 'app-role-list',
   standalone: true,
@@ -15,54 +11,92 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './role-list.html'
 })
 export class RoleListComponent implements OnInit {
-  roles: any[] = []; // List of roles from Identity system
-  newRoleName: string = '';
-  isLoading = false;
+  public roles: any[] = [];
+  public newRoleName: string = '';
+  public isLoading: boolean = false;
+  public errorMessage: string = '';
+  
+  // Explicitly defined editing state
+  public editingRoleId: string | null = null;
+  public editRoleName: string = '';
+
+  // Details state
+  public selectedRoleForDetails: any = null;
 
   constructor(private api: ApiService) {}
+
+  public showDetails(role: any): void {
+    this.selectedRoleForDetails = role;
+  }
+
+  public closeDetails(): void {
+    this.selectedRoleForDetails = null;
+  }
 
   ngOnInit() {
     this.loadRoles();
   }
 
-  /**
-   * Fetches all available roles from the API
-   */
-  loadRoles() {
+  public loadRoles(): void {
     this.isLoading = true;
+    this.errorMessage = '';
     this.api.get<any[]>('Role/get-all-roles').subscribe({
       next: (data) => {
-        this.roles = data;
+        this.roles = data || [];
         this.isLoading = false;
       },
-      error: () => this.isLoading = false
+      error: (err) => {
+        this.errorMessage = 'Failed to load roles.';
+        this.isLoading = false;
+        console.error(err);
+      }
     });
   }
 
-  /**
-   * Creates a new role in the system
-   */
-  createRole() {
+  public createRole(): void {
     if (!this.newRoleName) return;
     this.isLoading = true;
     this.api.post('Role/create-role', { roleName: this.newRoleName }).subscribe({
-      next: (res: any) => {
-        alert(res.message);
+      next: () => {
         this.newRoleName = '';
         this.loadRoles();
       },
       error: (err) => {
-        alert('Error creating role');
+        this.errorMessage = 'Error creating role.';
         this.isLoading = false;
       }
     });
   }
 
-  /**
-   * Deletes a role from the system
-   */
-  deleteRole(id: string) {
-    if (confirm('Are you sure you want to delete this role? Users assigned to this role will lose their permissions.')) {
+  public editRole(role: any): void {
+    if (role) {
+      this.editingRoleId = role.id;
+      this.editRoleName = role.roleName;
+    }
+  }
+
+  public cancelEdit(): void {
+    this.editingRoleId = null;
+    this.editRoleName = '';
+  }
+
+  public updateRole(): void {
+    if (!this.editingRoleId || !this.editRoleName) return;
+    this.isLoading = true;
+    this.api.post('Role/update-role', { id: this.editingRoleId, roleName: this.editRoleName }).subscribe({
+      next: () => {
+        this.cancelEdit();
+        this.loadRoles();
+      },
+      error: (err) => {
+        this.errorMessage = 'Update failed.';
+        this.isLoading = false;
+      }
+    });
+  }
+
+  public deleteRole(id: string): void {
+    if (id && confirm('Are you sure you want to delete this role?')) {
       this.api.delete(`Role/delete-role/${id}`).subscribe(() => {
         this.loadRoles();
       });

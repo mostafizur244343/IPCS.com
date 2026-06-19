@@ -1,4 +1,4 @@
-﻿using IPCS_Model.Entities;
+using IPCS_Model.Entities;
 using IPCS_Model.DTOs;
 
 namespace IPCS_Service.Interfaces
@@ -11,5 +11,6 @@ namespace IPCS_Service.Interfaces
         Task<object> GetMonthlyReportAsync(int branchId, int year, int month); // Monthly Report
         Task<object> GetYearlyReportAsync(int branchId, int year); // Yearly Report
         Task<bool> DeleteAsync(long id);
+        Task<object> GetInventoryStatsAsync();
     }
 }

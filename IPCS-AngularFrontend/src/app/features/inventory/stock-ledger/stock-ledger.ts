@@ -34,7 +34,7 @@ export class StockLedgerComponent implements OnInit {
     const branchId = 1; // Default branch
     this.api.get<any[]>(`StockLedger/branch/${branchId}`).subscribe({
       next: (data) => {
-        this.ledgerEntries = data.sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime());
+        this.ledgerEntries = data.sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime());
         this.filteredEntries = this.ledgerEntries;
         this.isLoading = false;
       },
@@ -43,13 +43,15 @@ export class StockLedgerComponent implements OnInit {
   }
 
   /**
-   * Filters the ledger by medicine name or transaction type
+   * Filters the ledger by medicine name, batch/lot, reference number or transaction type
    */
   onSearch() {
     const term = this.searchTerm.toLowerCase();
     this.filteredEntries = this.ledgerEntries.filter(e => 
-      e.productName?.toLowerCase().includes(term) || 
-      e.transactionType?.toLowerCase().includes(term)
+      e.product?.productName?.toLowerCase().includes(term) || 
+      e.lot?.lotNumber?.toLowerCase().includes(term) || 
+      e.transactionType?.toLowerCase().includes(term) ||
+      e.referenceNo?.toLowerCase().includes(term)
     );
   }
 }

@@ -32,7 +32,8 @@ export class PurchaseFormComponent implements OnInit {
     isShipment: false, // If true, stock won't be updated until received
     remarks: '',
     purchaseDetails: [],
-    payments: []
+    payments: [],
+    extraChargeAmount: 0
   };
 
   // UI State Variables
@@ -111,11 +112,29 @@ export class PurchaseFormComponent implements OnInit {
   }
 
   /**
+   * Calculates extra charge based on selected payment method
+   */
+  calculateExtraCharge() {
+    if (!this.purchase.methodId || this.purchase.paidAmount <= 0) {
+      this.purchase.extraChargeAmount = 0;
+      return;
+    }
+    
+    const paymentMethod = this.paymentMethods.find(m => m.paymentMethodId === this.purchase.methodId);
+    if (paymentMethod && paymentMethod.isDigital && paymentMethod.extraChargePercentage) {
+      this.purchase.extraChargeAmount = (this.purchase.paidAmount * paymentMethod.extraChargePercentage) / 100;
+    } else {
+      this.purchase.extraChargeAmount = 0;
+    }
+  }
+
+  /**
    * Calculates grand totals for the purchase
    */
   calculateTotals() {
     this.purchase.totalAmount = this.purchase.purchaseDetails.reduce((sum: number, item: any) => sum + item.lineTotal, 0);
     this.purchase.netAmount = this.purchase.totalAmount - this.purchase.discountAmount;
+    this.calculateExtraCharge();
     this.purchase.dueAmount = this.purchase.netAmount - this.purchase.paidAmount;
     this.purchase.paymentStatus = this.purchase.dueAmount <= 0 ? 'Paid' : 'Due';
   }

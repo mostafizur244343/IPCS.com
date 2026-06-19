@@ -14,6 +14,9 @@ namespace IPCS_Service.Interfaces
         // Delete a role
         Task<IdentityResult> DeleteRoleAsync(string roleId);
 
+        // Update a role name
+        Task<IdentityResult> UpdateRoleAsync(string roleId, string newRoleName);
+
         // Get all users with their assigned roles
         Task<List<UserWithRolesDTO>> GetUsersWithRolesAsync();
 

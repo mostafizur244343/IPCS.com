@@ -1,4 +1,4 @@
-﻿using IPCS_Model.Entities;
+using IPCS_Model.Entities;
 using IPCS_Model.DTOs;
 using IPCS_Service.Interfaces;
 using IPCS_Repo.Data;
@@ -99,5 +99,19 @@ namespace IPCS_Service.Implementation
 
         public async Task<object> GetYearlyReportAsync(int branchId, int year) => throw new NotImplementedException();
         public async Task<bool> DeleteAsync(long id) => throw new NotImplementedException();
+
+        public async Task<object> GetInventoryStatsAsync()
+        {
+            var totalItems = await _context.Products.CountAsync(p => !p.IsDeleted);
+            var lowStock = await _context.Products.CountAsync(p => !p.IsDeleted && p.CurrentStock <= p.ReorderLevel && p.CurrentStock > 0);
+            var outOfStock = await _context.Products.CountAsync(p => !p.IsDeleted && p.CurrentStock <= 0);
+
+            return new
+            {
+                TotalItems = totalItems,
+                LowStock = lowStock,
+                OutOfStock = outOfStock
+            };
+        }
     }
 }

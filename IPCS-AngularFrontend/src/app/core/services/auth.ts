@@ -24,9 +24,12 @@ export class AuthService {
   login(credentials: any) {
     return this.api.post<any>('Account/login', credentials).pipe(
       tap(res => {
-        localStorage.setItem('token', res.token);
-        localStorage.setItem('user_data', JSON.stringify(res.user));
-        // After login, fetch permissions
+        const token = res.token || res.Token;
+        const user = res.user || res.User;
+        if (token) localStorage.setItem('token', token);
+        if (user) localStorage.setItem('user_data', JSON.stringify(user));
+        
+        // Load permissions immediately
         this.permService.fetchMyPermissions().subscribe();
       })
     );

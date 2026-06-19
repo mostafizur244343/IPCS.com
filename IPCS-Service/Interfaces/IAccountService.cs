@@ -25,6 +25,9 @@ namespace IPCS_Service.Interfaces
         // Deactivate/Activate User
         Task<bool> ToggleUserStatusAsync(string email);
 
-
+        // Helper Methods for Login Data
+        Task<User?> GetUserByEmailOrMobileAsync(string emailOrMobile);
+        Task<IList<string>> GetUserRolesAsync(string email);
+        Task<IdentityResult> DeleteUserAsync(string userId, string currentUserId);
     }
-}
+}

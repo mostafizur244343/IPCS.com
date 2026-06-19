@@ -1,52 +1,90 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import Swal from 'sweetalert2';
 
 /**
  * NotificationService
- * Provides a global system for displaying toast notifications (Success, Error, Info).
- * Replaces generic browser alerts with a premium UI experience.
+ * Provides a global system for displaying dialog notifications (Success, Error, Info, Warning).
+ * Replaces generic browser alerts and banner popups with premium SweetAlert2 popups.
  */
 @Injectable({
   providedIn: 'root'
 })
 export class NotificationService {
+  // Maintained for backward compatibility, unused now
   private toastsSubject = new BehaviorSubject<any[]>([]);
   public toasts$ = this.toastsSubject.asObservable();
 
-  /**
-   * Displays a success toast
-   */
-  success(message: string) {
-    this.show(message, 'success');
+  private fire(title: string, message: string, icon: 'success' | 'error' | 'info' | 'warning') {
+    Swal.fire({
+      title: title,
+      text: message,
+      icon: icon,
+      width: '360px', // More compact, elegant width
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#0f766e', // Theme primary Teal color
+      background: '#ffffff',
+      color: '#1e293b',
+      heightAuto: false // Prevents body shift/scrollbar jump issues
+    });
   }
 
   /**
-   * Displays an error toast
+   * Displays a success dialog popup
    */
-  error(message: string) {
-    this.show(message, 'error');
+  success(message: string, title: string = 'Success') {
+    this.fire(title, message, 'success');
   }
 
   /**
-   * Displays an informational toast
+   * Displays an error dialog popup
    */
-  info(message: string) {
-    this.show(message, 'info');
+  error(message: string, title: string = 'Error') {
+    this.fire(title, message, 'error');
   }
 
-  private show(message: string, type: 'success' | 'error' | 'info') {
-    const id = Date.now();
-    const current = this.toastsSubject.value;
-    this.toastsSubject.next([...current, { id, message, type }]);
-
-    // Auto-remove toast after 4 seconds
-    setTimeout(() => {
-      this.remove(id);
-    }, 4000);
+  /**
+   * Displays an informational dialog popup
+   */
+  info(message: string, title: string = 'Info') {
+    this.fire(title, message, 'info');
   }
 
+  /**
+   * Displays a warning dialog popup
+   */
+  warning(message: string, title: string = 'Warning') {
+    this.fire(title, message, 'warning');
+  }
+
+  /**
+   * Displays a confirmation dialog and returns a promise resolving to boolean
+   */
+  confirm(
+    message: string,
+    title: string = 'Are you sure?',
+    confirmButtonText: string = 'Yes',
+    cancelButtonText: string = 'Cancel',
+    isDestructive: boolean = true
+  ): Promise<boolean> {
+    return Swal.fire({
+      title: title,
+      text: message,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: confirmButtonText,
+      cancelButtonText: cancelButtonText,
+      confirmButtonColor: isDestructive ? '#ef4444' : '#0f766e',
+      cancelButtonColor: '#64748b',
+      background: '#ffffff',
+      color: '#1e293b',
+      width: '360px',
+      heightAuto: false
+    }).then(result => !!result.isConfirmed);
+  }
+
+  // Maintained for backward compatibility, unused now
   remove(id: number) {
-    const current = this.toastsSubject.value.filter(t => t.id !== id);
-    this.toastsSubject.next(current);
+    // No-op
   }
 }

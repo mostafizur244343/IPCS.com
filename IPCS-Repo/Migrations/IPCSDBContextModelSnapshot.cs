@@ -58,6 +58,9 @@ namespace IPCS_Repo.Migrations
                     b.Property<string>("ManagerName")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("PicturePath")
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("BranchId");
 
                     b.ToTable("Branch");
@@ -174,19 +177,20 @@ namespace IPCS_Repo.Migrations
 
                     b.Property<string>("Mobile")
                         .IsRequired()
-                        .HasMaxLength(15)
-                        .HasColumnType("nvarchar(15)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<decimal>("OpeningBalance")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("PicturePath")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("CustomerId");
 
                     b.HasIndex("CustomerName");
 
-                    b.HasIndex("Mobile")
-                        .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
+                    b.HasIndex("Mobile");
 
                     b.ToTable("Customer");
                 });
@@ -482,6 +486,9 @@ namespace IPCS_Repo.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("ExtraChargePercentage")
                         .HasColumnType("decimal(18,2)");
 
@@ -525,9 +532,11 @@ namespace IPCS_Repo.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name");
 
                     b.ToTable("AppModule");
                 });
@@ -549,11 +558,13 @@ namespace IPCS_Repo.Migrations
 
                     b.Property<string>("PermissionKey")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ModuleId");
+
+                    b.HasIndex("PermissionKey");
 
                     b.ToTable("AppPermission");
                 });
@@ -571,11 +582,13 @@ namespace IPCS_Repo.Migrations
 
                     b.Property<string>("RoleId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("PermissionId");
+
+                    b.HasIndex("RoleId");
 
                     b.ToTable("RolePermission");
                 });
@@ -593,11 +606,13 @@ namespace IPCS_Repo.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("PermissionId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("UserPermission");
                 });
@@ -652,8 +667,11 @@ namespace IPCS_Repo.Migrations
                     b.Property<int>("MinOrderQuantity")
                         .HasColumnType("int");
 
-                    b.Property<string>("ProductCode")
+                    b.Property<string>("PicturePath")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProductCode")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ProductName")
                         .IsRequired()
@@ -685,7 +703,11 @@ namespace IPCS_Repo.Migrations
 
                     b.HasIndex("GenericId");
 
+                    b.HasIndex("IsActive");
+
                     b.HasIndex("LocationId");
+
+                    b.HasIndex("ProductCode");
 
                     b.HasIndex("ProductName")
                         .IsUnique()
@@ -1352,6 +1374,9 @@ namespace IPCS_Repo.Migrations
 
                     b.Property<decimal>("OpeningBalance")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("PicturePath")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SupplierCode")
                         .HasMaxLength(20)

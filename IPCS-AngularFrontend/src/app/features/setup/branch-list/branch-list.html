@@ -1,60 +1,209 @@
-<div class="setup-container animate-fade-in">
+<div class="list-container animate-fade-in">
   <div class="page-header">
     <div class="title-section">
       <h1>Branch Management</h1>
       <p>Manage multiple pharmacy locations and their contact details.</p>
     </div>
+    <div class="action-section">
+      <button class="btn btn-primary" (click)="toggleForm()">
+        <span class="icon" *ngIf="!showForm">+</span>
+        <span class="icon" *ngIf="showForm">×</span> 
+        {{ showForm ? 'Cancel' : 'Create New Branch' }}
+      </button>
+    </div>
   </div>
 
-  <div class="setup-grid">
-    <div class="card form-card">
-      <h3>Add Branch</h3>
+  <div class="card form-card" *ngIf="showForm" style="margin-bottom: 24px;">
+    <h3>Add Branch</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
       <div class="input-group">
         <label>Branch Name *</label>
-        <input type="text" [(ngModel)]="newBranch.branchName" placeholder="e.g. Uttara Branch">
+        <input type="text" [(ngModel)]="newBranch.branchName" placeholder="e.g. Uttara Branch" />
       </div>
       <div class="input-group">
         <label>Address</label>
-        <input type="text" [(ngModel)]="newBranch.address" placeholder="Physical location">
+        <input type="text" [(ngModel)]="newBranch.address" placeholder="Physical location" />
       </div>
       <div class="input-group">
         <label>Phone</label>
-        <input type="text" [(ngModel)]="newBranch.phone" placeholder="Contact number">
+        <input type="text" [(ngModel)]="newBranch.contactNumber" placeholder="Contact number" />
       </div>
-      <button class="btn btn-primary w-full" (click)="addBranch()" [disabled]="isLoading">
-        <span *ngIf="!isLoading">Save Branch</span>
+      <div class="input-group">
+        <label>Email</label>
+        <input type="text" [(ngModel)]="newBranch.email" placeholder="Email address" />
+      </div>
+      <div class="input-group">
+        <label>Manager Name</label>
+        <input type="text" [(ngModel)]="newBranch.managerName" placeholder="Manager name" />
+      </div>
+      <div class="input-group" style="grid-column: 1 / -1;">
+        <label>Picture</label>
+        <app-image-upload
+          [imageUrl]="newBranch.picturePath"
+          (imageSelected)="onImageSelected($event, 'new')"
+          (imageRemoved)="onImageRemoved('new')"
+        ></app-image-upload>
+      </div>
+    </div>
+    <div style="margin-top: 16px; text-align: right;">
+      <button class="btn btn-primary" (click)="addBranch()" [disabled]="isLoading || isUploading">
+        <span *ngIf="!isLoading && !isUploading">Save Branch</span>
+        <span *ngIf="isLoading || isUploading" class="spinner"></span>
       </button>
     </div>
+  </div>
 
-    <div class="card table-card">
-      <div *ngIf="isLoading" class="loading-state"><div class="spinner-blue"></div></div>
-      <table *ngIf="!isLoading" class="data-table">
-        <thead>
-          <tr>
-            <th>Branch Name</th>
-            <th>Address</th>
-            <th>Phone</th>
-            <th class="text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let b of branches">
-            <td><strong>{{ b.branchName }}</strong></td>
-            <td>{{ b.address || '-' }}</td>
-            <td>{{ b.phone || '-' }}</td>
-            <td class="text-right">
-              <button class="icon-btn delete" (click)="deleteBranch(b.branchId)">
+  <div class="card filter-card">
+    <div class="search-box">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input 
+        type="text" 
+        placeholder="Search by branch name or address..." 
+        [(ngModel)]="searchTerm"
+        (input)="onSearch()"
+      >
+    </div>
+  </div>
+
+  <div class="card table-card" style="padding: 0; overflow: hidden">
+    <div *ngIf="isLoading" style="padding: 40px; text-align: center">
+      <div class="spinner-blue" style="border-top-color: var(--primary); border-width: 4px; width: 40px; height: 40px; margin: 0 auto"></div>
+      <p style="color: var(--text-muted); margin-top: 12px;">Loading...</p>
+    </div>
+    <table *ngIf="!isLoading" class="data-table">
+      <thead>
+        <tr>
+          <th>Picture</th>
+          <th>Branch Name</th>
+          <th>Address</th>
+          <th>Phone</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let b of filteredBranches">
+          <ng-container *ngIf="editingBranchId !== b.branchId; else editTemplate">
+            <td>
+              <div class="table-image">
+                <img *ngIf="b.picturePath" [src]="getImageUrl(b.picturePath)" alt="{{ b.branchName }}">
+                <div *ngIf="!b.picturePath" class="no-image">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                  </svg>
+                </div>
+              </div>
+            </td>
+            <td>
+              <strong>{{ b.branchName }}</strong>
+            </td>
+            <td>{{ b.address }}</td>
+            <td>{{ b.contactNumber || '-' }}</td>
+            <td class="text-right actions-cell">
+              <button class="icon-btn edit" (click)="startEdit(b)" title="Edit">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              </button>
+              <button class="icon-btn info" (click)="showDetails(b)" title="Details" style="margin-left: 4px; margin-right: 4px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+              <button class="icon-btn delete" (click)="deleteBranch(b.branchId)" title="Delete">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
               </button>
             </td>
-          </tr>
-        </tbody>
-      </table>
+          </ng-container>
+
+          <ng-template #editTemplate>
+            <td>
+              <div class="image-upload-small">
+                <app-image-upload
+                  [imageUrl]="editBranch.picturePath"
+                  (imageSelected)="onImageSelected($event, 'edit')"
+                  (imageRemoved)="onImageRemoved('edit')"
+                ></app-image-upload>
+              </div>
+            </td>
+            <td>
+              <input type="text" [(ngModel)]="editBranch.branchName" class="edit-input" />
+            </td>
+            <td>
+              <input type="text" [(ngModel)]="editBranch.address" class="edit-input" />
+            </td>
+            <td>
+              <input type="text" [(ngModel)]="editBranch.contactNumber" class="edit-input" />
+            </td>
+            <td class="text-right actions-cell">
+              <button class="icon-btn save" (click)="updateBranch()" title="Save">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </button>
+              <button class="icon-btn cancel" (click)="cancelEdit()" title="Cancel">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </td>
+          </ng-template>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Details Modal -->
+  <div class="modal-backdrop" *ngIf="selectedBranchForDetails" (click)="closeDetails()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Branch Details</h2>
+        <button class="modal-close-btn" (click)="closeDetails()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-grid">
+          <div class="detail-label">Picture</div>
+          <div class="detail-value image-val">
+            <img *ngIf="selectedBranchForDetails.picturePath" [src]="getImageUrl(selectedBranchForDetails.picturePath)" alt="Branch Image">
+            <span *ngIf="!selectedBranchForDetails.picturePath">No Image</span>
+          </div>
+
+          <div class="detail-label">Branch ID</div>
+          <div class="detail-value">#{{ selectedBranchForDetails.branchId }}</div>
+
+          <div class="detail-label">Branch Name</div>
+          <div class="detail-value"><strong>{{ selectedBranchForDetails.branchName }}</strong></div>
+
+          <div class="detail-label">Address</div>
+          <div class="detail-value">{{ selectedBranchForDetails.address || '-' }}</div>
+
+          <div class="detail-label">Contact Number</div>
+          <div class="detail-value">{{ selectedBranchForDetails.contactNumber || '-' }}</div>
+
+          <div class="detail-label">Email</div>
+          <div class="detail-value">{{ selectedBranchForDetails.email || '-' }}</div>
+
+          <div class="detail-label">Manager Name</div>
+          <div class="detail-value">{{ selectedBranchForDetails.managerName || '-' }}</div>
+
+          <div class="detail-label">Status</div>
+          <div class="detail-value">
+            <span class="badge" [ngClass]="selectedBranchForDetails.isActive ? 'badge-success' : 'badge-error'">
+              {{ selectedBranchForDetails.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <style>
-  .setup-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
   .text-right { text-align: right; }
+  .actions-cell { display: flex; justify-content: flex-end; gap: 8px; }
+  .edit-input { width: 100%; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; }
+  
+  .table-image { width: 50px; height: 50px; border-radius: 8px; overflow: hidden; background: #f1f5f9; display: flex; align-items: center; justify-content: center; }
+  .table-image img { width: 100%; height: 100%; object-fit: cover; }
+  .table-image .no-image { color: #94a3b8; }
+  
+  .image-upload-small { width: 120px; }
+  .image-upload-small ::ng-deep .image-upload-container { padding: 8px; }
+  .image-upload-small ::ng-deep .image-preview img { height: 80px; }
+  .image-upload-small ::ng-deep .upload-placeholder { padding: 8px; }
+  .image-upload-small ::ng-deep .upload-placeholder svg { width: 24px; height: 24px; }
+  .image-upload-small ::ng-deep .upload-text, .image-upload-small ::ng-deep .upload-hint { display: none; }
 </style>

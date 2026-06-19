@@ -16,6 +16,7 @@ import { ApiService } from '../../../core/services/api';
 })
 export class GlobalUnitConversionComponent implements OnInit {
   conversions: any[] = [];
+  filteredConversions: any[] = [];
   units: any[] = [];
   
   newConversion: any = { 
@@ -25,12 +26,37 @@ export class GlobalUnitConversionComponent implements OnInit {
   };
   
   isLoading = false;
+  showForm = false;
+  searchTerm = '';
+
+  // Details state
+  selectedConversionForDetails: any = null;
 
   constructor(private api: ApiService) {}
+
+  showDetails(conversion: any) {
+    this.selectedConversionForDetails = conversion;
+  }
+
+  closeDetails() {
+    this.selectedConversionForDetails = null;
+  }
 
   ngOnInit() {
     this.loadLookups();
     this.loadConversions();
+  }
+
+  toggleForm() {
+    this.showForm = !this.showForm;
+  }
+
+  onSearch() {
+    const term = this.searchTerm.toLowerCase();
+    this.filteredConversions = this.conversions.filter(c => 
+      (c.fromUnitName && c.fromUnitName.toLowerCase().includes(term)) ||
+      (c.toUnitName && c.toUnitName.toLowerCase().includes(term))
+    );
   }
 
   loadLookups() {
@@ -42,6 +68,7 @@ export class GlobalUnitConversionComponent implements OnInit {
     this.api.get<any[]>('GlobalUnitConversion').subscribe({
       next: (data) => { 
         this.conversions = data; 
+        this.filteredConversions = data;
         this.isLoading = false; 
       },
       error: () => this.isLoading = false
@@ -58,6 +85,7 @@ export class GlobalUnitConversionComponent implements OnInit {
     this.api.post('GlobalUnitConversion', this.newConversion).subscribe({
       next: () => {
         this.newConversion = { fromUnitId: null, toUnitId: null, conversionFactor: null };
+        this.showForm = false;
         this.loadConversions();
       },
       error: (err) => { 
@@ -73,3 +101,4 @@ export class GlobalUnitConversionComponent implements OnInit {
     }
   }
 }
+

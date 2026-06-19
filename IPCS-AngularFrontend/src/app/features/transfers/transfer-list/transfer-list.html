@@ -55,7 +55,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </button>
               <!-- View Details Button -->
-              <button class="icon-btn" title="View Details">
+              <button class="icon-btn info" (click)="showDetails(t)" title="View Details">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
               </button>
               <!-- Cancel Transfer Button (visible for Pending status) -->
@@ -75,6 +75,64 @@
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- Details Modal -->
+  <div class="modal-backdrop" *ngIf="selectedTransferForDetails" (click)="closeDetails()">
+    <div class="modal-content" style="max-width: 650px;" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Transfer Details</h2>
+        <button class="modal-close-btn" (click)="closeDetails()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-grid">
+          <div class="detail-label">Transfer ID</div>
+          <div class="detail-value">#TR-{{ selectedTransferForDetails.transferId }}</div>
+
+          <div class="detail-label">Transfer Date</div>
+          <div class="detail-value">{{ selectedTransferForDetails.transferDate | date:'mediumDate' }}</div>
+
+          <div class="detail-label">From Branch</div>
+          <div class="detail-value">{{ selectedTransferForDetails.fromBranchName }}</div>
+
+          <div class="detail-label">To Branch</div>
+          <div class="detail-value">{{ selectedTransferForDetails.toBranchName }}</div>
+
+          <div class="detail-label">Total Items</div>
+          <div class="detail-value">{{ selectedTransferForDetails.itemCount }} items</div>
+
+          <div class="detail-label">Status</div>
+          <div class="detail-value">
+            <span class="status-badge" [ngClass]="selectedTransferForDetails.status.toLowerCase()">
+              {{ selectedTransferForDetails.status }}
+            </span>
+          </div>
+
+          <div class="detail-label">Remarks</div>
+          <div class="detail-value">{{ selectedTransferForDetails.remarks || '-' }}</div>
+        </div>
+
+        <h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Transfer Details</h3>
+        <div style="overflow-x: auto;">
+          <table class="data-table" style="font-size: 13px; min-width: 100%;">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>UOM</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of selectedTransferForDetails.transferDetails">
+                <td><strong>{{ item.productName }}</strong></td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.uomName }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -102,7 +160,12 @@
     cursor: pointer; transition: all 0.2s; color: var(--text-muted);
   }
 
-  .icon-btn:hover { background: #f8fafc; color: var(--primary); border-color: var(--primary); }
+  .icon-btn.info:hover {
+    background: #f0fdfa;
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+
   .icon-btn.success:hover { background: #dcfce7; color: #16a34a; border-color: #16a34a; }
   .icon-btn.delete:hover { background: #fef2f2; color: #ef4444; border-color: #ef4444; }
 

@@ -22,4 +22,7 @@ public class DailySummaryController : ControllerBase
 
     [HttpGet("by-date/{branchId}/{date}")]
     public async Task<IActionResult> GetByDate(int branchId, DateTime date) => Ok(await _summaryService.GetByDateAsync(branchId, date));
+
+    [HttpGet("inventory-stats")]
+    public async Task<IActionResult> GetInventoryStats() => Ok(await _summaryService.GetInventoryStatsAsync());
 }

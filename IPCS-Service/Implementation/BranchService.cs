@@ -3,6 +3,10 @@ using IPCS_Model.Entities;
 using IPCS_Service.Interfaces;
 using IPCS_Repo.Data;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace IPCS_Service.Implementation
 {
@@ -17,9 +21,16 @@ namespace IPCS_Service.Implementation
 
         public async Task<string> GenerateBranchCodeAsync()
         {
-            var lastBranch = await _context.Branches.AsNoTracking().OrderByDescending(b => b.BranchId).FirstOrDefaultAsync();
-            int nextId = (lastBranch == null) ? 1 : lastBranch.BranchId + 1;
-            return $"BRANCH-{nextId:D3}"; // Result BRANCH-001, BRANCH-002...
+            try
+            {
+                var lastBranch = await _context.Branches.IgnoreQueryFilters().AsNoTracking().OrderByDescending(b => b.BranchId).FirstOrDefaultAsync();
+                int nextId = (lastBranch == null) ? 1 : lastBranch.BranchId + 1;
+                return $"BRANCH-{nextId:D3}";
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error generating branch code: " + ex.Message);
+            }
         }
 
         public async Task<IEnumerable<BranchResponseDTO>> GetAllAsync()
@@ -37,23 +48,27 @@ namespace IPCS_Service.Implementation
                         ContactNumber = b.ContactNumber,
                         Email = b.Email,
                         ManagerName = b.ManagerName,
+                        PicturePath = b.PicturePath,
                         IsActive = b.IsActive,
-                        TotalSentTransfers = b.SentTransfers.Count(),
-                        TotalReceivedTransfers = b.ReceivedTransfers.Count(),
-                        TotalSentRequisitions = b.SentRequisitions.Count(),
-                        TotalReceivedRequisitions = b.ReceivedRequisitions.Count(),
-                        TotalSales = b.SalesMasters.Count(),
-                        TotalPurchases = b.PurchaseMasters.Count()
+                        TotalSentTransfers = 0,
+                        TotalReceivedTransfers = 0,
+                        TotalSentRequisitions = 0,
+                        TotalReceivedRequisitions = 0,
+                        TotalSales = 0,
+                        TotalPurchases = 0
                     }).ToListAsync();
             }
-            catch (Exception ex) { throw new Exception("Loading Branch List Error... " + ex.Message); }
+            catch (Exception ex) 
+            { 
+                throw new Exception("Error loading branches: " + ex.Message); 
+            }
         }
 
         public async Task<BranchResponseDTO?> GetByIdWithReportingAsync(int id)
         {
             try
             {
-                return await _context.Branches
+                var branch = await _context.Branches
                     .AsNoTracking()
                     .Where(b => b.BranchId == id)
                     .Select(b => new BranchResponseDTO
@@ -65,6 +80,7 @@ namespace IPCS_Service.Implementation
                         ContactNumber = b.ContactNumber,
                         Email = b.Email,
                         ManagerName = b.ManagerName,
+                        PicturePath = b.PicturePath,
                         IsActive = b.IsActive,
                         TotalSentTransfers = b.SentTransfers.Count(),
                         TotalReceivedTransfers = b.ReceivedTransfers.Count(),
@@ -73,37 +89,61 @@ namespace IPCS_Service.Implementation
                         TotalSales = b.SalesMasters.Count(),
                         TotalPurchases = b.PurchaseMasters.Count()
                     }).FirstOrDefaultAsync();
+
+                if (branch == null) throw new Exception($"Branch with ID {id} not found.");
+                return branch;
             }
-            catch (Exception ex) { throw new Exception("Finding Branch Error... " + ex.Message); }
+            catch (Exception ex) 
+            { 
+                throw new Exception(ex.Message); 
+            }
         }
 
         public async Task<Branch?> GetByIdAsync(int id)
         {
-            try { return await _context.Branches.FindAsync(id); }
-            catch (Exception ex) { throw new Exception("Finding Branch Error... " + ex.Message); }
+            try 
+            { 
+                var branch = await _context.Branches.FindAsync(id);
+                if (branch == null) throw new Exception($"Branch with ID {id} not found.");
+                return branch;
+            }
+            catch (Exception ex) 
+            { 
+                throw new Exception(ex.Message); 
+            }
         }
 
         public async Task<bool> CreateAsync(Branch branch)
         {
             try
             {
-                branch.BranchCode = await GenerateBranchCodeAsync(); // Auto Genereting Code
+                var exists = await _context.Branches.AnyAsync(b => b.BranchName.ToLower() == branch.BranchName.ToLower());
+                if (exists) throw new Exception($"Branch with name '{branch.BranchName}' already exists.");
+
+                branch.BranchCode = await GenerateBranchCodeAsync();
                 await _context.Branches.AddAsync(branch);
-                await _context.SaveChangesAsync();
-                return true;
+                return await _context.SaveChangesAsync() > 0;
             }
-            catch (Exception ex) { throw new Exception("Save Error... " + ex.Message); }
+            catch (Exception ex) 
+            { 
+                throw new Exception(ex.Message); 
+            }
         }
 
         public async Task<bool> UpdateAsync(Branch branch)
         {
             try
             {
+                var exists = await _context.Branches.AnyAsync(b => b.BranchName.ToLower() == branch.BranchName.ToLower() && b.BranchId != branch.BranchId);
+                if (exists) throw new Exception($"Another branch with name '{branch.BranchName}' already exists.");
+
                 _context.Branches.Update(branch);
-                await _context.SaveChangesAsync();
-                return true;
+                return await _context.SaveChangesAsync() > 0;
             }
-            catch (Exception ex) { throw new Exception("Updating Error... " + ex.Message); }
+            catch (Exception ex) 
+            { 
+                throw new Exception(ex.Message); 
+            }
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -111,12 +151,19 @@ namespace IPCS_Service.Implementation
             try
             {
                 var branch = await _context.Branches.FindAsync(id);
-                if (branch == null) return false;
+                if (branch == null) throw new Exception(" Branch not found for deletion.");
+
+                // Check for dependencies (Stocks, Users, Sales, Purchases)
+                var hasStock = await _context.BranchLotStocks.AnyAsync(s => s.BranchId == id && s.CurrentStock > 0);
+                if (hasStock) throw new Exception("Cannot delete branch because it has existing stock.");
+
                 _context.Branches.Remove(branch);
-                await _context.SaveChangesAsync();
-                return true;
+                return await _context.SaveChangesAsync() > 0;
             }
-            catch (Exception ex) { throw new Exception("Deleting Error... " + ex.Message); }
+            catch (Exception ex) 
+            { 
+                throw new Exception(ex.Message); 
+            }
         }
     }
-}
+}

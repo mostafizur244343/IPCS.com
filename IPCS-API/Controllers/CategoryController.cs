@@ -3,9 +3,9 @@ using IPCS_Model.Entities;
 using IPCS_Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
 using IPCS_API.Attributes;
 using IPCS_Model.Constants;
+using System.Linq;
 
 namespace IPCS_API.Controllers
 {
@@ -25,48 +25,65 @@ namespace IPCS_API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            try
+            var categories = await _categoryService.GetAllAsync();
+            var dtos = categories.Select(c => new CategoryDTO
             {
-                var categories = await _categoryService.GetAllAsync();
-                return Ok(categories);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+                CategoryId = c.CategoryId,
+                CategoryName = c.CategoryName,
+                Description = c.Description,
+                IsActive = c.IsActive
+            });
+            return Ok(dtos);
         }
 
         [PermissionAuthorize(Permissions.Category.Create)]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CategoryDTO model)
         {
-            try
+            if (!ModelState.IsValid)
             {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest("Input Format is Wrong please try Accurately");
-                }
-
-                var category = new Category
-                {
-                    CategoryName = model.CategoryName,
-                    Description = model.Description,
-                    IsActive = model.IsActive,
-                    CreatedBy = User.Identity?.Name
-                };
-
-
-                var result = await _categoryService.CreateAsync(category);
-                if (result)
-                {
-                    return Ok(new { Message = "Category Created Successfully" });
-                }
-                return BadRequest(new { Message = "Category Create Error... Please try again" });
+                return BadRequest(ModelState);
             }
-            catch (Exception ex)
+
+            var category = new Category
             {
-                return BadRequest(new { Message = ex.Message });
-            }
+                CategoryName = model.CategoryName,
+                Description = model.Description,
+                IsActive = model.IsActive,
+                CreatedBy = User.Identity?.Name,
+                CreatedDate = DateTime.Now
+            };
+
+            await _categoryService.CreateAsync(category);
+            
+            model.CategoryId = category.CategoryId;
+            return Ok(model);
+        }
+
+        [PermissionAuthorize(Permissions.Category.Edit)]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] CategoryDTO model)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var category = await _categoryService.GetByIdAsync(id);
+            if (category == null) return NotFound("Category not found");
+
+            category.CategoryName = model.CategoryName;
+            category.Description = model.Description;
+            category.IsActive = model.IsActive;
+
+            await _categoryService.UpdateAsync(category);
+            return Ok(new { Message = "Updated successfully" });
+        }
+
+        [PermissionAuthorize(Permissions.Category.Delete)]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            await _categoryService.DeleteAsync(id);
+            return Ok(new { Message = "Successfully deleted" });
         }
     }
 }
+

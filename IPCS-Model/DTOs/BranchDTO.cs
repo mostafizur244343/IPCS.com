@@ -10,6 +10,7 @@ namespace IPCS_Model.DTOs
         public string? ContactNumber { get; set; }
         public string? Email { get; set; }
         public string? ManagerName { get; set; }
+        public string? PicturePath { get; set; }
         public bool IsActive { get; set; } = true;
     }
 

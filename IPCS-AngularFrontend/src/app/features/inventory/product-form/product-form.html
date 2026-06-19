@@ -31,13 +31,27 @@
             <label>Strength</label>
             <input type="text" name="strength" [(ngModel)]="product.strength" placeholder="e.g. 500mg / 5ml">
           </div>
+          <div class="input-group">
+            <label>Picture</label>
+            <app-image-upload
+              [imageUrl]="product.picturePath"
+              (imageSelected)="onImageSelected($event)"
+              (imageRemoved)="onImageRemoved()"
+            ></app-image-upload>
+          </div>
           <!-- Dropdownbox for Generic Name selection -->
           <div class="input-group">
-            <label>Generic Name</label>
-            <select name="genericId" [(ngModel)]="product.genericId">
+            <div class="label-header">
+              <label>Generic Name *</label>
+              <button type="button" class="btn-inline-toggle" (click)="toggleNewGeneric()">
+                {{ isNewGeneric ? 'Select Existing' : '+ New' }}
+              </button>
+            </div>
+            <select name="genericId" [(ngModel)]="product.genericId" required *ngIf="!isNewGeneric">
               <option [ngValue]="null">Select Generic</option>
               <option *ngFor="let g of generics" [value]="g.genericId">{{ g.genericName }}</option>
             </select>
+            <input type="text" name="newGenericName" [(ngModel)]="newGenericName" *ngIf="isNewGeneric" placeholder="Enter new generic name..." required>
           </div>
         </div>
       </div>
@@ -47,25 +61,45 @@
         <h3>Categorization</h3>
         <div class="form-grid">
           <div class="input-group">
-            <label>Category *</label>
-            <select name="categoryId" [(ngModel)]="product.categoryId" required>
+            <div class="label-header">
+              <label>Category *</label>
+              <button type="button" class="btn-inline-toggle" (click)="toggleNewCategory()">
+                {{ isNewCategory ? 'Select Existing' : '+ New' }}
+              </button>
+            </div>
+            <select name="categoryId" [(ngModel)]="product.categoryId" required *ngIf="!isNewCategory">
               <option [ngValue]="null">Select Category</option>
               <option *ngFor="let c of categories" [value]="c.categoryId">{{ c.categoryName }}</option>
             </select>
+            <input type="text" name="newCategoryName" [(ngModel)]="newCategoryName" *ngIf="isNewCategory" placeholder="Enter new category..." required>
           </div>
+
           <div class="input-group">
-            <label>Manufacturer / Brand</label>
-            <select name="brandId" [(ngModel)]="product.brandId">
+            <div class="label-header">
+              <label>Manufacturer / Brand *</label>
+              <button type="button" class="btn-inline-toggle" (click)="toggleNewManufacturer()">
+                {{ isNewManufacturer ? 'Select Existing' : '+ New' }}
+              </button>
+            </div>
+            <select name="brandId" [(ngModel)]="product.brandId" required *ngIf="!isNewManufacturer">
               <option [ngValue]="null">Select Manufacturer</option>
-              <option *ngFor="let m of manufacturers" [value]="m.manufacturerId">{{ m.manufacturerName }}</option>
+              <option *ngFor="let m of manufacturers" [value]="m.brandId">{{ m.brandName }}</option>
             </select>
+            <input type="text" name="newManufacturerName" [(ngModel)]="newManufacturerName" *ngIf="isNewManufacturer" placeholder="Enter new manufacturer..." required>
           </div>
+
           <div class="input-group">
-            <label>Storage Location</label>
-            <select name="locationId" [(ngModel)]="product.locationId">
+            <div class="label-header">
+              <label>Storage Location</label>
+              <button type="button" class="btn-inline-toggle" (click)="toggleNewLocation()">
+                {{ isNewLocation ? 'Select Existing' : '+ New' }}
+              </button>
+            </div>
+            <select name="locationId" [(ngModel)]="product.locationId" *ngIf="!isNewLocation">
               <option [ngValue]="null">Select Location</option>
               <option *ngFor="let l of locations" [value]="l.locationId">{{ l.locationName }}</option>
             </select>
+            <input type="text" name="newLocationName" [(ngModel)]="newLocationName" *ngIf="isNewLocation" placeholder="Enter new shelf/location..." required>
           </div>
         </div>
       </div>
@@ -75,11 +109,17 @@
         <h3>Pricing & Initial Stock</h3>
         <div class="form-grid">
           <div class="input-group">
-            <label>Base Unit (UOM) *</label>
-            <select name="uomId" [(ngModel)]="product.uomId" required>
+            <div class="label-header">
+              <label>Base Unit (UOM) *</label>
+              <button type="button" class="btn-inline-toggle" (click)="toggleNewUom()">
+                {{ isNewUom ? 'Select Existing' : '+ New' }}
+              </button>
+            </div>
+            <select name="uomId" [(ngModel)]="product.uomId" required *ngIf="!isNewUom">
               <option [ngValue]="null">Select Unit</option>
               <option *ngFor="let u of units" [value]="u.uomId">{{ u.uomName }}</option>
             </select>
+            <input type="text" name="newUomName" [(ngModel)]="newUomName" *ngIf="isNewUom" placeholder="Enter new unit (e.g. Box)..." required>
           </div>
           <div class="input-group">
             <label>MRP (Per Unit)</label>
@@ -107,7 +147,7 @@
       <!-- Action buttons for Save and Cancel -->
       <div class="form-actions">
         <button type="button" class="btn btn-secondary" routerLink="/dashboard/inventory">Cancel</button>
-        <button type="submit" class="btn btn-primary" [disabled]="!productForm.valid || isLoading">
+        <button type="submit" class="btn btn-primary" [disabled]="isLoading">
           {{ isEditMode ? 'Update Product' : 'Save Product' }}
         </button>
       </div>
@@ -228,5 +268,37 @@
     .form-grid {
       grid-template-columns: 1fr;
     }
+  }
+
+  .label-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .label-header label {
+    margin-bottom: 0;
+  }
+  .btn-inline-toggle {
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.2s;
+  }
+  .btn-inline-toggle:hover {
+    color: #0f766e;
+    text-decoration: underline;
+  }
+
+  /* Red border and background indicator when required fields are left empty */
+  input.ng-touched.ng-invalid,
+  select.ng-touched.ng-invalid {
+    border-color: #ef4444 !important;
+    background-color: #fef2f2 !important;
+    box-shadow: 0 0 0 1px #ef4444 !important;
   }
 </style>

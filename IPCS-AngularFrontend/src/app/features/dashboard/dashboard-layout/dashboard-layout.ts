@@ -18,30 +18,64 @@ export class DashboardLayoutComponent implements OnInit {
   isSidebarOpen = true;
   currentUser = { name: 'User', role: 'Staff' };
 
-  // Comprehensive menu items for the entire system
-  allMenuItems = [
-    { name: 'Dashboard', icon: 'grid', route: '/dashboard/home', permission: null },
-    { name: 'Inventory', icon: 'package', route: '/dashboard/inventory', permission: 'Permissions.Inventory.View' },
-    { name: 'Sales POS', icon: 'shopping-cart', route: '/dashboard/sales/new', permission: 'Permissions.Sales.Create' },
-    { name: 'Sales List', icon: 'list', route: '/dashboard/sales', permission: 'Permissions.Sales.View' },
-    { name: 'Purchase', icon: 'truck', route: '/dashboard/purchase', permission: 'Permissions.Purchase.View' },
-    { name: 'Transfers', icon: 'repeat', route: '/dashboard/transfers', permission: 'Permissions.Transfer.View' },
-    { name: 'Returns', icon: 'rotate-ccw', route: '/dashboard/returns/sales', permission: 'Permissions.SalesReturn.View' },
-    { name: 'Reports', icon: 'bar-chart-2', route: '/dashboard/reports', permission: 'Permissions.Administration.ViewDailySummary' },
-    
-    // Administration
-    { name: 'Users', icon: 'users', route: '/dashboard/administration/users', permission: 'Permissions.Administration.ManageUsers' },
-    { name: 'Roles', icon: 'shield', route: '/dashboard/administration/roles', permission: 'Permissions.Administration.ManageRoles' },
-    
-    // Setup Sub-menu
-    { name: 'Customers', icon: 'user-plus', route: '/dashboard/setup/customers', permission: 'Permissions.Inventory.View' },
-    { name: 'Suppliers', icon: 'briefcase', route: '/dashboard/setup/suppliers', permission: 'Permissions.Inventory.View' },
-    { name: 'Branches', icon: 'map-pin', route: '/dashboard/setup/branches', permission: 'Permissions.Administration.ManagePermissions' },
-    { name: 'Global Units', icon: 'layers', route: '/dashboard/setup/global-conversions', permission: 'Permissions.Administration.ManagePermissions' },
-    { name: 'Settings', icon: 'settings', route: '/dashboard/setup/categories', permission: 'Permissions.Administration.ManagePermissions' },
+  menuGroups = [
+    {
+      title: 'Main',
+      items: [
+        { name: 'Control Panel', icon: 'shield', route: '/dashboard/admin-portal', permission: 'Permissions.Administration.ManageUsers' },
+        { name: 'Dashboard', icon: 'grid', route: '/dashboard/home', permission: null },
+        { name: 'Reports', icon: 'bar-chart-2', route: '/dashboard/reports', permission: 'Permissions.Administration.ViewDailySummary' }
+      ]
+    },
+    {
+      title: 'Operations',
+      items: [
+        { name: 'Sales POS', icon: 'shopping-cart', route: '/dashboard/sales/new', permission: 'Permissions.Sales.Create' },
+        { name: 'Sales History', icon: 'file-text', route: '/dashboard/sales', permission: 'Permissions.Sales.View' },
+        { name: 'Purchases', icon: 'truck', route: '/dashboard/purchase', permission: 'Permissions.Purchase.View' },
+        { name: 'Sales Returns', icon: 'rotate-ccw', route: '/dashboard/returns/sales', permission: 'Permissions.SalesReturn.View' },
+        { name: 'Purchase Returns', icon: 'rotate-ccw', route: '/dashboard/returns/purchase', permission: 'Permissions.PurchaseReturn.View' },
+        { name: 'Transfers', icon: 'repeat', route: '/dashboard/transfers', permission: 'Permissions.Transfer.View' },
+        { name: 'Invoice Payments', icon: 'credit-card', route: '/dashboard/payments', permission: 'Permissions.InvoicePayment.View' }
+      ]
+    },
+    {
+      title: 'Inventory',
+      items: [
+        { name: 'Products', icon: 'package', route: '/dashboard/inventory', permission: 'Permissions.Product.View' },
+        { name: 'Stock Ledger', icon: 'list', route: '/dashboard/inventory/ledger', permission: 'Permissions.StockLedger.View' },
+        { name: 'Batches/Lots', icon: 'layers', route: '/dashboard/inventory/lots', permission: 'Permissions.LotInfo.View' },
+        { name: 'Branch Stock', icon: 'layers', route: '/dashboard/inventory/branch-stock', permission: 'Permissions.BranchLotStock.View' },
+        { name: 'Stock Adjustment', icon: 'sliders', route: '/dashboard/inventory/adjustment', permission: 'Permissions.Product.Edit' },
+        { name: 'Expiry Tracker', icon: 'alert-triangle', route: '/dashboard/inventory/expiry', permission: 'Permissions.Product.View' }
+      ]
+    },
+    {
+      title: 'Setup & Masters',
+      items: [
+        { name: 'Branches', icon: 'map-pin', route: '/dashboard/setup/branches', permission: 'Permissions.Branch.View' },
+        { name: 'Categories', icon: 'settings', route: '/dashboard/setup/categories', permission: 'Permissions.Category.View' },
+        { name: 'UOM (Units)', icon: 'layers', route: '/dashboard/setup/uoms', permission: 'Permissions.UOM.View' },
+        { name: 'Unit Conversions', icon: 'refresh-cw', route: '/dashboard/setup/unit-conversions', permission: 'Permissions.ProductUnitConversion.View' },
+        { name: 'Global Conversions', icon: 'globe', route: '/dashboard/setup/global-conversions', permission: 'Permissions.GlobalUnitConversion.View' },
+        { name: 'Manufacturers', icon: 'briefcase', route: '/dashboard/setup/manufacturers', permission: 'Permissions.Manufacturer.View' },
+        { name: 'Suppliers', icon: 'truck', route: '/dashboard/setup/suppliers', permission: 'Permissions.Supplier.View' },
+        { name: 'Customers', icon: 'user-plus', route: '/dashboard/setup/customers', permission: 'Permissions.Customer.View' },
+        { name: 'Payment Methods', icon: 'credit-card', route: '/dashboard/setup/payment-methods', permission: 'Permissions.PaymentMethod.View' },
+        { name: 'Generics', icon: 'file-text', route: '/dashboard/setup/generics', permission: 'Permissions.GenericInfo.View' },
+        { name: 'Store Locations', icon: 'map', route: '/dashboard/setup/store-locations', permission: 'Permissions.StoreLocation.View' }
+      ]
+    },
+    {
+      title: 'Administration',
+      items: [
+        { name: 'Users', icon: 'users', route: '/dashboard/administration/users', permission: 'Permissions.Administration.ManageUsers' },
+        { name: 'Roles', icon: 'shield', route: '/dashboard/administration/roles', permission: 'Permissions.Administration.ManageRoles' }
+      ]
+    }
   ];
 
-  filteredMenuItems: any[] = [];
+  filteredGroups: any[] = [];
 
   constructor(
     private router: Router, 
@@ -58,15 +92,48 @@ export class DashboardLayoutComponent implements OnInit {
     const data = localStorage.getItem('user_data');
     if (data) {
       const user = JSON.parse(data);
-      this.currentUser = { name: user.name || 'User', role: user.role || 'Staff' };
+      this.currentUser = { 
+        name: user.name || user.Name || 'User', 
+        role: user.role || user.Role || 'Staff' 
+      };
     }
   }
 
   filterMenu() {
-    this.filteredMenuItems = this.allMenuItems.filter(item => {
-      if (!item.permission) return true;
-      return this.permService.hasPermission(item.permission);
-    });
+    const isSuperAdmin = this.currentUser.role === 'SuperAdmin';
+    
+    this.filteredGroups = this.menuGroups.map(group => {
+      return {
+        ...group,
+        items: group.items.filter(item => {
+          if (isSuperAdmin) return true; // SuperAdmin sees everything
+          if (!item.permission) return true;
+          return this.permService.hasPermission(item.permission);
+        })
+      };
+    }).filter(group => group.items.length > 0);
+  }
+
+  isLinkActive(route: string): boolean {
+    const currentUrl = this.router.url.split('?')[0];
+    
+    if (route === '/dashboard/inventory') {
+      return currentUrl === '/dashboard/inventory' || 
+             currentUrl === '/dashboard/inventory/add' || 
+             currentUrl.startsWith('/dashboard/inventory/edit/');
+    }
+    
+    if (route === '/dashboard/sales') {
+      return currentUrl === '/dashboard/sales';
+    }
+    if (route === '/dashboard/purchase') {
+      return currentUrl === '/dashboard/purchase';
+    }
+    if (route === '/dashboard/transfers') {
+      return currentUrl === '/dashboard/transfers';
+    }
+
+    return currentUrl === route;
   }
 
   toggleSidebar() {

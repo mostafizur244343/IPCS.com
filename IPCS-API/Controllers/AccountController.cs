@@ -95,9 +95,19 @@ namespace IPCS_API.Controllers
                 }
 
                 // In a real app, 'RememberMe' would be handled by setting cookie expiration or refresh tokens
+                var user = await _accountService.GetUserByEmailOrMobileAsync(model.EmailOrMobile);
+                if (user == null) return Unauthorized(new { message = "User record not found" });
+
+                var roles = await _accountService.GetUserRolesAsync(user.Email);
+
                 return Ok(new
                 {
                     Token = token,
+                    User = new {
+                        Name = user.FullName,
+                        Email = user.Email,
+                        Role = roles.FirstOrDefault() ?? "Staff"
+                    },
                     Message = "Successfully Login",
                     RememberMe = model.RememberMe
                 });
@@ -185,5 +195,29 @@ namespace IPCS_API.Controllers
                 return BadRequest(new { Message = "Error toggling status: " + ex.Message });
             }
         }
+
+        [PermissionAuthorize(Permissions.Administration.ManageUsers)]
+        [HttpDelete("delete-user/{id}")]
+        public async Task<IActionResult> DeleteUser(string id)
+        {
+            try
+            {
+                var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(currentUserId)) return Unauthorized();
+
+                var result = await _accountService.DeleteUserAsync(id, currentUserId);
+                if (result.Succeeded)
+                {
+                    return Ok(new { Message = "User deleted successfully." });
+                }
+                return BadRequest(new { Message = result.Errors.FirstOrDefault()?.Description ?? "Delete failed" });
+            }
+
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = "Error deleting user: " + ex.Message });
+            }
+        }
     }
 }
+

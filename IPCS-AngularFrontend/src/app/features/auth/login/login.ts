@@ -30,9 +30,17 @@ export class LoginComponent {
     this.errorMsg = '';
 
     this.auth.login(this.loginData).subscribe({
-      next: () => {
+      next: (res) => {
         this.isLoading = false;
-        this.router.navigate(['/dashboard']); // Redirect to dashboard on success
+        const user = res.user || res.User;
+        const role = (user?.role || user?.Role || 'Staff').toLowerCase();
+        
+        // Redirect to Admin Portal if role is any kind of Admin
+        if (role.includes('admin') || role.includes('superadmin') || role.includes('manager')) {
+          this.router.navigate(['/dashboard/admin-portal']);
+        } else {
+          this.router.navigate(['/dashboard/home']);
+        }
       },
       error: (err) => {
         this.isLoading = false;

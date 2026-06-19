@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace IPCS_Model.DTOs
 {
@@ -7,12 +8,15 @@ namespace IPCS_Model.DTOs
     /// </summary>
     public class RoleDTO
     {
+        [JsonPropertyName("id")]
         public string? Id { get; set; }
 
         [Required(ErrorMessage = "Role Name is required")]
         [StringLength(50, MinimumLength = 2, ErrorMessage = "Role name must be between 2 and 50 characters")]
+        [JsonPropertyName("roleName")]
         public string RoleName { get; set; } = string.Empty;
     }
+
 
     /// <summary>
     /// DTO for displaying a list of users and their assigned roles.

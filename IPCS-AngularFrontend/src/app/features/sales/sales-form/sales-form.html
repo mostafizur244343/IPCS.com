@@ -118,6 +118,12 @@
 
         <div class="payment-section">
           <div class="input-group">
+            <label>Payment Method</label>
+            <select [(ngModel)]="sale.selectedPaymentMethodId" (change)="updatePaymentInfo()">
+              <option *ngFor="let m of paymentMethods" [value]="m.paymentMethodId">{{ m.methodName }} {{ m.isDigital ? '(Digital)' : '' }}</option>
+            </select>
+          </div>
+          <div class="input-group">
             <label>Paid Amount</label>
             <input type="number" [(ngModel)]="sale.paidAmount" (input)="updatePaymentInfo()" class="paid-input">
           </div>
@@ -130,6 +136,14 @@
             <div class="stat-box success" [class.active]="sale.changeAmount > 0">
               <span class="label">Change</span>
               <span class="val">৳{{ sale.changeAmount | number:'1.2-2' }}</span>
+            </div>
+          </div>
+          
+          <!-- Extra Charge Display -->
+          <div *ngIf="sale.extraChargeAmount > 0" class="extra-charge-box">
+            <div class="extra-charge-line">
+              <span>Extra Charge</span>
+              <span class="extra-charge-amount">৳{{ sale.extraChargeAmount | number:'1.2-2' }}</span>
             </div>
           </div>
           
@@ -380,6 +394,25 @@
     color: var(--text-muted);
     cursor: pointer;
     margin-top: 16px;
+  }
+
+  .extra-charge-box {
+    margin-top: 16px;
+    padding: 12px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+  }
+
+  .extra-charge-line {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+  }
+
+  .extra-charge-amount {
+    font-weight: 700;
+    color: #ef4444;
   }
 
   @keyframes spin { to { transform: rotate(360deg); } }

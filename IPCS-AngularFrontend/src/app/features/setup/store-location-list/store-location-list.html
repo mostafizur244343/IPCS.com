@@ -1,55 +1,112 @@
-<div class="setup-container animate-fade-in">
+<div class="list-container animate-fade-in">
   <div class="page-header">
     <div class="title-section">
       <h1>Store Locations</h1>
       <p>Manage shelves, refrigerators, and other physical storage areas.</p>
     </div>
+    <div class="action-section">
+      <button class="btn btn-primary" (click)="toggleForm()">
+        <span class="icon" *ngIf="!showForm">+</span>
+        <span class="icon" *ngIf="showForm">×</span> 
+        {{ showForm ? 'Cancel' : 'Add Location' }}
+      </button>
+    </div>
   </div>
 
-  <div class="setup-grid">
-    <div class="card form-card">
-      <h3>Add Location</h3>
+  <div class="card form-card" *ngIf="showForm" style="margin-bottom: 24px;">
+    <h3>Add Location</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
       <div class="input-group">
         <label>Location Name *</label>
-        <input type="text" [(ngModel)]="newLocation.locationName" placeholder="e.g. Shelf A-1">
+        <input type="text" [(ngModel)]="newLocation.locationName" placeholder="e.g. Shelf A-1" />
       </div>
-      <div class="input-group">
+      <div class="input-group" style="grid-column: 1 / -1;">
         <label>Description</label>
         <textarea [(ngModel)]="newLocation.description" placeholder="Optional notes..."></textarea>
       </div>
-      <button class="btn btn-primary w-full" (click)="addLocation()" [disabled]="isLoading">
+    </div>
+    <div style="margin-top: 16px; text-align: right;">
+      <button class="btn btn-primary" (click)="addLocation()" [disabled]="isLoading">
         <span *ngIf="!isLoading">Save Location</span>
+        <span *ngIf="isLoading" class="spinner"></span>
       </button>
     </div>
+  </div>
 
-    <div class="card table-card">
-      <div *ngIf="isLoading" class="loading-state"><div class="spinner-blue"></div></div>
-      <table *ngIf="!isLoading" class="data-table">
-        <thead>
-          <tr>
-            <th>Location Name</th>
-            <th>Description</th>
-            <th class="text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let loc of locations">
-            <td><strong>{{ loc.locationName }}</strong></td>
-            <td>{{ loc.description || '-' }}</td>
-            <td class="text-right">
-              <button class="icon-btn delete" (click)="deleteLocation(loc.locationId)">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+  <div class="card filter-card">
+    <div class="search-box">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input 
+        type="text" 
+        placeholder="Search by name or description..." 
+        [(ngModel)]="searchTerm"
+        (input)="onSearch()"
+      >
+    </div>
+  </div>
+
+  <div class="card table-card" style="padding: 0; overflow: hidden">
+    <div *ngIf="isLoading" style="padding: 40px; text-align: center">
+      <div class="spinner-blue" style="border-top-color: var(--primary); border-width: 4px; width: 40px; height: 40px; margin: 0 auto"></div>
+      <p style="color: var(--text-muted); margin-top: 12px;">Loading...</p>
+    </div>
+    <table *ngIf="!isLoading" class="data-table">
+      <thead>
+        <tr>
+          <th>Location Name</th>
+          <th>Description</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let loc of filteredLocations">
+          <td><strong>{{ loc.locationName }}</strong></td>
+          <td>{{ loc.description || '-' }}</td>
+          <td class="text-right actions-cell">
+            <button class="icon-btn info" (click)="showDetails(loc)" title="View Details">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+            <button class="icon-btn delete" (click)="deleteLocation(loc.locationId)" title="Delete Location">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Details Modal -->
+  <div class="modal-backdrop" *ngIf="selectedLocationForDetails" (click)="closeDetails()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Store Location Details</h2>
+        <button class="modal-close-btn" (click)="closeDetails()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-grid">
+          <div class="detail-label">Location ID</div>
+          <div class="detail-value">#{{ selectedLocationForDetails.locationId }}</div>
+
+          <div class="detail-label">Location Name</div>
+          <div class="detail-value"><strong>{{ selectedLocationForDetails.locationName }}</strong></div>
+
+          <div class="detail-label">Description</div>
+          <div class="detail-value">{{ selectedLocationForDetails.description || '-' }}</div>
+
+          <div class="detail-label">Status</div>
+          <div class="detail-value">
+            <span class="badge" [ngClass]="selectedLocationForDetails.isActive ? 'badge-success' : 'badge-error'">
+              {{ selectedLocationForDetails.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <style>
-  .setup-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
   textarea { width: 100%; height: 80px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; outline: none; }
   .text-right { text-align: right; }
+  .actions-cell { display: flex; justify-content: flex-end; gap: 8px; }
 </style>

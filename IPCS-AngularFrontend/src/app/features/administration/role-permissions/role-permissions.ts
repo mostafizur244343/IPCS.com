@@ -20,6 +20,7 @@ export class RolePermissionsComponent implements OnInit {
   roleName: string = '';
   modules: any[] = []; // List of modules with their nested permissions
   isLoading = false;
+  errorMessage: string = '';
 
   constructor(
     private api: ApiService,
@@ -37,12 +38,26 @@ export class RolePermissionsComponent implements OnInit {
    */
   loadPermissions() {
     this.isLoading = true;
+    this.errorMessage = '';
     this.api.get<any[]>(`Permission/all-modules?roleId=${this.roleId}`).subscribe({
       next: (data) => {
-        this.modules = data;
+        // Map IsAssigned to isSelected for internal UI state if needed, 
+        // or just ensure we use the correct names.
+        // We'll also ensure displayName is mapped if we want to keep template names.
+        this.modules = data.map(m => ({
+          ...m,
+          permissions: m.permissions.map((p: any) => ({
+            ...p,
+            isSelected: p.isAssigned // Mapping backend IsAssigned to frontend isSelected
+          }))
+        }));
         this.isLoading = false;
       },
-      error: () => this.isLoading = false
+      error: (err) => {
+        this.errorMessage = 'Failed to load permissions. Please check if you have administrative rights.';
+        this.isLoading = false;
+        console.error('Permission Load Error:', err);
+      }
     });
   }
 
@@ -62,7 +77,7 @@ export class RolePermissionsComponent implements OnInit {
     const selectedIds: number[] = [];
     this.modules.forEach(m => {
       m.permissions.forEach((p: any) => {
-        if (p.isSelected) selectedIds.push(p.permissionId);
+        if (p.isSelected) selectedIds.push(p.id); // Fixed: backend uses 'id', not 'permissionId'
       });
     });
 
@@ -71,12 +86,12 @@ export class RolePermissionsComponent implements OnInit {
       permissionIds: selectedIds
     }).subscribe({
       next: (res: any) => {
-        alert(res.message);
         this.router.navigate(['/dashboard/administration/roles']);
       },
-      error: () => {
-        alert('Update failed');
+      error: (err) => {
+        this.errorMessage = err.error?.message || 'Update failed. You might not have permission to modify roles.';
         this.isLoading = false;
+        console.error('Permission Update Error:', err);
       }
     });
   }

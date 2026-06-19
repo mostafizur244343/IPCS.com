@@ -21,6 +21,7 @@
         <tr>
           <th>Date & Time</th>
           <th>Medicine</th>
+          <th>Batch/Lot</th>
           <th>Transaction Type</th>
           <th class="text-center">Qty In</th>
           <th class="text-center">Qty Out</th>
@@ -30,8 +31,11 @@
       </thead>
       <tbody>
         <tr *ngFor="let entry of filteredEntries">
-          <td>{{ entry.createdDate | date:'medium' }}</td>
-          <td><strong>{{ entry.productName }}</strong></td>
+          <td>{{ entry.transactionDate | date:'medium' }}</td>
+          <td><strong>{{ entry.product?.productName }}</strong></td>
+          <td>
+            <span class="badge badge-warning">{{ entry.lot?.lotNumber || 'N/A' }}</span>
+          </td>
           <td>
             <span class="type-badge" [ngClass]="entry.transactionType?.toLowerCase().replace(' ', '-')">
               {{ entry.transactionType }}
@@ -39,8 +43,8 @@
           </td>
           <td class="text-center text-success">{{ entry.quantityIn > 0 ? '+' + entry.quantityIn : '-' }}</td>
           <td class="text-center text-danger">{{ entry.quantityOut > 0 ? '-' + entry.quantityOut : '-' }}</td>
-          <td class="text-center"><strong>{{ entry.balanceQuantity }}</strong></td>
-          <td><small class="ref-text">REF: #{{ entry.referenceId || 'N/A' }}</small></td>
+          <td class="text-center"><strong>{{ entry.currentBalance }}</strong></td>
+          <td><small class="ref-text">REF: #{{ entry.referenceNo || 'N/A' }}</small></td>
         </tr>
       </tbody>
     </table>

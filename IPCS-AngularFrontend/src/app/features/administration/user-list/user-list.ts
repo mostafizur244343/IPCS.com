@@ -18,7 +18,18 @@ export class UserListComponent implements OnInit {
   users: any[] = []; // List of users with their roles
   isLoading = false;
 
+  // Details state
+  selectedUserForDetails: any = null;
+
   constructor(private api: ApiService) {}
+
+  showDetails(user: any) {
+    this.selectedUserForDetails = user;
+  }
+
+  closeDetails() {
+    this.selectedUserForDetails = null;
+  }
 
   ngOnInit() {
     this.loadUsers();

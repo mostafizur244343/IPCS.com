@@ -9,27 +9,48 @@ namespace IPCS_Service.Implementation
     public class BranchLotStockService : IBranchLotStockService
     {
         private readonly IPCSDBContext _context;
+        private readonly IProductService _productService;
 
-        public BranchLotStockService(IPCSDBContext context)
+        public BranchLotStockService(IPCSDBContext context, IProductService productService)
         {
             _context = context;
+            _productService = productService;
         }
 
         // For the fast data Loading Using AsNoTracking 
         public async Task<IEnumerable<object>> GetAllAsync()
         {
-            return await _context.BranchLotStocks
+            var stocks = await _context.BranchLotStocks
                 .AsNoTracking()
                 .Include(s => s.Product)
+                .Include(s => s.Product!.UOM)
                 .Include(s => s.Branch)
-                .Select(s => new {
+                .Include(s => s.Lot)
+                .ToListAsync();
+
+            var result = new List<object>();
+            foreach (var s in stocks)
+            {
+                var displayStock = await _productService.ConvertFromBaseUnit(s.ProductId, s.Product!.UOMId, s.CurrentStock);
+                result.Add(new {
+                    s.BranchId,
                     s.Branch!.BranchName,
+                    s.ProductId,
                     s.Product!.ProductName,
+                    SKU = s.Product!.SKU ?? s.Product!.ProductCode,
+                    UomId = s.Product!.UOMId,
+                    UomName = s.Product!.UOM!.UOMName,
+                    s.LotId,
                     s.Lot!.LotNumber,
-                    s.CurrentStock,
+                    CurrentStock = displayStock,
+                    CurrentStockInPcs = s.CurrentStock,
                     s.DamagedStock,
-                    s.LastUpdated
-                }).ToListAsync();
+                    PicturePath = s.Product!.PicturePath,
+                    s.LastUpdated,
+                    PurchasePrice = s.Lot?.PurchasePrice ?? 0
+                });
+            }
+            return result;
         }
 
         //Low Stock Alert Logic (Where CurrentStock < Product.ReorderLevel)

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Net;
 using System.Text.Json;
@@ -9,10 +10,12 @@ namespace IPCS_API.Middlewares
     public class ExceptionMiddleware
     {
         private readonly RequestDelegate _next;
+        private readonly IHostEnvironment _env;
 
-        public ExceptionMiddleware(RequestDelegate next)
+        public ExceptionMiddleware(RequestDelegate next, IHostEnvironment env)
         {
             _next = next;
+            _env = env;
         }
 
         public async Task InvokeAsync(HttpContext httpContext)
@@ -27,10 +30,9 @@ namespace IPCS_API.Middlewares
             }
         }
 
-        private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+        private async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
-            // Log the error using Serilog
-            Serilog.Log.Error(exception, "An unhandled exception occurred during the request.");
+            Serilog.Log.Error(exception, "Unhandled Exception: {Message}", exception.Message);
 
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
@@ -38,12 +40,14 @@ namespace IPCS_API.Middlewares
             var response = new
             {
                 StatusCode = context.Response.StatusCode,
-                Message = "Internal Server Error from the custom middleware.",
-                Detail = exception.Message // In production, you might want to hide this detail
+                Message = exception.Message,
+                Detail = _env.IsDevelopment() ? exception.StackTrace?.ToString() : "Internal Server Error"
             };
 
-            var json = JsonSerializer.Serialize(response);
-            return context.Response.WriteAsync(json);
+            var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            var json = JsonSerializer.Serialize(response, options);
+
+            await context.Response.WriteAsync(json);
         }
     }
 }

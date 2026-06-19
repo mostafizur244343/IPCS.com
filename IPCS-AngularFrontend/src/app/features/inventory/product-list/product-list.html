@@ -6,13 +6,17 @@
       <p>Manage your pharmacy items, stock levels and pricing.</p>
     </div>
     <div class="action-section">
-      <!-- Only users with Create permission can see the Add button -->
       <button 
-        *ngIf="permService.hasPermission('Permissions.Inventory.Create')" 
+        class="btn btn-secondary" 
+        routerLink="/dashboard/purchase/new"
+      >
+        <span class="icon">🛒</span> New Purchase
+      </button>
+      <button 
         class="btn btn-primary" 
         routerLink="/dashboard/inventory/add"
       >
-        <span class="icon">+</span> Add New Product
+        <span class="icon">+</span> Create New Product
       </button>
     </div>
   </div>
@@ -40,6 +44,7 @@
     <table *ngIf="!isLoading" class="data-table">
       <thead>
         <tr>
+          <th>Picture</th>
           <th>Product Name</th>
           <th>SKU</th>
           <th>Category</th>
@@ -51,9 +56,21 @@
       </thead>
       <tbody>
         <tr *ngFor="let product of filteredProducts">
+          <td>
+            <div class="table-image">
+              <img *ngIf="product.picturePath" [src]="getImageUrl(product.picturePath)" alt="{{ product.productName }}">
+              <div *ngIf="!product.picturePath" class="no-image">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+              </div>
+            </div>
+          </td>
           <td>{{ product.productName }}</td>
-          <td>{{ product.sku }}</td>
-          <td>{{ product.categoryName }}</td>
+          <td>{{ product.sku || product.sKU }}</td>
+          <td>{{ product.category?.categoryName }}</td>
           <td>৳{{ product.salesPrice | number:'1.2-2' }}</td>
           <td>
             <span class="stock-badge" [class.low]="product.currentStock <= product.reorderLevel">
@@ -67,19 +84,23 @@
           </td>
           <td class="text-right">
             <div class="action-buttons">
-              <!-- Edit button hidden if no permission -->
+              <!-- Details button -->
+              <button class="icon-btn info" (click)="showDetails(product)" title="Details">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+              <!-- Edit button -->
               <button 
-                *ngIf="permService.hasPermission('Permissions.Inventory.Edit')" 
                 class="icon-btn edit" 
                 [routerLink]="['/dashboard/inventory/edit', product.productId]"
+                title="Edit Product"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
               </button>
-              <!-- Delete button hidden if no permission -->
+              <!-- Delete button -->
               <button 
-                *ngIf="permService.hasPermission('Permissions.Inventory.Delete')" 
                 class="icon-btn delete" 
                 (click)="deleteProduct(product.productId)"
+                title="Delete Product"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
               </button>
@@ -89,6 +110,69 @@
       </tbody>
     </table>
   </div>
+
+  <!-- Details Modal -->
+  <div class="modal-backdrop" *ngIf="selectedProductForDetails" (click)="closeDetails()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Product Details</h2>
+        <button class="modal-close-btn" (click)="closeDetails()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-grid">
+          <div class="detail-label">Picture</div>
+          <div class="detail-value image-val">
+            <img *ngIf="selectedProductForDetails.picturePath" [src]="getImageUrl(selectedProductForDetails.picturePath)" alt="Product Image">
+            <span *ngIf="!selectedProductForDetails.picturePath">No Image</span>
+          </div>
+
+          <div class="detail-label">Product ID</div>
+          <div class="detail-value">#{{ selectedProductForDetails.productId }}</div>
+
+          <div class="detail-label">Product Name</div>
+          <div class="detail-value"><strong>{{ selectedProductForDetails.productName }}</strong></div>
+
+          <div class="detail-label">SKU</div>
+          <div class="detail-value">{{ selectedProductForDetails.sku || selectedProductForDetails.sKU }}</div>
+
+          <div class="detail-label">Category</div>
+          <div class="detail-value">{{ selectedProductForDetails.category?.categoryName }}</div>
+
+          <div class="detail-label">Generic Name</div>
+          <div class="detail-value">{{ selectedProductForDetails.generic?.genericName || '-' }}</div>
+
+          <div class="detail-label">Manufacturer</div>
+          <div class="detail-value">{{ selectedProductForDetails.brand?.brandName || '-' }}</div>
+
+          <div class="detail-label">Purchase Price</div>
+          <div class="detail-value">৳{{ selectedProductForDetails.costPrice | number:'1.2-2' }}</div>
+
+          <div class="detail-label">Sales Price</div>
+          <div class="detail-value">৳{{ selectedProductForDetails.salesPrice | number:'1.2-2' }}</div>
+
+          <div class="detail-label">Current Stock</div>
+          <div class="detail-value">
+            <span class="stock-badge" [class.low]="selectedProductForDetails.currentStock <= selectedProductForDetails.reorderLevel">
+              {{ selectedProductForDetails.currentStock }} (Reorder Level: {{ selectedProductForDetails.reorderLevel }})
+            </span>
+          </div>
+
+          <div class="detail-label">UOM (Sales)</div>
+          <div class="detail-value">{{ selectedProductForDetails.uom?.uomName || '-' }}</div>
+
+          <div class="detail-label">UOM (Purchase)</div>
+          <div class="detail-value">{{ selectedProductForDetails.baseUOM?.uomName || selectedProductForDetails.baseUom?.uomName || '-' }}</div>
+
+          <div class="detail-label">Status</div>
+          <div class="detail-value">
+            <span class="badge" [ngClass]="selectedProductForDetails.isActive ? 'badge-success' : 'badge-error'">
+              {{ selectedProductForDetails.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <style>
@@ -97,6 +181,7 @@
   */
   .inventory-container { padding-bottom: 40px; }
   .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .action-section { display: flex; gap: 12px; }
   .filter-card { margin-bottom: 24px; padding: 16px 24px; }
   .search-box { display: flex; align-items: center; background: #f1f5f9; padding: 10px 16px; border-radius: 10px; gap: 12px; }
   .search-box input { background: none; border: none; outline: none; width: 100%; font-size: 14px; }
@@ -107,9 +192,20 @@
   .status-indicator.active::before { background: var(--success); }
   .action-buttons { display: flex; gap: 8px; justify-content: flex-end; }
   .icon-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
-  .icon-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .icon-btn.info:hover { color: var(--primary); background: #f0fdfa; border-color: var(--primary); }
   .icon-btn.delete:hover { border-color: var(--error); color: var(--error); background: #fef2f2; }
   .loading-state { padding: 40px; text-align: center; color: var(--text-muted); }
   .spinner-blue { width: 32px; height: 32px; border: 3px solid rgba(15, 118, 110, 0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 12px; }
+  .btn-secondary { background-color: #64748b; color: white; border: none; padding: 10px 20px; border-radius: 8px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; }
+  .btn-secondary:hover { background-color: #475569; }
+  .btn-primary { background-color: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; }
+  .btn-primary:hover { background-color: #0f766e; }
+  .icon { font-size: 16px; }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  .table-image { width: 50px; height: 50px; border-radius: 8px; overflow: hidden; background: #f1f5f9; display: flex; align-items: center; justify-content: center; }
+  .table-image img { width: 100%; height: 100%; object-fit: cover; }
+  .table-image .no-image { color: #94a3b8; }
+  .detail-value.image-val { max-width: 150px; max-height: 150px; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; background: #f8fafc; }
+  .detail-value.image-val img { width: 100%; height: 100%; object-fit: cover; }
 </style>

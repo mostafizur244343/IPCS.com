@@ -75,6 +75,8 @@ builder.Services.AddControllers();
 
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+
 
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IUOMService, UOMService>();
@@ -136,6 +138,9 @@ app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Serve static files from wwwroot
+app.UseStaticFiles();
 
 app.MapControllers();
 

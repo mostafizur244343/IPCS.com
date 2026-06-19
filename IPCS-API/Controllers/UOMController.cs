@@ -5,6 +5,7 @@ using IPCS_Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using IPCS_API.Attributes;
 using IPCS_Model.Constants;
+using System.Linq;
 
 namespace IPCS_API.Controllers
 {
@@ -24,90 +25,60 @@ namespace IPCS_API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            try
+            var uoms = await _uomService.GetAllAsync();
+            var dtos = uoms.Select(u => new UOMDTO
             {
-                var uoms = await _uomService.GetAllAsync();
-                return Ok(uoms);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+                UOMId = u.UOMId,
+                UOMName = u.UOMName,
+                Description = u.Description,
+                IsActive = u.IsActive
+            });
+            return Ok(dtos);
         }
 
         [PermissionAuthorize(Permissions.UOM.Create)]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] UOMDTO model)
         {
-            try
-            {
-                if (!ModelState.IsValid) return BadRequest("Invalid Input Format");
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-                var uom = new UOM
-                {
-                    UOMName = model.UOMName,
-                    Description = model.Description,
-                    IsActive = model.IsActive,
-                    CreatedBy = User.Identity?.Name
-                };
-
-                await _uomService.CreateAsync(uom);
-                return Ok(new { Message = "UOM Created Successfully" });
-            }
-            catch (Exception ex)
+            var uom = new UOM
             {
-                return BadRequest(new { Message = ex.Message });
-            }
+                UOMName = model.UOMName,
+                Description = model.Description,
+                IsActive = model.IsActive,
+                CreatedBy = User.Identity?.Name,
+                CreatedDate = DateTime.Now
+            };
+
+            await _uomService.CreateAsync(uom);
+            model.UOMId = uom.UOMId;
+            return Ok(model);
         }
-
 
         [PermissionAuthorize(Permissions.UOM.Edit)]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UOMDTO model)
         {
-            try
-            {
-                if (!ModelState.IsValid) return BadRequest("Invalid Input Format");
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-                var existingUom = await _uomService.GetByIdAsync(id);
-                if (existingUom == null)
-                {
-                    return NotFound(new { Message = "Don't find this UOM" });
-                }
+            var uom = await _uomService.GetByIdAsync(id);
+            if (uom == null) return NotFound("UOM not found");
 
-                // Property For Update Table
-                existingUom.UOMName = model.UOMName;
-                existingUom.Description = model.Description;
-                existingUom.IsActive = model.IsActive;
-                // CreatedBy Don;t keep now
+            uom.UOMName = model.UOMName;
+            uom.Description = model.Description;
+            uom.IsActive = model.IsActive;
 
-                await _uomService.UpdateAsync(existingUom);
-                return Ok(new { Message = "UOM Updated Successfully" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            await _uomService.UpdateAsync(uom);
+            return Ok(new { Message = "Updated successfully" });
         }
 
         [PermissionAuthorize(Permissions.UOM.Delete)]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            try
-            {
-                var result = await _uomService.DeleteAsync(id);
-                if (result)
-                {
-                    return Ok(new { Message = "UOM Deleted Successfully" });
-                }
-                return BadRequest(new { Message = "UOM Delete Unsuccessful" });
-            }
-            catch (Exception ex)
-            {
-                // Now Show the Custom exception messsege in a service
-                return BadRequest(new { Message = ex.Message });
-            }
+            await _uomService.DeleteAsync(id);
+            return Ok(new { Message = "Successfully deleted" });
         }
     }
 }

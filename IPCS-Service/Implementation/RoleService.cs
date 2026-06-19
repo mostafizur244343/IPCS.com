@@ -54,8 +54,44 @@ namespace IPCS_Service.Implementation
             {
                 return IdentityResult.Failed(new IdentityError { Description = "Role not found." });
             }
+
+            if (role.Name == "SuperAdmin")
+            {
+                return IdentityResult.Failed(new IdentityError { Description = "The 'SuperAdmin' role is a core system role and cannot be deleted." });
+            }
+
             return await _roleManager.DeleteAsync(role);
         }
+
+        public async Task<IdentityResult> UpdateRoleAsync(string roleId, string newRoleName)
+        {
+            var role = await _roleManager.FindByIdAsync(roleId);
+            if (role == null)
+            {
+                return IdentityResult.Failed(new IdentityError { Description = "Role not found." });
+            }
+
+            if (role.Name == "SuperAdmin")
+            {
+                return IdentityResult.Failed(new IdentityError { Description = "The 'SuperAdmin' role cannot be renamed." });
+            }
+
+            // Only check existence if the name is actually changing
+            if (!string.Equals(role.Name, newRoleName, StringComparison.OrdinalIgnoreCase))
+            {
+                if (await _roleManager.RoleExistsAsync(newRoleName))
+                {
+                    return IdentityResult.Failed(new IdentityError { Description = "Role name already exists." });
+                }
+            }
+
+            role.Name = newRoleName;
+            role.NormalizedName = newRoleName.ToUpper(); // Ensure normalized name is also updated
+            return await _roleManager.UpdateAsync(role);
+        }
+
+
+
 
         /// <summary>
         /// Gets a complex list of Users and their Roles. Optimized with projection.

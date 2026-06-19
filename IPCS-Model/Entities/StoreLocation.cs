@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IPCS_Model.Entities
@@ -21,6 +21,20 @@ namespace IPCS_Model.Entities
 
         [ForeignKey("BranchId")]
         public virtual Branch? Branch { get; set; } 
+
+        [NotMapped]
+        public string? LocationName
+        {
+            get => ShelfName;
+            set => ShelfName = value;
+        }
+
+        [NotMapped]
+        public string? Description
+        {
+            get => Notes;
+            set => Notes = value;
+        }
 
         public bool IsActive { get; set; } = true;
         public DateTime CreatedDate { get; set; } = DateTime.Now;

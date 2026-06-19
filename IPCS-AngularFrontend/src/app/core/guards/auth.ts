@@ -14,6 +14,7 @@ import { PermissionService } from '../services/permission';
 export class AuthGuard implements CanActivate {
   constructor(
     private auth: AuthService,
+    private permissionService: PermissionService,
     private router: Router
   ) {}
 
@@ -27,8 +28,10 @@ export class AuthGuard implements CanActivate {
     // 2. Check for required permissions if specified in the route data
     const requiredPermission = route.data['permission'];
     if (requiredPermission) {
-      // Note: We'll use PermissionService to check here if needed
-      // For now, allowing all authenticated users to proceed to children
+      if (!this.permissionService.hasPermission(requiredPermission)) {
+        this.router.navigate(['/dashboard']); // Redirect to dashboard if no permission
+        return false;
+      }
     }
 
     return true;

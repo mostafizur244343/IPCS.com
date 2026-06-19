@@ -31,11 +31,17 @@ public class CustomerController : ControllerBase
     {
         try
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { Message = "Please Enter Valid Info...", Errors = ModelState });
+            }
+
             var cust = new Customer
             {
                 CustomerName = model.CustomerName,
                 Mobile = model.Mobile,
                 Address = model.Address,
+                PicturePath = model.PicturePath,
                 OpeningBalance = model.OpeningBalance,
                 AdvanceBalance = model.AdvanceBalance,
                 IsDue = model.IsDue,
@@ -45,13 +51,26 @@ public class CustomerController : ControllerBase
             await _custService.CreateAsync(cust);
             return Ok(new { Message = "Create Successfully..." });
         }
+        catch (InvalidOperationException ex)
+        {
+            Serilog.Log.Error(ex, "Error creating customer");
+            return BadRequest(new { Message = ex.Message });
+        }
         catch (Exception ex)
         {
-            if (ex.InnerException?.Message.Contains("IX_Customer_Mobile") == true)
+            Serilog.Log.Error(ex, "Error creating customer");
+            var errorMessage = ex.Message;
+            var fullMessage = ex.ToString();
+
+            if (ex.InnerException != null)
             {
-                return BadRequest(new { Message = "Duplicate Mobile Number" });
+                errorMessage = ex.InnerException.Message;
+                if (ex.InnerException.Message.Contains("IX_Customer_Mobile", StringComparison.OrdinalIgnoreCase))
+                {
+                    return BadRequest(new { Message = "Duplicate Mobile Number" });
+                }
             }
-            return BadRequest(new { Message = ex.Message });
+            return BadRequest(new { Message = errorMessage, FullError = fullMessage });
         }
     }
 
@@ -61,4 +80,64 @@ public class CustomerController : ControllerBase
 
     [HttpPost("restore/{id}")]
     public async Task<IActionResult> Restore(int id) => Ok(await _custService.RestoreAsync(id));
+
+    [PermissionAuthorize(Permissions.Customer.Edit)]
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, CustomerDTO model)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { Message = "Please Enter Valid Info...", Errors = ModelState });
+            }
+
+            var cust = await _custService.GetByIdAsync(id);
+            if (cust == null) return NotFound(new { Message = "Customer Not Found" });
+
+            cust.CustomerName = model.CustomerName;
+            cust.Mobile = model.Mobile;
+            cust.Address = model.Address;
+            cust.PicturePath = model.PicturePath;
+            cust.OpeningBalance = model.OpeningBalance;
+            cust.AdvanceBalance = model.AdvanceBalance;
+            cust.IsDue = model.IsDue;
+            cust.IsActive = model.IsActive;
+
+            if (cust.IsDue)
+            {
+                cust.CurrentDue = cust.OpeningBalance;
+                cust.AdvanceBalance = 0;
+            }
+            else
+            {
+                cust.AdvanceBalance = cust.OpeningBalance;
+                cust.CurrentDue = 0;
+            }
+
+            await _custService.UpdateAsync(cust);
+            return Ok(new { Message = "Update Successfully..." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            Serilog.Log.Error(ex, "Error updating customer");
+            return BadRequest(new { Message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Error(ex, "Error updating customer");
+            var errorMessage = ex.Message;
+            var fullMessage = ex.ToString();
+
+            if (ex.InnerException != null)
+            {
+                errorMessage = ex.InnerException.Message;
+                if (ex.InnerException.Message.Contains("IX_Customer_Mobile", StringComparison.OrdinalIgnoreCase))
+                {
+                    return BadRequest(new { Message = "Duplicate Mobile Number" });
+                }
+            }
+            return BadRequest(new { Message = errorMessage, FullError = fullMessage });
+        }
+    }
 }

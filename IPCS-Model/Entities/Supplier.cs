@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,6 +20,8 @@ namespace IPCS_Model.Entities
         [Required]
         [StringLength(15)]
         public string Mobile { get; set; } = string.Empty;
+
+        public string? PicturePath { get; set; } // Supplier profile picture
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal OpeningBalance { get; set; } // Be + Or -

@@ -95,8 +95,8 @@
         <div class="payment-box">
           <div class="input-group">
             <label>Payment Method</label>
-            <select [(ngModel)]="purchase.methodId">
-              <option *ngFor="let m of paymentMethods" [value]="m.paymentMethodId">{{ m.paymentMethodName }}</option>
+            <select [(ngModel)]="purchase.methodId" (change)="calculateTotals()">
+              <option *ngFor="let m of paymentMethods" [value]="m.paymentMethodId">{{ m.methodName }} {{ m.isDigital ? '(Digital)' : '' }}</option>
             </select>
           </div>
           <div class="input-group">
@@ -105,6 +105,14 @@
           </div>
           <div class="due-display" [class.active]="purchase.dueAmount > 0">
             Due: ৳{{ purchase.dueAmount | number:'1.2-2' }}
+          </div>
+          
+          <!-- Extra Charge Display -->
+          <div *ngIf="purchase.extraChargeAmount > 0" class="extra-charge-box">
+            <div class="extra-charge-line">
+              <span>Extra Charge</span>
+              <span class="extra-charge-amount">৳{{ purchase.extraChargeAmount | number:'1.2-2' }}</span>
+            </div>
           </div>
         </div>
 
@@ -166,6 +174,25 @@
   .submit-btn { width: 100%; margin-top: 24px; padding: 16px; }
 
   .checkbox-container { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-top: 16px; }
+
+  .extra-charge-box {
+    margin-top: 16px;
+    padding: 12px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+  }
+
+  .extra-charge-line {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+  }
+
+  .extra-charge-amount {
+    font-weight: 700;
+    color: #ef4444;
+  }
 
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>

@@ -16,13 +16,43 @@ import { FormsModule } from '@angular/forms';
 })
 export class GenericListComponent implements OnInit {
   generics: any[] = [];
-  newGeneric = { genericName: '', indications: '' };
+  filteredGenerics: any[] = [];
+  newGeneric = { genericName: '', indication: '' };
   isLoading = false;
+  showForm = false;
+  searchTerm = '';
+
+  // Editing state
+  editingGenericId: number | null = null;
+  editGeneric: any = {};
+
+  // Details state
+  selectedGenericForDetails: any = null;
 
   constructor(private api: ApiService) {}
 
   ngOnInit() {
     this.loadGenerics();
+  }
+
+  showDetails(generic: any) {
+    this.selectedGenericForDetails = generic;
+  }
+
+  closeDetails() {
+    this.selectedGenericForDetails = null;
+  }
+
+  toggleForm() {
+    this.showForm = !this.showForm;
+  }
+
+  onSearch() {
+    const term = this.searchTerm.toLowerCase();
+    this.filteredGenerics = this.generics.filter(g => 
+      (g.genericName && g.genericName.toLowerCase().includes(term)) ||
+      (g.indication && g.indication.toLowerCase().includes(term))
+    );
   }
 
   /**
@@ -33,6 +63,7 @@ export class GenericListComponent implements OnInit {
     this.api.get<any[]>('GenericInfo').subscribe({
       next: (data) => {
         this.generics = data;
+        this.filteredGenerics = data;
         this.isLoading = false;
       },
       error: () => this.isLoading = false
@@ -47,7 +78,39 @@ export class GenericListComponent implements OnInit {
     this.isLoading = true;
     this.api.post('GenericInfo', this.newGeneric).subscribe({
       next: () => {
-        this.newGeneric = { genericName: '', indications: '' };
+        this.newGeneric = { genericName: '', indication: '' };
+        this.showForm = false;
+        this.loadGenerics();
+      },
+      error: () => this.isLoading = false
+    });
+  }
+
+  /**
+   * Starts editing a generic entry
+   */
+  startEdit(generic: any) {
+    this.editingGenericId = generic.genericId;
+    this.editGeneric = { ...generic };
+  }
+
+  /**
+   * Cancels editing
+   */
+  cancelEdit() {
+    this.editingGenericId = null;
+    this.editGeneric = {};
+  }
+
+  /**
+   * Saves the updated generic entry
+   */
+  updateGeneric() {
+    if (!this.editGeneric.genericName || !this.editingGenericId) return;
+    this.isLoading = true;
+    this.api.put(`GenericInfo/${this.editingGenericId}`, this.editGeneric).subscribe({
+      next: () => {
+        this.cancelEdit();
         this.loadGenerics();
       },
       error: () => this.isLoading = false
@@ -63,3 +126,4 @@ export class GenericListComponent implements OnInit {
     }
   }
 }
+

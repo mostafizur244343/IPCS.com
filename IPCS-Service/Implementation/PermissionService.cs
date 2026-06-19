@@ -171,15 +171,17 @@ namespace IPCS_Service.Implementation
             var permissionType = typeof(IPCS_Model.Constants.Permissions);
             var nestedTypes = permissionType.GetNestedTypes(BindingFlags.Public | BindingFlags.Static);
 
+            var existingModules = await _context.AppModules.ToDictionaryAsync(m => m.Name);
+            var existingPermissions = await _context.AppPermissions.Select(p => p.PermissionKey).ToHashSetAsync();
+
             foreach (var type in nestedTypes)
             {
                 var moduleName = type.Name;
-                var module = await _context.AppModules.FirstOrDefaultAsync(m => m.Name == moduleName);
-                if (module == null)
+                if (!existingModules.TryGetValue(moduleName, out var module))
                 {
                     module = new AppModule { Name = moduleName, DisplayName = moduleName };
                     _context.AppModules.Add(module);
-                    await _context.SaveChangesAsync();
+                    existingModules[moduleName] = module;
                 }
 
                 var fields = type.GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
@@ -188,7 +190,7 @@ namespace IPCS_Service.Implementation
                     var permissionKey = field.GetValue(null)?.ToString();
                     if (string.IsNullOrEmpty(permissionKey)) continue;
 
-                    if (!await _context.AppPermissions.AnyAsync(p => p.PermissionKey == permissionKey))
+                    if (!existingPermissions.Contains(permissionKey))
                     {
                         _context.AppPermissions.Add(new AppPermission
                         {
@@ -196,6 +198,7 @@ namespace IPCS_Service.Implementation
                             DisplayName = field.Name,
                             ModuleId = module.Id
                         });
+                        existingPermissions.Add(permissionKey);
                     }
                 }
             }

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using IPCS_API.Attributes;
 using IPCS_Model.Constants;
+using System.Linq;
 
 namespace IPCS_API.Controllers
 {
@@ -20,165 +21,156 @@ namespace IPCS_API.Controllers
             _productService = productService;
         }
 
-        // 1. All Active Product List
         [PermissionAuthorize(Permissions.Product.View)]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            try
-            {
-                var results = await _productService.GetAllActiveAsync();
-                return Ok(results);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Message = "Loading Product Error", Error = ex.Message });
-            }
+            var products = await _productService.GetAllActiveAsync();
+            var dtos = products.Select(MapToDTO);
+            return Ok(dtos);
         }
 
-        // 2. List of Deleted Product For Dashboard
         [PermissionAuthorize(Permissions.Product.View)]
         [HttpGet("trash")]
         public async Task<IActionResult> GetTrashList()
         {
-            try
-            {
-                var results = await _productService.GetDeletedListAsync();
-                return Ok(results);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Message = "Error Loading Trash List", Error = ex.Message });
-            }
+            var products = await _productService.GetDeletedListAsync();
+            var dtos = products.Select(MapToDTO);
+            return Ok(dtos);
         }
 
-        // 3 See Product details By ID
         [PermissionAuthorize(Permissions.Product.View)]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            try
-            {
-                var product = await _productService.GetByIdAsync(id);
-                if (product == null) return NotFound(new { Message = "Product Not Found" });
-                return Ok(product);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            var product = await _productService.GetByIdAsync(id);
+            if (product == null) return NotFound("Product not found");
+            return Ok(MapToDTO(product));
         }
 
-        // 4.Creating New Product With (Opening Stock & Moving Average Logic)
         [PermissionAuthorize(Permissions.Product.Create)]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] ProductDTO model)
         {
-            try
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var product = new Product
             {
-                if (!ModelState.IsValid) return BadRequest("Please Enter Valid Info...");
+                ProductName = model.ProductName,
+                SKU = model.SKU,
+                Strength = model.Strength,
+                PicturePath = model.PicturePath,
+                MRP = model.MRP,
+                SalesPrice = model.SalesPrice,
+                BaseUOMId = model.BaseUOMId,
+                ReorderLevel = model.ReorderLevel,
+                MinOrderQuantity = model.MinOrderQuantity,
+                CategoryId = model.CategoryId ?? 0,
+                BrandId = model.BrandId ?? 0,
+                UOMId = model.UOMId ?? 0,
+                GenericId = model.GenericId ?? 0,
+                LocationId = model.LocationId,
+                IsService = model.IsService,
+                IsActive = model.IsActive,
+                CreatedBy = User.Identity?.Name,
+                CreatedDate = DateTime.Now
+            };
 
-                var product = new Product
-                {
-                    ProductName = model.ProductName,
-                    SKU = model.SKU,
-                    Strength = model.Strength,
-                    MRP = model.MRP,
-                    SalesPrice = model.SalesPrice,
-                    BaseUOMId = model.BaseUOMId,
-                    ReorderLevel = model.ReorderLevel,
-                    MinOrderQuantity = model.MinOrderQuantity,
-                    CategoryId = model.CategoryId,
-                    BrandId = model.BrandId,
-                    UOMId = model.UOMId,
-                    GenericId = model.GenericId,
-                    LocationId = model.LocationId,
-                    IsService = model.IsService,
-                    IsActive = model.IsActive,
-                    CreatedBy = User.Identity?.Name
-                };
-
-                // Sending Opening Qty and Cost in Service Level
-                await _productService.CreateAsync(product, model.OpeningQuantity, model.OpeningCostPrice, model.SelectedPurchaseUnitId);
-                return Ok(new { Message = "Create Successfully..." });
-            }
-            catch (Exception ex)
-            {
-                // Handling Unique Index Validation
-                if (ex.InnerException?.Message.Contains("IX_Product_ProductName") == true)
-                    return BadRequest(new { Message = "Already have in stock" });
-
-                return BadRequest(new { Message = ex.Message });
-            }
+            await _productService.CreateAsync(
+                product, 
+                model.OpeningQuantity, 
+                model.OpeningCostPrice, 
+                model.SelectedPurchaseUnitId,
+                model.NewGenericName,
+                model.NewCategoryName,
+                model.NewBrandName,
+                model.NewLocationName,
+                model.NewUOMName,
+                User.Identity?.Name
+            );
+            return Ok(new { Message = "Created successfully", ProductCode = product.ProductCode });
         }
 
-        // 5. Updating Product
         [PermissionAuthorize(Permissions.Product.Edit)]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] ProductDTO model)
         {
-            try
-            {
-                var product = await _productService.GetByIdAsync(id);
-                if (product == null) return NotFound(new { Message = "Product Not Found" });
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-                product.ProductName = model.ProductName;
-                product.SKU = model.SKU;
-                product.Strength = model.Strength;
-                product.MRP = model.MRP;
-                product.SalesPrice = model.SalesPrice;
-                product.BaseUOMId = model.BaseUOMId;
-                product.ReorderLevel = model.ReorderLevel;
-                product.MinOrderQuantity = model.MinOrderQuantity;
-                product.CategoryId = model.CategoryId;
-                product.BrandId = model.BrandId;
-                product.UOMId = model.UOMId;
-                product.GenericId = model.GenericId;
-                product.LocationId = model.LocationId;
-                product.IsService = model.IsService;
-                product.IsActive = model.IsActive;
+            var product = await _productService.GetByIdAsync(id);
+            if (product == null) return NotFound("Product not found");
 
-                await _productService.UpdateAsync(product);
-                return Ok(new { Message = "Update Successfully..." });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            product.ProductName = model.ProductName;
+            product.SKU = model.SKU;
+            product.Strength = model.Strength;
+            product.PicturePath = model.PicturePath;
+            product.MRP = model.MRP;
+            product.SalesPrice = model.SalesPrice;
+            product.BaseUOMId = model.BaseUOMId;
+            product.ReorderLevel = model.ReorderLevel;
+            product.MinOrderQuantity = model.MinOrderQuantity;
+            product.CategoryId = model.CategoryId ?? 0;
+            product.BrandId = model.BrandId ?? 0;
+            product.UOMId = model.UOMId ?? 0;
+            product.GenericId = model.GenericId ?? 0;
+            product.LocationId = model.LocationId;
+            product.IsService = model.IsService;
+            product.IsActive = model.IsActive;
+
+            await _productService.UpdateAsync(
+                product,
+                model.NewGenericName,
+                model.NewCategoryName,
+                model.NewBrandName,
+                model.NewLocationName,
+                model.NewUOMName,
+                User.Identity?.Name
+            );
+            return Ok(new { Message = "Updated successfully" });
         }
 
-        // 6. Soft Delete
         [PermissionAuthorize(Permissions.Product.Delete)]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            try
-            {
-                var result = await _productService.SoftDeleteAsync(id);
-                if (!result) return NotFound(new { Message = "Not Found For Delete" });
-                return Ok(new { Message = "Product Moved to Trash Successfully..." });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            await _productService.SoftDeleteAsync(id);
+            return Ok(new { Message = "Successfully moved to trash" });
         }
 
-        // 7. Restore from Trash
         [HttpPost("restore/{id}")]
         public async Task<IActionResult> Restore(int id)
         {
-            try
-            {
-                var result = await _productService.RestoreAsync(id);
-                if (!result) return NotFound(new { Message = "Product Not Found in Trash" });
-                return Ok(new { Message = "Product Restored Successfully..." });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            await _productService.RestoreAsync(id);
+            return Ok(new { Message = "Successfully restored" });
         }
+
+        private static ProductDTO MapToDTO(Product p) => new ProductDTO
+        {
+            ProductId = p.ProductId,
+            ProductCode = p.ProductCode,
+            ProductName = p.ProductName,
+            SKU = p.SKU,
+            Strength = p.Strength,
+            PicturePath = p.PicturePath,
+            MRP = p.MRP,
+            SalesPrice = p.SalesPrice,
+            CurrentStock = p.CurrentStock,
+            CostPrice = p.CostPrice,
+            BaseUOMId = p.BaseUOMId,
+            BaseUOMName = p.BaseUOM?.UOMName,
+            ReorderLevel = p.ReorderLevel,
+            MinOrderQuantity = p.MinOrderQuantity,
+            CategoryId = p.CategoryId,
+            CategoryName = p.Category?.CategoryName,
+            BrandId = p.BrandId,
+            BrandName = p.Brand?.BrandName,
+            UOMId = p.UOMId,
+            GenericId = p.GenericId,
+            GenericName = p.Generic?.GenericName,
+            LocationId = p.LocationId,
+            IsService = p.IsService,
+            IsActive = p.IsActive
+        };
     }
 }
 

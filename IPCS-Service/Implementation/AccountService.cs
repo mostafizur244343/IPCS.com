@@ -246,5 +246,52 @@ namespace IPCS_Service.Implementation
                 throw new Exception("Error Toggling Status: " + ex.Message);
             }
         }
+
+        public async Task<User?> GetUserByEmailOrMobileAsync(string emailOrMobile)
+        {
+            if (emailOrMobile.Contains("@"))
+            {
+                return await _userManager.FindByEmailAsync(emailOrMobile);
+            }
+            return _userManager.Users.FirstOrDefault(u => u.PhoneNumber == emailOrMobile);
+        }
+
+        public async Task<IList<string>> GetUserRolesAsync(string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null) return new List<string>();
+            return await _userManager.GetRolesAsync(user);
+        }
+
+        public async Task<IdentityResult> DeleteUserAsync(string userId, string currentUserId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return IdentityResult.Failed(new IdentityError { Description = "User not found." });
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+            bool isTargetSuperAdmin = roles.Contains("SuperAdmin");
+
+            if (isTargetSuperAdmin)
+            {
+                // Rule 1: Nobody else can delete a SuperAdmin
+                if (userId != currentUserId)
+                {
+                    return IdentityResult.Failed(new IdentityError { Description = "Super Administrators cannot be deleted by others." });
+                }
+
+                // Rule 2: SuperAdmin can only delete themselves if another SuperAdmin exists
+                var allSuperAdmins = await _userManager.GetUsersInRoleAsync("SuperAdmin");
+                if (allSuperAdmins.Count <= 1)
+                {
+                    return IdentityResult.Failed(new IdentityError { Description = "You are the only Super Administrator. Please assign another Super Administrator before deleting your account." });
+                }
+            }
+
+            return await _userManager.DeleteAsync(user);
+        }
     }
 }
+

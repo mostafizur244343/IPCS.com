@@ -16,22 +16,50 @@ import { FormsModule } from '@angular/forms';
 })
 export class UnitConversionListComponent implements OnInit {
   conversions: any[] = [];
+  filteredConversions: any[] = [];
   newConversion: any = {
     productId: null,
-    fromUomId: null,
-    toUomId: null,
-    conversionFactor: 1
+    fromUnitId: null,
+    toUnitId: null,
+    factor: 1,
+    level: 1
   };
 
   products: any[] = [];
   units: any[] = [];
   isLoading = false;
+  showForm = false;
+  searchTerm = '';
+
+  // Details state
+  selectedConversionForDetails: any = null;
 
   constructor(private api: ApiService) {}
+
+  showDetails(conversion: any) {
+    this.selectedConversionForDetails = conversion;
+  }
+
+  closeDetails() {
+    this.selectedConversionForDetails = null;
+  }
 
   ngOnInit() {
     this.loadConversions();
     this.loadLookups();
+  }
+
+  toggleForm() {
+    this.showForm = !this.showForm;
+  }
+
+  onSearch() {
+    const term = this.searchTerm.toLowerCase();
+    this.filteredConversions = this.conversions.filter(c => 
+      (c.product?.productName && c.product.productName.toLowerCase().includes(term)) ||
+      (c.fromUnit?.uomName && c.fromUnit.uomName.toLowerCase().includes(term)) ||
+      (c.toUnit?.uomName && c.toUnit.uomName.toLowerCase().includes(term))
+    );
   }
 
   loadLookups() {
@@ -44,6 +72,7 @@ export class UnitConversionListComponent implements OnInit {
     this.api.get<any[]>('ProductUnitConversion').subscribe({
       next: (data) => {
         this.conversions = data;
+        this.filteredConversions = data;
         this.isLoading = false;
       },
       error: () => this.isLoading = false
@@ -51,7 +80,7 @@ export class UnitConversionListComponent implements OnInit {
   }
 
   addConversion() {
-    if (!this.newConversion.productId || !this.newConversion.fromUomId || !this.newConversion.toUomId) {
+    if (!this.newConversion.productId || !this.newConversion.fromUnitId || !this.newConversion.toUnitId) {
       alert('Please fill all required fields');
       return;
     }
@@ -59,7 +88,8 @@ export class UnitConversionListComponent implements OnInit {
     this.isLoading = true;
     this.api.post('ProductUnitConversion', this.newConversion).subscribe({
       next: () => {
-        this.newConversion = { productId: null, fromUomId: null, toUomId: null, conversionFactor: 1 };
+        this.newConversion = { productId: null, fromUnitId: null, toUnitId: null, factor: 1, level: 1 };
+        this.showForm = false;
         this.loadConversions();
       },
       error: () => this.isLoading = false
@@ -72,3 +102,4 @@ export class UnitConversionListComponent implements OnInit {
     }
   }
 }
+

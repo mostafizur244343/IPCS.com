@@ -16,13 +16,39 @@ import { FormsModule } from '@angular/forms';
 })
 export class StoreLocationListComponent implements OnInit {
   locations: any[] = [];
+  filteredLocations: any[] = [];
   newLocation = { locationName: '', description: '' };
   isLoading = false;
+  showForm = false;
+  searchTerm = '';
+
+  // Details state
+  selectedLocationForDetails: any = null;
 
   constructor(private api: ApiService) {}
 
+  showDetails(loc: any) {
+    this.selectedLocationForDetails = loc;
+  }
+
+  closeDetails() {
+    this.selectedLocationForDetails = null;
+  }
+
   ngOnInit() {
     this.loadLocations();
+  }
+
+  toggleForm() {
+    this.showForm = !this.showForm;
+  }
+
+  onSearch() {
+    const term = this.searchTerm.toLowerCase();
+    this.filteredLocations = this.locations.filter(l => 
+      (l.locationName && l.locationName.toLowerCase().includes(term)) ||
+      (l.description && l.description.toLowerCase().includes(term))
+    );
   }
 
   /**
@@ -33,6 +59,7 @@ export class StoreLocationListComponent implements OnInit {
     this.api.get<any[]>('StoreLocation').subscribe({
       next: (data) => {
         this.locations = data;
+        this.filteredLocations = data;
         this.isLoading = false;
       },
       error: () => this.isLoading = false
@@ -48,6 +75,7 @@ export class StoreLocationListComponent implements OnInit {
     this.api.post('StoreLocation', this.newLocation).subscribe({
       next: () => {
         this.newLocation = { locationName: '', description: '' };
+        this.showForm = false;
         this.loadLocations();
       },
       error: () => this.isLoading = false
@@ -63,3 +91,4 @@ export class StoreLocationListComponent implements OnInit {
     }
   }
 }
+

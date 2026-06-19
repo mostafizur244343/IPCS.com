@@ -1,4 +1,4 @@
-﻿using IPCS_Model.Entities;
+using IPCS_Model.Entities;
 using IPCS_Repo.Data;
 using IPCS_Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +16,16 @@ namespace IPCS_Service.Implementation
                 .Include(c => c.FromUnit)
                 .Include(c => c.ToUnit)
                 .Where(c => c.ProductId == productId)
+                .OrderBy(c => c.Level)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<ProductUnitConversion>> GetAllConversionsAsync()
+        {
+            return await _context.ProductUnitConversions
+                .Include(c => c.Product)
+                .Include(c => c.FromUnit)
+                .Include(c => c.ToUnit)
                 .OrderBy(c => c.Level)
                 .ToListAsync();
         }

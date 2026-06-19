@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using IPCS_Model.DTOs;
 using IPCS_Model.Entities;
@@ -6,6 +5,7 @@ using IPCS_Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using IPCS_API.Attributes;
 using IPCS_Model.Constants;
+using System.Linq;
 
 namespace IPCS_API.Controllers
 {
@@ -25,63 +25,66 @@ namespace IPCS_API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            try { return Ok(await _mfgService.GetAllAsync()); }
-            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+            var manufacturers = await _mfgService.GetAllAsync();
+            var dtos = manufacturers.Select(m => new ManufacturerDTO
+            {
+                BrandId = m.BrandId,
+                BrandName = m.BrandName,
+                Origin = m.Origin,
+                ContactPerson = m.ContactPerson,
+                PhoneNumber = m.PhoneNumber,
+                IsActive = m.IsActive
+            });
+            return Ok(dtos);
         }
 
         [PermissionAuthorize(Permissions.Manufacturer.Create)]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] ManufacturerDTO model)
         {
-            try
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var mfg = new Manufacturer
             {
-                if (!ModelState.IsValid) return BadRequest("Please input a valid info");
-                var mfg = new Manufacturer
-                {
-                    BrandName = model.BrandName,
-                    Origin = model.Origin,
-                    ContactPerson = model.ContactPerson,
-                    PhoneNumber = model.PhoneNumber,
-                    IsActive = model.IsActive,
-                    CreatedBy = User.Identity?.Name
-                };
-                await _mfgService.CreateAsync(mfg);
-                return Ok(new { Message = "Successfully Created" });
-            }
-            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+                BrandName = model.BrandName,
+                Origin = model.Origin,
+                ContactPerson = model.ContactPerson,
+                PhoneNumber = model.PhoneNumber,
+                IsActive = model.IsActive,
+                CreatedBy = User.Identity?.Name,
+                CreatedDate = DateTime.Now
+            };
+
+            await _mfgService.CreateAsync(mfg);
+            model.BrandId = mfg.BrandId;
+            return Ok(model);
         }
 
         [PermissionAuthorize(Permissions.Manufacturer.Edit)]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] ManufacturerDTO model)
         {
-            try
-            {
-                var brand = await _mfgService.GetByIdAsync(id);
-                if (brand == null) return NotFound("No Info Found");
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-                brand.BrandName = model.BrandName;
-                brand.Origin = model.Origin;
-                brand.ContactPerson = model.ContactPerson;
-                brand.PhoneNumber = model.PhoneNumber;
-                brand.IsActive = model.IsActive;
+            var brand = await _mfgService.GetByIdAsync(id);
+            if (brand == null) return NotFound("Manufacturer not found");
 
-                await _mfgService.UpdateAsync(brand);
-                return Ok(new { Message = "Successfully Updated" });
-            }
-            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+            brand.BrandName = model.BrandName;
+            brand.Origin = model.Origin;
+            brand.ContactPerson = model.ContactPerson;
+            brand.PhoneNumber = model.PhoneNumber;
+            brand.IsActive = model.IsActive;
+
+            await _mfgService.UpdateAsync(brand);
+            return Ok(new { Message = "Updated successfully" });
         }
 
         [PermissionAuthorize(Permissions.Manufacturer.Delete)]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            try
-            {
-                await _mfgService.DeleteAsync(id);
-                return Ok(new { Message = "Delete Successfull" });
-            }
-            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+            await _mfgService.DeleteAsync(id);
+            return Ok(new { Message = "Successfully deleted" });
         }
     }
-}
+}

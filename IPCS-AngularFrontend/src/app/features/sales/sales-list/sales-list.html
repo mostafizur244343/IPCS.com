@@ -70,7 +70,7 @@
           <td class="text-right">
             <div class="action-buttons">
               <!-- View Invoice Detail Button -->
-              <button class="icon-btn" title="View Details">
+              <button class="icon-btn info" (click)="showDetails(sale)" title="View Details">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
               </button>
               <!-- Print Invoice Button -->
@@ -90,6 +90,83 @@
     <!-- Displayed when no data matches search criteria -->
     <div *ngIf="!isLoading && filteredSales.length === 0" class="empty-state">
       <p>No sales records found.</p>
+    </div>
+  </div>
+
+  <!-- Details Modal -->
+  <div class="modal-backdrop" *ngIf="selectedSalesForDetails" (click)="closeDetails()">
+    <div class="modal-content" style="max-width: 700px;" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Sales Details</h2>
+        <button class="modal-close-btn" (click)="closeDetails()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-grid">
+          <div class="detail-label">Sales ID</div>
+          <div class="detail-value">#{{ selectedSalesForDetails.salesId }}</div>
+
+          <div class="detail-label">Invoice Number</div>
+          <div class="detail-value"><strong>{{ selectedSalesForDetails.invoiceNo }}</strong></div>
+
+          <div class="detail-label">Sales Date</div>
+          <div class="detail-value">{{ selectedSalesForDetails.salesDate | date:'mediumDate' }}</div>
+
+          <div class="detail-label">Customer</div>
+          <div class="detail-value">{{ selectedSalesForDetails.customerName }}</div>
+
+          <div class="detail-label">Total Amount</div>
+          <div class="detail-value">৳{{ selectedSalesForDetails.totalAmount | number:'1.2-2' }}</div>
+
+          <div class="detail-label">VAT/Tax</div>
+          <div class="detail-value">৳{{ selectedSalesForDetails.vatAmount | number:'1.2-2' }}</div>
+
+          <div class="detail-label">Discount</div>
+          <div class="detail-value">৳{{ selectedSalesForDetails.discount | number:'1.2-2' }}</div>
+
+          <div class="detail-label">Net Amount</div>
+          <div class="detail-value"><strong>৳{{ selectedSalesForDetails.netAmount | number:'1.2-2' }}</strong></div>
+
+          <div class="detail-label">Paid Amount</div>
+          <div class="detail-value">৳{{ selectedSalesForDetails.paidAmount | number:'1.2-2' }}</div>
+
+          <div class="detail-label">Due Amount</div>
+          <div class="detail-value">৳{{ selectedSalesForDetails.dueAmount | number:'1.2-2' }}</div>
+
+          <div class="detail-label">Payment Status</div>
+          <div class="detail-value">
+            <span class="status-badge" [ngClass]="selectedSalesForDetails.paymentStatus.toLowerCase()">
+              {{ selectedSalesForDetails.paymentStatus }}
+            </span>
+          </div>
+
+          <div class="detail-label">Payment Method</div>
+          <div class="detail-value">{{ selectedSalesForDetails.paymentMethodName || '-' }}</div>
+        </div>
+
+        <h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Sold Items</h3>
+        <div style="overflow-x: auto;">
+          <table class="data-table" style="font-size: 13px; min-width: 100%;">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>UOM</th>
+                <th>Sales Price</th>
+                <th class="text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of selectedSalesForDetails.salesDetails">
+                <td><strong>{{ item.productName }}</strong></td>
+                <td>{{ item.qty }}</td>
+                <td>{{ item.uomName }}</td>
+                <td>৳{{ item.salesPrice | number:'1.2-2' }}</td>
+                <td class="text-right">৳{{ (item.qty * item.salesPrice) | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -184,6 +261,12 @@
 
   .icon-btn:hover {
     background: #f8fafc;
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+
+  .icon-btn.info:hover {
+    background: #f0fdfa;
     color: var(--primary);
     border-color: var(--primary);
   }

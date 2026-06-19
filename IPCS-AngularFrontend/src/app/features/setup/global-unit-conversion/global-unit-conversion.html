@@ -1,16 +1,22 @@
-<div class="setup-container animate-fade-in">
+<div class="list-container animate-fade-in">
   <div class="page-header">
     <div class="title-section">
       <h1>Global Unit Conversions</h1>
       <p>Setup standard universal conversions (e.g., 1 KG = 1000 Gram, 1 Liter = 1000 ML)</p>
     </div>
+    <div class="action-section">
+      <button class="btn btn-primary" (click)="toggleForm()">
+        <span class="icon" *ngIf="!showForm">+</span>
+        <span class="icon" *ngIf="showForm">×</span> 
+        {{ showForm ? 'Cancel' : 'Add Universal Rule' }}
+      </button>
+    </div>
   </div>
 
-  <div class="setup-grid">
-    <!-- Form Card -->
-    <div class="card form-card">
-      <h3>Add Universal Rule</h3>
-      
+  <!-- Form Card -->
+  <div class="card form-card" *ngIf="showForm" style="margin-bottom: 24px;">
+    <h3>Add Universal Rule</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
       <div class="input-group">
         <label>From Unit (Large) *</label>
         <select [(ngModel)]="newConversion.fromUnitId">
@@ -29,49 +35,102 @@
         <label>Factor (Multiplier) *</label>
         <input type="number" [(ngModel)]="newConversion.conversionFactor" placeholder="e.g. 1000">
       </div>
-      
-      <button class="btn btn-primary w-full" (click)="addConversion()" [disabled]="isLoading">
+    </div>
+    
+    <div style="margin-top: 16px; text-align: right;">
+      <button class="btn btn-primary" (click)="addConversion()" [disabled]="isLoading">
         <span *ngIf="!isLoading">Save Rule</span>
         <span *ngIf="isLoading" class="spinner"></span>
       </button>
     </div>
+  </div>
 
-    <!-- Table Card -->
-    <div class="card table-card">
-      <div *ngIf="isLoading" class="loading-state"><div class="spinner-blue"></div></div>
-      
-      <table *ngIf="!isLoading" class="data-table">
-        <thead>
-          <tr>
-            <th>From Unit</th>
-            <th>Equals To</th>
-            <th>To Unit</th>
-            <th class="text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let c of conversions">
-            <td>1 <strong>{{ c.fromUnitName }}</strong></td>
-            <td>= {{ c.conversionFactor }}</td>
-            <td><strong>{{ c.toUnitName }}</strong></td>
-            <td class="text-right">
-              <button class="icon-btn delete" (click)="deleteConversion(c.id)" title="Delete Rule">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      
-      <div *ngIf="!isLoading && conversions.length === 0" class="empty-state">
-        <p>No global conversion rules defined yet.</p>
+  <div class="card filter-card">
+    <div class="search-box">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input 
+        type="text" 
+        placeholder="Search by unit name..." 
+        [(ngModel)]="searchTerm"
+        (input)="onSearch()"
+      >
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="card table-card" style="padding: 0; overflow: hidden">
+    <div *ngIf="isLoading" style="padding: 40px; text-align: center">
+      <div class="spinner-blue" style="border-top-color: var(--primary); border-width: 4px; width: 40px; height: 40px; margin: 0 auto"></div>
+      <p style="color: var(--text-muted); margin-top: 12px;">Loading...</p>
+    </div>
+    
+    <table *ngIf="!isLoading" class="data-table">
+      <thead>
+        <tr>
+          <th>From Unit</th>
+          <th>Equals To</th>
+          <th>To Unit</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of filteredConversions">
+          <td>1 <strong>{{ c.fromUnitName }}</strong></td>
+          <td>= {{ c.conversionFactor }}</td>
+          <td><strong>{{ c.toUnitName }}</strong></td>
+          <td class="text-right actions-cell">
+            <button class="icon-btn info" (click)="showDetails(c)" title="View Details">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+            <button class="icon-btn delete" (click)="deleteConversion(c.id)" title="Delete Rule">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div *ngIf="!isLoading && filteredConversions.length === 0" class="empty-state">
+      <p>No global conversion rules defined yet.</p>
+    </div>
+  </div>
+
+  <!-- Details Modal -->
+  <div class="modal-backdrop" *ngIf="selectedConversionForDetails" (click)="closeDetails()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Conversion Details</h2>
+        <button class="modal-close-btn" (click)="closeDetails()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-grid">
+          <div class="detail-label">Rule ID</div>
+          <div class="detail-value">#{{ selectedConversionForDetails.id }}</div>
+
+          <div class="detail-label">From Unit (Large)</div>
+          <div class="detail-value"><strong>{{ selectedConversionForDetails.fromUnitName }}</strong></div>
+
+          <div class="detail-label">To Unit (Small)</div>
+          <div class="detail-value"><strong>{{ selectedConversionForDetails.toUnitName }}</strong></div>
+
+          <div class="detail-label">Factor</div>
+          <div class="detail-value">1 {{ selectedConversionForDetails.fromUnitName }} = {{ selectedConversionForDetails.conversionFactor }} {{ selectedConversionForDetails.toUnitName }}</div>
+
+          <div class="detail-label">Status</div>
+          <div class="detail-value">
+            <span class="badge" [ngClass]="selectedConversionForDetails.isActive ? 'badge-success' : 'badge-error'">
+              {{ selectedConversionForDetails.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
 <style>
-  .setup-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
   .text-right { text-align: right; }
+  .actions-cell { display: flex; justify-content: flex-end; gap: 8px; }
   .empty-state { padding: 40px; text-align: center; color: #64748b; font-style: italic; }
+  select { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; background: white; }
 </style>

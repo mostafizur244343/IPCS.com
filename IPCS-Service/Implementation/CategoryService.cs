@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace IPCS_Service.Implementation
@@ -14,7 +13,7 @@ namespace IPCS_Service.Implementation
     {
         private readonly IPCSDBContext _context;
 
-        public CategoryService (IPCSDBContext context)
+        public CategoryService(IPCSDBContext context)
         {
             _context = context;
         }
@@ -27,42 +26,50 @@ namespace IPCS_Service.Implementation
             }
             catch (Exception ex)
             {
-                throw new Exception("Load Category List Error" + ex.Message);
+                throw new Exception("Error loading categories: " + ex.Message);
             }
         }
 
-        public async Task<Category?> GetByIdAsync (int id)
+        public async Task<Category?> GetByIdAsync(int id)
         {
             try
             {
                 var category = await _context.Categories.FindAsync(id);
                 if (category == null)
                 {
-                    throw new Exception("Do not Find any Category");
+                    throw new Exception($"Category with ID {id} not found.");
                 }
                 return category;
             }
             catch (Exception ex)
             {
-                throw new Exception("Category ID not found " + ex.Message);
+                throw new Exception(ex.Message);
             }
         }
 
-        public async Task<bool> CreateAsync (Category category)
+        public async Task<bool> CreateAsync(Category category)
         {
             try
             {
                 if (category == null)
                 {
-                    throw new Exception("Please enter a category");
+                    throw new Exception("Category data is missing.");
                 }
+
+                // Check for duplicate name
+                var exists = await _context.Categories.AnyAsync(c => c.CategoryName == category.CategoryName);
+                if (exists)
+                {
+                    throw new Exception($"A category with the name '{category.CategoryName}' already exists.");
+                }
+
                 await _context.Categories.AddAsync(category);
                 await _context.SaveChangesAsync();
                 return true;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error Creating Category... Please try again");
+                throw new Exception(ex.Message);
             }
         }
 
@@ -70,13 +77,25 @@ namespace IPCS_Service.Implementation
         {
             try
             {
-                _context.Categories.Update(category);
+                if (category == null) throw new Exception("Category data is missing.");
+
+                var existing = await _context.Categories.FindAsync(category.CategoryId);
+                if (existing == null) throw new Exception("Category not found for update.");
+
+                // Check for duplicate name excluding current
+                var exists = await _context.Categories.AnyAsync(c => c.CategoryName == category.CategoryName && c.CategoryId != category.CategoryId);
+                if (exists)
+                {
+                    throw new Exception($"Another category with the name '{category.CategoryName}' already exists.");
+                }
+
+                _context.Entry(existing).CurrentValues.SetValues(category);
                 await _context.SaveChangesAsync();
                 return true;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error Category Update" + ex.Message);
+                throw new Exception(ex.Message);
             }
         }
 
@@ -87,7 +106,14 @@ namespace IPCS_Service.Implementation
                 var category = await _context.Categories.FindAsync(id);
                 if (category == null)
                 {
-                    throw new Exception("Do not find this ID");
+                    throw new Exception("Category not found for deletion.");
+                }
+
+                // Check if category is used by products before deleting
+                var hasProducts = await _context.Products.AnyAsync(p => p.CategoryId == id);
+                if (hasProducts)
+                {
+                    throw new Exception("Cannot delete category because it is being used by one or more products.");
                 }
 
                 _context.Categories.Remove(category);
@@ -96,7 +122,7 @@ namespace IPCS_Service.Implementation
             }
             catch (Exception ex)
             {
-                throw new Exception("Error to delete Category..." + ex.Message);
+                throw new Exception(ex.Message);
             }
         }
     }

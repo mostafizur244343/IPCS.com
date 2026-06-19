@@ -20,7 +20,26 @@ export class SalesListComponent implements OnInit {
   searchTerm: string = '';
   isLoading = false;
 
+  // Details state
+  selectedSalesForDetails: any = null;
+
   constructor(private api: ApiService) {}
+
+  showDetails(sale: any) {
+    this.api.get<any>(`Sales/${sale.salesId}`).subscribe({
+      next: (fullData) => {
+        this.selectedSalesForDetails = fullData;
+      },
+      error: (err) => {
+        console.error('Error loading sales details', err);
+        this.selectedSalesForDetails = sale;
+      }
+    });
+  }
+
+  closeDetails() {
+    this.selectedSalesForDetails = null;
+  }
 
   ngOnInit() {
     this.loadSales();

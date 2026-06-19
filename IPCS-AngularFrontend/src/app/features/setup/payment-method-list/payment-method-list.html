@@ -1,54 +1,190 @@
-<div class="setup-container animate-fade-in">
+<div class="list-container animate-fade-in">
   <div class="page-header">
     <div class="title-section">
       <h1>Payment Methods</h1>
       <p>Configure Cash, Card, and Mobile Banking options.</p>
     </div>
+    <div class="action-section">
+      <button class="btn btn-primary" (click)="toggleForm()">
+        <span class="icon" *ngIf="!showForm">+</span>
+        <span class="icon" *ngIf="showForm">×</span> 
+        {{ showForm ? 'Cancel' : 'Add Method' }}
+      </button>
+    </div>
   </div>
 
-  <div class="setup-grid">
-    <div class="card form-card">
-      <h3>Add Method</h3>
+  <div class="card form-card" *ngIf="showForm" style="margin-bottom: 24px;">
+    <h3>{{ isEditing ? 'Edit Method' : 'Add Method' }}</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
       <div class="input-group">
         <label>Method Name *</label>
-        <input type="text" [(ngModel)]="newMethod.methodName" placeholder="e.g. Bkash">
+        <input type="text" [(ngModel)]="newMethod.MethodName" placeholder="e.g. Bkash" />
       </div>
       <div class="input-group">
         <label>Description</label>
-        <input type="text" [(ngModel)]="newMethod.description" placeholder="Optional notes">
+        <input type="text" [(ngModel)]="newMethod.Description" placeholder="Optional notes" />
       </div>
-      <button class="btn btn-primary w-full" (click)="addMethod()" [disabled]="isLoading">
-        <span *ngIf="!isLoading">Save Method</span>
+      <div class="input-group">
+        <label>Account Number</label>
+        <input type="text" [(ngModel)]="newMethod.AccountNumber" placeholder="Account / Card Number" />
+      </div>
+      <div class="input-group">
+        <label>Extra Charge (%)</label>
+        <input type="number" [(ngModel)]="newMethod.ExtraChargePercentage" placeholder="0" />
+      </div>
+      <div class="input-group">
+        <label>Minimum Amount</label>
+        <input type="number" [(ngModel)]="newMethod.MinimumAmount" placeholder="0" />
+      </div>
+      <div class="input-group" style="display: flex; gap: 24px; align-items: center; margin-top: 28px;">
+        <label class="flex items-center gap-2" style="margin-bottom: 0;">
+          <input type="checkbox" [(ngModel)]="newMethod.IsDigital">
+          Is Digital Payment?
+        </label>
+        <label class="flex items-center gap-2" style="margin-bottom: 0;">
+          <input type="checkbox" [(ngModel)]="newMethod.IsActive">
+          Active
+        </label>
+      </div>
+    </div>
+    <div class="flex gap-2" style="margin-top: 16px; justify-content: flex-end;">
+      <button *ngIf="isEditing" class="btn btn-secondary" (click)="resetForm()">
+        Cancel
+      </button>
+      <button class="btn btn-primary" (click)="addMethod()" [disabled]="isLoading">
+        <span *ngIf="!isLoading">{{ isEditing ? 'Update Method' : 'Save Method' }}</span>
+        <span *ngIf="isLoading" class="spinner"></span>
       </button>
     </div>
+  </div>
 
-    <div class="card table-card">
-      <div *ngIf="isLoading" class="loading-state"><div class="spinner-blue"></div></div>
-      <table *ngIf="!isLoading" class="data-table">
-        <thead>
-          <tr>
-            <th>Method Name</th>
-            <th>Description</th>
-            <th class="text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let m of methods">
-            <td><strong>{{ m.methodName }}</strong></td>
-            <td>{{ m.description || '-' }}</td>
-            <td class="text-right">
-              <button class="icon-btn delete" (click)="deleteMethod(m.paymentMethodId)">
+  <div class="card filter-card">
+    <div class="search-box">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input 
+        type="text" 
+        placeholder="Search by name, description or account..." 
+        [(ngModel)]="searchTerm"
+        (input)="onSearch()"
+      >
+    </div>
+  </div>
+
+  <div class="card table-card" style="padding: 0; overflow: hidden">
+    <div *ngIf="isLoading" style="padding: 40px; text-align: center">
+      <div class="spinner-blue" style="border-top-color: var(--primary); border-width: 4px; width: 40px; height: 40px; margin: 0 auto"></div>
+      <p style="color: var(--text-muted); margin-top: 12px;">Loading...</p>
+    </div>
+    <table *ngIf="!isLoading" class="data-table">
+      <thead>
+        <tr>
+          <th>Method Name</th>
+          <th>Description</th>
+          <th>Type</th>
+          <th>Extra Charge</th>
+          <th>Minimum Amount</th>
+          <th>Status</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let m of filteredMethods">
+          <td><strong>{{ m.methodName }}</strong></td>
+          <td>{{ m.description || '-' }}</td>
+          <td>
+            <span class="badge" [class.badge-digital]="m.isDigital" [class.badge-cash]="!m.isDigital">
+              {{ m.isDigital ? 'Digital' : 'Cash' }}
+            </span>
+          </td>
+          <td>{{ m.extraChargePercentage | number:'1.2-2' }}%</td>
+          <td>৳{{ m.minimumAmount | number:'1.2-2' }}</td>
+          <td>
+            <span class="status-indicator" [class.active]="m.isActive">
+              {{ m.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+          <td class="text-right">
+            <div class="action-buttons">
+              <button class="icon-btn edit" (click)="editMethod(m)" title="Edit Method">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              </button>
+              <button class="icon-btn info" (click)="showDetails(m)" title="View Details">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+              <button class="icon-btn delete" (click)="deleteMethod(m.methodId)" title="Delete Method">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
               </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Details Modal -->
+  <div class="modal-backdrop" *ngIf="selectedMethodForDetails" (click)="closeDetails()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Payment Method Details</h2>
+        <button class="modal-close-btn" (click)="closeDetails()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-grid">
+          <div class="detail-label">Method ID</div>
+          <div class="detail-value">#{{ selectedMethodForDetails.methodId }}</div>
+
+          <div class="detail-label">Method Name</div>
+          <div class="detail-value"><strong>{{ selectedMethodForDetails.methodName }}</strong></div>
+
+          <div class="detail-label">Description</div>
+          <div class="detail-value">{{ selectedMethodForDetails.description || '-' }}</div>
+
+          <div class="detail-label">Account Number</div>
+          <div class="detail-value">{{ selectedMethodForDetails.accountNumber || '-' }}</div>
+
+          <div class="detail-label">Is Digital?</div>
+          <div class="detail-value">
+            <span class="badge" [class.badge-digital]="selectedMethodForDetails.isDigital" [class.badge-cash]="!selectedMethodForDetails.isDigital">
+              {{ selectedMethodForDetails.isDigital ? 'Yes (Digital)' : 'No (Cash)' }}
+            </span>
+          </div>
+
+          <div class="detail-label">Extra Charge</div>
+          <div class="detail-value">{{ selectedMethodForDetails.extraChargePercentage }}%</div>
+
+          <div class="detail-label">Minimum Amount</div>
+          <div class="detail-value">৳{{ selectedMethodForDetails.minimumAmount | number:'1.2-2' }}</div>
+
+          <div class="detail-label">Status</div>
+          <div class="detail-value">
+            <span class="badge" [ngClass]="selectedMethodForDetails.isActive ? 'badge-success' : 'badge-error'">
+              {{ selectedMethodForDetails.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <style>
-  .setup-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
   .text-right { text-align: right; }
+  .flex { display: flex; }
+  .items-center { align-items: center; }
+  .gap-2 { gap: 8px; }
+  .flex-1 { flex: 1; }
+  .action-buttons { display: flex; gap: 8px; justify-content: flex-end; }
+  .icon-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+  .icon-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .icon-btn.edit:hover { color: #3b82f6; background: #eff6ff; }
+  .icon-btn.info:hover { color: var(--primary); background: #f0fdfa; }
+  .icon-btn.delete:hover { border-color: var(--error); color: var(--error); background: #fef2f2; }
+  .btn-secondary { background-color: #64748b; color: white; border: none; padding: 10px 20px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: 600; }
+  .btn-secondary:hover { background-color: #475569; }
+  .badge { padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+  .badge-digital { background: #dbeafe; color: #1d4ed8; }
+  .badge-cash { background: #f0fdf4; color: #15803d; }
+  .status-indicator { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+  .status-indicator::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; }
+  .status-indicator.active::before { background: var(--success); }
 </style>

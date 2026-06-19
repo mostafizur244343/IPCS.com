@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 /**
  * ApiService
@@ -8,10 +9,10 @@ import { Observable } from 'rxjs';
  * Authentication headers are now handled globally via AuthInterceptor.
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ApiService {
-  private baseUrl = 'https://localhost:7054/api'; 
+  private baseUrl = environment.apiUrl; 
 
   constructor(private http: HttpClient) {}
 
@@ -41,5 +42,36 @@ export class ApiService {
    */
   delete<T>(endpoint: string): Observable<T> {
     return this.http.delete<T>(`${this.baseUrl}/${endpoint}`);
+  }
+
+  /**
+   * Uploads a file and returns the file path
+   */
+  uploadFile(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.baseUrl}/Upload`, formData);
+  }
+
+  /**
+   * Uploads a data URL and returns the file path
+   */
+  async uploadDataUrl(dataUrl: string): Promise<string> {
+    const file = await this.dataUrlToFile(dataUrl);
+    return new Promise((resolve, reject) => {
+      this.uploadFile(file).subscribe({
+        next: (response: any) => resolve(response.filePath),
+        error: reject
+      });
+    });
+  }
+
+  /**
+   * Converts a data URL to a File object
+   */
+  private async dataUrlToFile(dataUrl: string): Promise<File> {
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    return new File([blob], 'image.png', { type: 'image/png' });
   }
 }

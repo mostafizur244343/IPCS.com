@@ -1,8 +1,9 @@
-﻿namespace IPCS_Model.DTOs
+namespace IPCS_Model.DTOs
 {
     public class PaymentMethodDTO
     {
         public string MethodName { get; set; } = string.Empty;
+        public string? Description { get; set; }
         public bool IsDigital { get; set; }
         public decimal ExtraChargePercentage { get; set; }
         public string? AccountNumber { get; set; }

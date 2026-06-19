@@ -1,74 +1,145 @@
-<div class="setup-container animate-fade-in">
-  <!-- Page Header -->
+<div class="container animate-fade-in setup-container">
+<div class="list-container animate-fade-in">
   <div class="page-header">
     <div class="title-section">
-      <h1>Product Categories</h1>
-      <p>Define types of products available in the pharmacy.</p>
+      <h1>Category Management</h1>
+      <p>Organize products into categories for easier management and searching.</p>
+    </div>
+    <div class="action-section">
+      <button class="btn btn-primary" (click)="toggleForm()">
+        <span class="icon" *ngIf="!showForm">+</span>
+        <span class="icon" *ngIf="showForm">×</span> 
+        {{ showForm ? 'Cancel' : 'Create New Category' }}
+      </button>
     </div>
   </div>
 
-  <div class="setup-grid">
-    <!-- Left: Add New Category -->
-    <div class="card form-card">
-      <h3>Quick Add</h3>
+  <div class="card form-card" *ngIf="showForm" style="margin-bottom: 24px;">
+    <h3>Add Category</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
       <div class="input-group">
         <label>Category Name *</label>
-        <input type="text" [(ngModel)]="newCategory.categoryName" placeholder="e.g. Tablets">
+        <input type="text" [(ngModel)]="newCategory.categoryName" placeholder="e.g. Tablets, Syrups" />
       </div>
       <div class="input-group">
         <label>Description</label>
-        <textarea [(ngModel)]="newCategory.description" placeholder="Optional notes..."></textarea>
+        <input type="text" [(ngModel)]="newCategory.description" placeholder="Optional description" />
       </div>
-      <button class="btn btn-primary w-full" (click)="addCategory()" [disabled]="isLoading">
-        <span *ngIf="!isLoading">Add Category</span>
+    </div>
+    <div style="margin-top: 16px; text-align: right;">
+      <button class="btn btn-primary" (click)="addCategory()" [disabled]="isLoading">
+        <span *ngIf="!isLoading">Save Category</span>
         <span *ngIf="isLoading" class="spinner"></span>
       </button>
     </div>
+  </div>
 
-    <!-- Right: Categories Table -->
-    <div class="card table-card">
-      <div *ngIf="isLoading" class="loading-state">
-        <div class="spinner-blue"></div>
-      </div>
+  <div class="card filter-card" style="margin-bottom: 24px;">
+    <div class="search-box">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input 
+        type="text" 
+        placeholder="Search by category name..." 
+        [(ngModel)]="searchTerm"
+        (input)="onSearch()"
+      >
+    </div>
+  </div>
 
-      <table *ngIf="!isLoading" class="data-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Description</th>
-            <th class="text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let cat of categories">
-            <td><strong>{{ cat.categoryName }}</strong></td>
-            <td>{{ cat.description || 'No description' }}</td>
-            <td class="text-right">
-              <div class="action-buttons">
-                <button class="icon-btn delete" (click)="deleteCategory(cat.categoryId)" title="Delete">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                </button>
-              </div>
+  <div class="card table-card" style="padding: 0; overflow: hidden">
+    <div *ngIf="isLoading" style="padding: 40px; text-align: center">
+      <div class="spinner-blue" style="border-top-color: var(--primary); border-width: 4px; width: 40px; height: 40px; margin: 0 auto"></div>
+      <p style="color: var(--text-muted); margin-top: 12px;">Loading...</p>
+    </div>
+    <table *ngIf="!isLoading" class="data-table">
+      <thead>
+        <tr>
+          <th>Category Name</th>
+          <th>Description</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of filteredCategories">
+          <ng-container *ngIf="editingCategoryId !== c.categoryId; else editTemplate">
+            <td>
+              <strong>{{ c.categoryName }}</strong>
             </td>
-          </tr>
-        </tbody>
-      </table>
+            <td>{{ c.description }}</td>
+            <td class="text-right actions-cell">
+              <button class="icon-btn edit" (click)="startEdit(c)" title="Edit">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              </button>
+              <button class="icon-btn info" (click)="showDetails(c)" title="Details" style="margin-left: 4px; margin-right: 4px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+              <button class="icon-btn delete" (click)="deleteCategory(c.categoryId)" title="Delete">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+            </td>
+          </ng-container>
+
+          <ng-template #editTemplate>
+            <td>
+              <input type="text" [(ngModel)]="editCategory.categoryName" class="edit-input" />
+            </td>
+            <td>
+              <input type="text" [(ngModel)]="editCategory.description" class="edit-input" />
+            </td>
+            <td class="text-right actions-cell">
+              <button class="icon-btn save" (click)="updateCategory()" title="Save">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </button>
+              <button class="icon-btn cancel" (click)="cancelEdit()" title="Cancel">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </td>
+          </ng-template>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Details Modal -->
+  <div class="modal-backdrop" *ngIf="selectedCategoryForDetails" (click)="closeDetails()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Category Details</h2>
+        <button class="modal-close-btn" (click)="closeDetails()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-grid">
+          <div class="detail-label">Category ID</div>
+          <div class="detail-value">#{{ selectedCategoryForDetails.categoryId }}</div>
+
+          <div class="detail-label">Category Name</div>
+          <div class="detail-value"><strong>{{ selectedCategoryForDetails.categoryName }}</strong></div>
+
+          <div class="detail-label">Description</div>
+          <div class="detail-value">{{ selectedCategoryForDetails.description || '-' }}</div>
+
+          <div class="detail-label">Status</div>
+          <div class="detail-value">
+            <span class="badge" [ngClass]="selectedCategoryForDetails.isActive ? 'badge-success' : 'badge-error'">
+              {{ selectedCategoryForDetails.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <style>
-  /* 
-    Category Setup Specific Styles (CSS)
-  */
-  .setup-container { padding-bottom: 40px; }
-  .setup-grid { display: grid; grid-template-columns: 300px 1fr; gap: 24px; }
-  .form-card { padding: 24px; height: fit-content; }
-  .form-card h3 { font-size: 16px; margin-bottom: 16px; }
-  .w-full { width: 100%; }
-  textarea { width: 100%; height: 80px; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; outline: none; font-family: inherit; }
   .text-right { text-align: right; }
-  .action-buttons { display: flex; gap: 8px; justify-content: flex-end; }
-  
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .actions-cell { display: flex; justify-content: flex-end; gap: 8px; }
+  .edit-input { width: 100%; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; }
+  .edit-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  }
+  .icon-btn.edit:hover { color: #3b82f6; background: #eff6ff; }
+  .icon-btn.save:hover { color: #10b981; background: #ecfdf5; }
+  .icon-btn.cancel:hover { color: #ef4444; background: #fef2f2; }
 </style>
+

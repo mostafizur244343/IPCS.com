@@ -18,6 +18,10 @@ namespace IPCS_API.Controllers
         [HttpGet("by-product/{productId}")]
         public async Task<IActionResult> GetByProduct(int productId) => Ok(await _service.GetByProductIdAsync(productId));
 
+        [PermissionAuthorize(Permissions.Product.View)]
+        [HttpGet]
+        public async Task<IActionResult> GetAll() => Ok(await _service.GetAllConversionsAsync());
+
         [PermissionAuthorize(Permissions.Product.Edit)]
         [HttpPost]
         public async Task<IActionResult> Create(ProductUnitConversionDTO dto)

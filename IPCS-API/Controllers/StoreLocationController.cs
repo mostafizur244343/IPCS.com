@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using IPCS_API.Attributes;
 using IPCS_Model.Constants;
+using System.Linq;
 
 namespace IPCS_API.Controllers
 {
@@ -24,78 +25,88 @@ namespace IPCS_API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            try { return Ok(await _locationService.GetAllAsync()); }
-            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+            var results = await _locationService.GetAllAsync();
+            var dtos = results.Select(MapToDTO);
+            return Ok(dtos);
         }
 
         [PermissionAuthorize(Permissions.StoreLocation.View)]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            try { return Ok(await _locationService.GetByIdAsync(id)); }
-            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+            var result = await _locationService.GetByIdAsync(id);
+            if (result == null) return NotFound("Location not found");
+            return Ok(MapToDTO(result));
         }
 
         [PermissionAuthorize(Permissions.StoreLocation.Create)]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] StoreLocationDTO model)
         {
-            try
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var loc = new StoreLocation
             {
-                var loc = new StoreLocation
-                {
-                    ShelfName = model.ShelfName,
-                    RowNumber = model.RowNumber,
-                    ColumnNumber = model.ColumnNumber,
-                    FloorNumber = model.FloorNumber,
-                    RoomNumber = model.RoomNumber,
-                    Capacity = model.Capacity,
-                    Notes = model.Notes,
-                    BranchId = model.BranchId, 
-                    IsActive = model.IsActive,
-                    CreatedBy = User.Identity?.Name
-                };
-                await _locationService.CreateAsync(loc);
-                return Ok(new { Message = "Saved Location info Successfully" });
-            }
-            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+                ShelfName = model.ShelfName,
+                RowNumber = model.RowNumber,
+                ColumnNumber = model.ColumnNumber,
+                FloorNumber = model.FloorNumber,
+                RoomNumber = model.RoomNumber,
+                Capacity = model.Capacity,
+                Notes = model.Notes,
+                BranchId = model.BranchId, 
+                IsActive = model.IsActive,
+                CreatedBy = User.Identity?.Name,
+                CreatedDate = DateTime.Now
+            };
+
+            await _locationService.CreateAsync(loc);
+            return Ok(new { Message = "Created successfully", LocationId = loc.LocationId });
         }
 
         [PermissionAuthorize(Permissions.StoreLocation.Edit)]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] StoreLocationDTO model)
         {
-            try
-            {
-                var loc = await _locationService.GetByIdAsync(id);
-                if (loc == null) return NotFound("Not found any Info");
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-                loc.ShelfName = model.ShelfName;
-                loc.RowNumber = model.RowNumber;
-                loc.ColumnNumber = model.ColumnNumber;
-                loc.FloorNumber = model.FloorNumber;
-                loc.RoomNumber = model.RoomNumber;
-                loc.Capacity = model.Capacity;
-                loc.Notes = model.Notes;
-                loc.BranchId = model.BranchId;
-                loc.IsActive = model.IsActive;
+            var loc = await _locationService.GetByIdAsync(id);
+            if (loc == null) return NotFound("Location not found");
 
-                await _locationService.UpdateAsync(loc);
-                return Ok(new { Message = "Updated Successfully" });
-            }
-            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+            loc.ShelfName = model.ShelfName;
+            loc.RowNumber = model.RowNumber;
+            loc.ColumnNumber = model.ColumnNumber;
+            loc.FloorNumber = model.FloorNumber;
+            loc.RoomNumber = model.RoomNumber;
+            loc.Capacity = model.Capacity;
+            loc.Notes = model.Notes;
+            loc.BranchId = model.BranchId;
+            loc.IsActive = model.IsActive;
+
+            await _locationService.UpdateAsync(loc);
+            return Ok(new { Message = "Updated successfully" });
         }
 
         [PermissionAuthorize(Permissions.StoreLocation.Delete)]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            try
-            {
-                await _locationService.DeleteAsync(id);
-                return Ok(new { Message = "Successfully Deleted." });
-            }
-            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+            await _locationService.DeleteAsync(id);
+            return Ok(new { Message = "Deleted successfully" });
         }
+
+        private static StoreLocationDTO MapToDTO(StoreLocation l) => new StoreLocationDTO
+        {
+            LocationId = l.LocationId,
+            ShelfName = l.ShelfName,
+            RowNumber = l.RowNumber,
+            ColumnNumber = l.ColumnNumber,
+            FloorNumber = l.FloorNumber,
+            RoomNumber = l.RoomNumber,
+            Capacity = l.Capacity,
+            Notes = l.Notes,
+            BranchId = l.BranchId,
+            IsActive = l.IsActive
+        };
     }
-}
+}

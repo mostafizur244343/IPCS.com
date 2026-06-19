@@ -11,6 +11,8 @@ namespace IPCS_Model.Entities
         [Required(ErrorMessage = "Must Input Method Name")]
         public string MethodName { get; set; } = string.Empty; // Cash, Bkash, Card, Nagad
 
+        public string? Description { get; set; }
+
         public bool IsDigital { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]

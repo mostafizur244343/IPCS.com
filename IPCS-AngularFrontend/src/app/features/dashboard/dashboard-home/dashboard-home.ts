@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api';
 
 /**
@@ -10,53 +11,75 @@ import { ApiService } from '../../../core/services/api';
 @Component({
   selector: 'app-dashboard-home',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './dashboard-home.html'
 })
 export class DashboardHomeComponent implements OnInit {
-  stats: any[] = [];
-  recentTransactions: any[] = [];
+  userName: string = 'User';
+  currentTime: Date = new Date();
   isLoading = false;
+  
+  stats = [
+    { name: 'Today\'s Sales', value: '৳0.00', icon: 'trending-up', color: 'blue', delta: '+0%' },
+    { name: 'Total Products', value: '0', icon: 'package', color: 'teal' },
+    { name: 'Low Stock', value: '0', icon: 'alert-triangle', color: 'amber' },
+    { name: 'Out of Stock', value: '0', icon: 'shopping-bag', color: 'red' }
+  ];
+
+  recentTransactions: any[] = [];
 
   constructor(private api: ApiService) {}
 
   ngOnInit() {
-    this.loadDashboardData();
+    this.loadUserData();
+    this.loadStats();
+    this.startClock();
   }
 
-  /**
-   * Fetches data for stats and recent sales from multiple API endpoints
-   */
-  loadDashboardData() {
+  loadUserData() {
+    const data = localStorage.getItem('user_data');
+    if (data) {
+      const user = JSON.parse(data);
+      // Support both camelCase and PascalCase
+      this.userName = user.name || user.Name || user.fullName || user.FullName || 'User';
+    }
+  }
+
+  startClock() {
+    setInterval(() => {
+      this.currentTime = new Date();
+    }, 1000);
+  }
+
+  loadStats() {
     this.isLoading = true;
-    const branchId = 1;
-    const today = new Date().toISOString().split('T')[0];
-
-    // 1. Fetch Today's Summary
-    this.api.get<any>(`DailySummary/by-date/${branchId}/${today}`).subscribe(data => {
-      this.stats = [
-        { name: 'Today Sales', value: `৳ ${data?.totalSales || 0}`, icon: 'trending-up', color: 'blue' },
-        { name: 'Today Purchase', value: `৳ ${data?.totalPurchase || 0}`, icon: 'shopping-bag', color: 'teal' },
-      ];
+    // Load Inventory Stats
+    this.api.get<any>('DailySummary/inventory-stats').subscribe({
+      next: (data) => {
+        this.stats[1].value = data.totalItems.toString();
+        this.stats[2].value = data.lowStock.toString();
+        this.stats[3].value = data.outOfStock.toString();
+      }
     });
 
-    // 2. Fetch Inventory Stats
-    this.api.get<any[]>('Product').subscribe(products => {
-      const lowStock = products.filter(p => p.currentStock <= p.reorderLevel).length;
-      this.stats.push({ name: 'Active Products', value: products.length, icon: 'package', color: 'amber' });
-      this.stats.push({ name: 'Low Stock', value: lowStock, icon: 'alert-triangle', color: 'red' });
-    });
-
-    // 3. Fetch Recent Sales
-    this.api.get<any[]>('Sales').subscribe(sales => {
-      this.recentTransactions = sales.slice(0, 5).map(s => ({
-        id: s.invoiceNo,
-        customer: s.customerName,
-        date: s.salesDate,
-        amount: `৳ ${s.netAmount}`,
-        status: s.paymentStatus
-      }));
-      this.isLoading = false;
+    // Load Sales for Today and Recent Transactions
+    this.api.get<any[]>('Sales').subscribe({
+      next: (sales) => {
+        const todayStr = new Date().toDateString();
+        const todaySales = sales.filter(s => new Date(s.salesDate).toDateString() === todayStr);
+        const total = todaySales.reduce((acc, curr) => acc + curr.netAmount, 0);
+        this.stats[0].value = `৳${total.toFixed(2)}`;
+        
+        this.recentTransactions = sales.slice(0, 5).map(s => ({
+          id: s.invoiceNo,
+          customer: s.customerName || 'Walk-in',
+          date: new Date(s.salesDate).toLocaleDateString(),
+          amount: `৳${s.netAmount.toFixed(2)}`,
+          status: s.dueAmount > 0 ? 'Due' : 'Paid'
+        }));
+        this.isLoading = false;
+      },
+      error: () => this.isLoading = false
     });
   }
 }

@@ -132,12 +132,6 @@ builder.Entity<ProductUnitConversion>()
             builder.Entity<Customer>().HasIndex(c => c.CustomerName);
             builder.Entity<Customer>().HasIndex(c => c.Mobile);
 
-            // 2. Filtered Unique Index: Mobile Number Be Unique Just Fpr Unique Supplier
-            builder.Entity<Customer>()
-            .HasIndex(c => c.Mobile)
-            .IsUnique()
-            .HasFilter("[IsDeleted] = 0");
-
             // 3. Global Query Filter: Defaultly Deleted Supplier Not in Query
             builder.Entity<Customer>().HasQueryFilter(c => !c.IsDeleted);
 
@@ -148,7 +142,27 @@ builder.Entity<ProductUnitConversion>()
                 .HasIndex(p => p.ProductName)
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");
-            //3. 
+
+            // Filtered Unique Index on SKU
+            builder.Entity<Product>()
+                .HasIndex(p => p.SKU)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0 AND [SKU] IS NOT NULL AND [SKU] != ''");
+            
+            // Additional indexes for Product performance
+            builder.Entity<Product>().HasIndex(p => p.CategoryId);
+            builder.Entity<Product>().HasIndex(p => p.BrandId);
+            builder.Entity<Product>().HasIndex(p => p.GenericId);
+            builder.Entity<Product>().HasIndex(p => p.IsActive);
+            builder.Entity<Product>().HasIndex(p => p.ProductCode);
+
+            // Permission System Indexes
+            builder.Entity<AppModule>().HasIndex(m => m.Name);
+            builder.Entity<AppPermission>().HasIndex(p => p.PermissionKey);
+            builder.Entity<RolePermission>().HasIndex(rp => rp.RoleId);
+            builder.Entity<RolePermission>().HasIndex(rp => rp.PermissionId);
+            builder.Entity<UserPermission>().HasIndex(up => up.UserId);
+            builder.Entity<UserPermission>().HasIndex(up => up.PermissionId);
 
             builder.Entity<ProductUnitConversion>()
                 .HasOne(c => c.Product)

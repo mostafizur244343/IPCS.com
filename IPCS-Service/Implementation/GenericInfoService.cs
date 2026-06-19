@@ -1,7 +1,10 @@
-﻿using IPCS_Model.Entities;
+using IPCS_Model.Entities;
 using IPCS_Service.Interfaces;
 using IPCS_Repo.Data;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace IPCS_Service.Implementation
 {
@@ -16,8 +19,14 @@ namespace IPCS_Service.Implementation
 
         public async Task<IEnumerable<GenericInfo>> GetAllAsync()
         {
-            try { return await _context.GenericInfos.ToListAsync(); }
-            catch (Exception ex) { throw new Exception("Loading Generic List Error " + ex.Message); }
+            try 
+            { 
+                return await _context.GenericInfos.AsNoTracking().ToListAsync(); 
+            }
+            catch (Exception ex) 
+            { 
+                throw new Exception("Error loading generic information: " + ex.Message); 
+            }
         }
 
         public async Task<GenericInfo?> GetByIdAsync(int id)
@@ -25,32 +34,45 @@ namespace IPCS_Service.Implementation
             try
             {
                 var info = await _context.GenericInfos.FindAsync(id);
-                if (info == null) throw new Exception("Error to find this Information");
+                if (info == null) throw new Exception($"Generic info with ID {id} not found.");
                 return info;
             }
-            catch (Exception ex) { throw new Exception("Finding Information Error... " + ex.Message); }
+            catch (Exception ex) 
+            { 
+                throw new Exception(ex.Message); 
+            }
         }
 
         public async Task<bool> CreateAsync(GenericInfo genericInfo)
         {
             try
             {
+                var exists = await _context.GenericInfos.AnyAsync(g => g.GenericName.ToLower() == genericInfo.GenericName.ToLower());
+                if (exists) throw new Exception($"Generic name '{genericInfo.GenericName}' already exists.");
+
                 await _context.GenericInfos.AddAsync(genericInfo);
-                await _context.SaveChangesAsync();
-                return true;
+                return await _context.SaveChangesAsync() > 0;
             }
-            catch (Exception ex) { throw new Exception("Creating Error... " + ex.Message); }
+            catch (Exception ex) 
+            { 
+                throw new Exception(ex.Message); 
+            }
         }
 
         public async Task<bool> UpdateAsync(GenericInfo genericInfo)
         {
             try
             {
+                var exists = await _context.GenericInfos.AnyAsync(g => g.GenericName.ToLower() == genericInfo.GenericName.ToLower() && g.GenericId != genericInfo.GenericId);
+                if (exists) throw new Exception($"Generic name '{genericInfo.GenericName}' already exists.");
+
                 _context.GenericInfos.Update(genericInfo);
-                await _context.SaveChangesAsync();
-                return true;
+                return await _context.SaveChangesAsync() > 0;
             }
-            catch (Exception ex) { throw new Exception("Error Updating Info... " + ex.Message); }
+            catch (Exception ex) 
+            { 
+                throw new Exception(ex.Message); 
+            }
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -58,12 +80,19 @@ namespace IPCS_Service.Implementation
             try
             {
                 var info = await _context.GenericInfos.FindAsync(id);
-                if (info == null) throw new Exception("Info Not found to Delete");
+                if (info == null) throw new Exception("Information not found for deletion.");
+
+                // Check for dependencies (Products)
+                var hasProducts = await _context.Products.AnyAsync(p => p.GenericId == id && !p.IsDeleted);
+                if (hasProducts) throw new Exception("Cannot delete this generic info because it is assigned to active products.");
+
                 _context.GenericInfos.Remove(info);
-                await _context.SaveChangesAsync();
-                return true;
+                return await _context.SaveChangesAsync() > 0;
             }
-            catch (Exception ex) { throw new Exception("Error Deleting... " + ex.Message); }
+            catch (Exception ex) 
+            { 
+                throw new Exception(ex.Message); 
+            }
         }
     }
-}
+}

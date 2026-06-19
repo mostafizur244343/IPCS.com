@@ -16,6 +16,7 @@ namespace IPCS_Model.Entities
         public string? ContactNumber { get; set; }
         public string? Email { get; set; }
         public string? ManagerName { get; set; }
+        public string? PicturePath { get; set; } // Branch image
 
         public bool IsActive { get; set; } = true;
 

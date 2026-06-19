@@ -44,6 +44,7 @@ namespace IPCS_API.Controllers
                 var method = new PaymentMethod
                 {
                     MethodName = model.MethodName,
+                    Description = model.Description,
                     IsDigital = model.IsDigital,
                     ExtraChargePercentage = model.ExtraChargePercentage,
                     AccountNumber = model.AccountNumber,
@@ -69,6 +70,7 @@ namespace IPCS_API.Controllers
                 if (method == null) return NotFound("Informetion Not Found...");
 
                 method.MethodName = model.MethodName;
+                method.Description = model.Description;
                 method.IsDigital = model.IsDigital;
                 method.ExtraChargePercentage = model.ExtraChargePercentage;
                 method.AccountNumber = model.AccountNumber;

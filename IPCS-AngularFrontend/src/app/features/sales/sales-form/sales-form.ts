@@ -32,7 +32,9 @@ export class SalesFormComponent implements OnInit {
     paymentStatus: 'Paid',
     remarks: '',
     salesDetails: [],
-    payments: []
+    payments: [],
+    selectedPaymentMethodId: null,
+    extraChargeAmount: 0
   };
 
   // UI State Variables
@@ -54,7 +56,29 @@ export class SalesFormComponent implements OnInit {
    */
   loadLookups() {
     this.api.get<any[]>('Customer/active').subscribe(data => this.customers = data);
-    this.api.get<any[]>('PaymentMethod').subscribe(data => this.paymentMethods = data);
+    this.api.get<any[]>('PaymentMethod').subscribe(data => {
+      this.paymentMethods = data;
+      if (this.paymentMethods.length > 0) {
+        this.sale.selectedPaymentMethodId = this.paymentMethods[0].paymentMethodId;
+      }
+    });
+  }
+
+  /**
+   * Calculates extra charge based on selected payment method
+   */
+  calculateExtraCharge() {
+    if (!this.sale.selectedPaymentMethodId || this.sale.paidAmount <= 0) {
+      this.sale.extraChargeAmount = 0;
+      return;
+    }
+    
+    const paymentMethod = this.paymentMethods.find(m => m.paymentMethodId === this.sale.selectedPaymentMethodId);
+    if (paymentMethod && paymentMethod.isDigital && paymentMethod.extraChargePercentage) {
+      this.sale.extraChargeAmount = (this.sale.paidAmount * paymentMethod.extraChargePercentage) / 100;
+    } else {
+      this.sale.extraChargeAmount = 0;
+    }
   }
 
   /**
@@ -126,6 +150,8 @@ export class SalesFormComponent implements OnInit {
    * Updates due and change amounts based on paid amount
    */
   updatePaymentInfo() {
+    this.calculateExtraCharge();
+    
     if (this.sale.paidAmount >= this.sale.netAmount) {
       this.sale.changeAmount = this.sale.paidAmount - this.sale.netAmount;
       this.sale.dueAmount = 0;
@@ -150,7 +176,7 @@ export class SalesFormComponent implements OnInit {
     
     // Preparing the payment object for the API
     this.sale.payments = [{
-      paymentMethodId: this.paymentMethods[0]?.paymentMethodId || 1, // Default to Cash
+      paymentMethodId: this.sale.selectedPaymentMethodId || this.paymentMethods[0]?.paymentMethodId || 1,
       amount: this.sale.paidAmount,
       paymentDate: this.sale.salesDate
     }];
@@ -213,6 +239,12 @@ export class SalesFormComponent implements OnInit {
           <span>Net Total:</span>
           <span>৳${this.sale.netAmount.toFixed(2)}</span>
         </div>
+        ${this.sale.extraChargeAmount > 0 ? `
+        <div style="display: flex; justify-content: space-between; color: #ef4444;">
+          <span>Extra Charge:</span>
+          <span>৳${this.sale.extraChargeAmount.toFixed(2)}</span>
+        </div>
+        ` : ''}
         <div style="display: flex; justify-content: space-between;">
           <span>Paid:</span>
           <span>৳${this.sale.paidAmount.toFixed(2)}</span>
@@ -253,8 +285,14 @@ export class SalesFormComponent implements OnInit {
       paidAmount: 0,
       dueAmount: 0,
       changeAmount: 0,
+      isChangeConvertedToCredit: false,
+      isChangeTakenAsIncome: false,
+      paymentStatus: 'Paid',
+      remarks: '',
       salesDetails: [],
-      payments: []
+      payments: [],
+      selectedPaymentMethodId: this.paymentMethods.length > 0 ? this.paymentMethods[0].paymentMethodId : null,
+      extraChargeAmount: 0
     };
     this.searchTerm = '';
     this.isLoading = false;

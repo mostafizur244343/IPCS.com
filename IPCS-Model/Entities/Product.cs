@@ -15,6 +15,7 @@ namespace IPCS_Model.Entities
         public string? ProductCode { get; set; } // Auto Generated
         public string? SKU { get; set; }//Stock Keeping Unit
         public string? Strength { get; set; } // Example: 500mg
+        public string? PicturePath { get; set; } // Product image
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal MRP { get; set; } // Maximum Retail Price

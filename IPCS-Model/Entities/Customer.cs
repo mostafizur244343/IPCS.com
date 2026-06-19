@@ -17,10 +17,10 @@ namespace IPCS_Model.Entities
         public string CustomerName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Must Input Mobile Number")]
-        [StringLength(15)]
-        [RegularExpression(@"^(?:\+88|88)?(01[3-9]\d{8})$", ErrorMessage = "Enter Valid BD Mobile Number")]
-
+        [StringLength(50)]
         public string Mobile { get; set; } = string.Empty;
+
+        public string? PicturePath { get; set; } // Customer profile picture
 
         [StringLength(200)]
         public string? Address { get; set; }
