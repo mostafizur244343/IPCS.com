@@ -196,7 +196,7 @@ namespace IPCS_Service.Implementation
                         {
                             PermissionKey = permissionKey,
                             DisplayName = field.Name,
-                            ModuleId = module.Id
+                            Module = module
                         });
                         existingPermissions.Add(permissionKey);
                     }
