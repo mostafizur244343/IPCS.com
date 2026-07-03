@@ -46,7 +46,15 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 //This is JWT Registration Code
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var key = Encoding.ASCII.GetBytes(jwtSettings["SecurityKey"]!);
+
+// যদি SecurityKey এর মান খালি বা ডামি থাকে, তবে একটি ডিফল্ট স্ট্রং কি ব্যবহার করবে
+var secretKey = jwtSettings["SecurityKey"];
+if (string.IsNullOrEmpty(secretKey) || secretKey == "YOUR_SECRET_KEY_MIN_32_CHARS_LONG")
+{
+    secretKey = "ThisIsASecretFallbackKeyForIPCSAPI2026SecureTokenGeneration!!";
+}
+
+var key = Encoding.ASCII.GetBytes(secretKey);
 
 
 builder.Services.AddAuthentication(options =>
