@@ -13,14 +13,17 @@ import { AuthService } from '../../../core/services/auth';
   selector: 'app-login',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './login.html'
+  templateUrl: './login.html',
 })
 export class LoginComponent {
   loginData = { emailOrMobile: '', password: '' };
   isLoading = false;
   errorMsg = '';
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(
+    private auth: AuthService,
+    private router: Router,
+  ) {}
 
   /**
    * Submit the login form to the AuthService
@@ -32,9 +35,16 @@ export class LoginComponent {
     this.auth.login(this.loginData).subscribe({
       next: (res) => {
         this.isLoading = false;
+        const token = res.token || res.Token || res.securityKey || res.SecurityKey;
+        if (token) {
+          localStorage.setItem('token', token);
+        }
         const user = res.user || res.User;
+        if (user) {
+          localStorage.setItem('user_data', JSON.stringify(user));
+        }
         const role = (user?.role || user?.Role || 'Staff').toLowerCase();
-        
+
         // Redirect to Admin Portal if role is any kind of Admin
         if (role.includes('admin') || role.includes('superadmin') || role.includes('manager')) {
           this.router.navigate(['/dashboard/admin-portal']);
@@ -46,7 +56,7 @@ export class LoginComponent {
         this.isLoading = false;
         // Displaying error message from API if available
         this.errorMsg = err.error?.message || 'Invalid Username or Password';
-      }
+      },
     });
   }
 }
