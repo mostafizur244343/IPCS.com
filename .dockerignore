@@ -1,0 +1,9 @@
+**/.git
+**/.vs
+**/bin
+**/obj
+**/node_modules
+IPCS-AngularFrontend/dist
+build_errors*.txt
+*.sln.xml
+.vscode/
