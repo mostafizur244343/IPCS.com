@@ -21,7 +21,7 @@ namespace IPCS_Service.Implementation
             _productService = productService;
         }
 
-        private async Task<string> GenerateCodeAsync(string prefix, DbSet<TransferMaster> dbSetMaster = null, DbSet<TransferRequisition> dbSetReq = null)
+        private async Task<string> GenerateCodeAsync(string prefix, DbSet<TransferMaster>? dbSetMaster = null, DbSet<TransferRequisition>? dbSetReq = null)
         {
             int nextId = 1;
             if (dbSetMaster != null)

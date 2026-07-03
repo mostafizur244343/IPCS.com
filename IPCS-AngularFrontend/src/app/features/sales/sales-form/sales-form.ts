@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api';
+import Swal from 'sweetalert2';
 
 /**
  * SalesFormComponent
@@ -19,7 +20,7 @@ export class SalesFormComponent implements OnInit {
   // Main Sales Master Object
   sale: any = {
     salesDate: new Date().toISOString().split('T')[0],
-    branchId: 1, // Default branch
+    branchId: null, // Selected branch
     customerId: null,
     totalAmount: 0,
     discountAmount: 0,
@@ -39,7 +40,7 @@ export class SalesFormComponent implements OnInit {
 
   // UI State Variables
   customers: any[] = [];
-  products: any[] = [];
+  branches: any[] = []; // New Branch Lookup
   paymentMethods: any[] = [];
   searchTerm: string = '';
   searchResults: any[] = [];
@@ -52,16 +53,36 @@ export class SalesFormComponent implements OnInit {
   }
 
   /**
-   * Loads lookup data for Customers and Payment Methods
+   * Loads lookup data for Customers, Branches and Payment Methods
    */
   loadLookups() {
     this.api.get<any[]>('Customer/active').subscribe(data => this.customers = data);
+    
+    this.api.get<any[]>('Branch').subscribe(data => {
+      this.branches = data;
+      if (this.branches.length > 0) {
+        this.sale.branchId = this.branches[0].branchId;
+      }
+    });
+
     this.api.get<any[]>('PaymentMethod').subscribe(data => {
       this.paymentMethods = data;
       if (this.paymentMethods.length > 0) {
         this.sale.selectedPaymentMethodId = this.paymentMethods[0].paymentMethodId;
       }
     });
+  }
+
+  /**
+   * Called when branch is changed. Resets current items as stock is branch-specific.
+   */
+  onBranchChange() {
+    if (this.sale.salesDetails.length > 0) {
+      if (confirm('Changing branch will reset your current items. Continue?')) {
+        this.sale.salesDetails = [];
+        this.calculateTotals();
+      }
+    }
   }
 
   /**
@@ -82,15 +103,22 @@ export class SalesFormComponent implements OnInit {
   }
 
   /**
-   * Searches for products by Name or SKU
+   * Searches for products by Name or SKU filtering by selected branch stock
    */
   searchProduct() {
     if (this.searchTerm.length < 2) {
       this.searchResults = [];
       return;
     }
-    // Fetching products from API based on search term
-    this.api.get<any[]>(`Product?search=${this.searchTerm}`).subscribe(data => {
+    
+    if (!this.sale.branchId) {
+      alert('Please select a branch first');
+      this.searchTerm = '';
+      return;
+    }
+
+    // Fetching products from API based on search term and branchId
+    this.api.get<any[]>(`Product?search=${this.searchTerm}&branchId=${this.sale.branchId}`).subscribe(data => {
       this.searchResults = data;
     });
   }
@@ -104,21 +132,38 @@ export class SalesFormComponent implements OnInit {
       existing.quantity += 1;
       this.calculateLineTotal(existing);
     } else {
-      this.sale.salesDetails.push({
-        productId: product.productId,
-        productName: product.productName,
-        sku: product.sku,
+      const newItem = {
+        productId: product.productId || product.ProductId,
+        productName: product.productName || product.ProductName,
+        sku: product.sku || product.SKU,
         quantity: 1,
-        uomId: product.uomId,
-        uomName: product.uomName,
-        unitPrice: product.salesPrice,
+        uomId: product.uomId || product.UOMId || product.baseUOMId || product.BaseUOMId || 1,
+        uomName: product.uomName || product.UOMName || product.baseUOMName || product.BaseUOMName || 'Unit',
+        unitPrice: product.salesPrice || product.SalesPrice,
         discountPerUnit: 0,
-        lineTotal: product.salesPrice
-      });
+        lineTotal: product.salesPrice || product.SalesPrice,
+        lotId: null,
+        availableLots: [] // To store lots for this specific product in the selected branch
+      };
+      this.sale.salesDetails.push(newItem);
+      this.loadLots(newItem);
     }
     this.searchTerm = '';
     this.searchResults = [];
     this.calculateTotals();
+  }
+
+  /**
+   * Fetches lots for a specific item based on selected branch
+   */
+  loadLots(item: any) {
+    const productId = item.productId || item.ProductId;
+    this.api.get<any[]>(`BranchLotStock/product/${productId}/branch/${this.sale.branchId}`).subscribe(data => {
+      item.availableLots = data;
+      if (data.length > 0) {
+        item.lotId = data[0].lotId || data[0].LotId; // Default to first available lot
+      }
+    });
   }
 
   /**
@@ -172,6 +217,13 @@ export class SalesFormComponent implements OnInit {
       return;
     }
 
+    // Ensure all items have a lot selected
+    const missingLot = this.sale.salesDetails.find((d: any) => !d.lotId);
+    if (missingLot) {
+      alert(`Please select a lot for ${missingLot.productName}`);
+      return;
+    }
+
     this.isLoading = true;
     
     // Preparing the payment object for the API
@@ -181,14 +233,41 @@ export class SalesFormComponent implements OnInit {
       paymentDate: this.sale.salesDate
     }];
 
+    console.log('Submitting Sale:', this.sale);
     this.api.post('Sales', this.sale).subscribe({
       next: (res: any) => {
-        alert(res.message);
+        Swal.fire({
+          icon: 'success',
+          title: 'Sale Completed',
+          text: res.message || 'Invoice generated successfully!',
+          timer: 2000,
+          showConfirmButton: false
+        });
         this.printReceipt(res); // Print thermal receipt
         this.resetForm();
       },
       error: (err) => {
-        alert(err.error?.message || 'Error processing sale');
+        console.error('Full Error Trace:', err);
+        let errorMsg = 'Error processing sale';
+        
+        if (err.error) {
+          if (typeof err.error === 'string') {
+            errorMsg = err.error;
+          } else if (err.error.errors) {
+            errorMsg = Object.keys(err.error.errors)
+              .map(key => `${key}: ${err.error.errors[key].join(', ')}`)
+              .join('\n');
+          } else {
+            errorMsg = err.error.message || err.error.Message || 'Insufficient stock or data inconsistency';
+          }
+        }
+        
+        Swal.fire({
+          icon: 'error',
+          title: 'Transaction failed',
+          text: errorMsg,
+          footer: 'Please check stock availability and customer selection.'
+        });
         this.isLoading = false;
       }
     });
@@ -277,7 +356,7 @@ export class SalesFormComponent implements OnInit {
   resetForm() {
     this.sale = {
       salesDate: new Date().toISOString().split('T')[0],
-      branchId: 1,
+      branchId: this.branches.length > 0 ? this.branches[0].branchId : null,
       customerId: null,
       totalAmount: 0,
       discountAmount: 0,

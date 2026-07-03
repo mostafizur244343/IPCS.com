@@ -30,24 +30,33 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
   // Handle the response and catch errors
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
+      let errorMessage = 'An unexpected error occurred.';
+      
       if (error.status === 401) {
         // Token expired or unauthorized -> logout and redirect
         localStorage.removeItem('token');
+        localStorage.removeItem('user_data');
+        
         const now = Date.now();
         if (now - lastSessionExpiredTime > 5000) {
           lastSessionExpiredTime = now;
-          notification.error('Session expired. Please login again.');
+          notification.error('Your session has expired. Please login again.');
         }
         router.navigate(['/login']);
+        errorMessage = 'Session expired';
       } else if (error.status === 403) {
-        notification.error('You do not have permission to perform this action.');
+        errorMessage = 'You do not have permission to perform this action.';
+        notification.error(errorMessage);
       } else if (error.status === 0) {
-        notification.error('Cannot connect to the server. Please check your connection.');
+        errorMessage = 'Cannot connect to the server. Please check your connection.';
+        notification.error(errorMessage);
       } else {
-        // Show the error message from the API or a generic one
-        const msg = error.error?.message || 'An unexpected error occurred.';
-        notification.error(msg);
+        // Server-side errors or other
+        errorMessage = error.error?.message || error.error?.Message || error.message || 'An unexpected error occurred.';
+        notification.error(errorMessage);
       }
+      
+      // Return the original HttpErrorResponse so components can handle it specifically
       return throwError(() => error);
     })
   );

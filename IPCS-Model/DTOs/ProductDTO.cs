@@ -16,7 +16,8 @@ namespace IPCS_Model.DTOs
 
         //Unit Fields
         public int BaseUOMId { get; set; }
-        public int SelectedPurchaseUnitId { get; set; } // Which unit user entry in stock?
+        public string? BaseUOMName { get; set; }
+        public int SelectedPurchaseUnitId { get; set; }
 
 
         // For Opening Stock
@@ -33,6 +34,7 @@ namespace IPCS_Model.DTOs
         public string? BrandName { get; set; }
         
         public int? UOMId { get; set; }
+        public string? UOMName { get; set; }
         public int? GenericId { get; set; }
         public string? GenericName { get; set; }
         

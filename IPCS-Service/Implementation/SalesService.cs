@@ -91,7 +91,10 @@ namespace IPCS_Service.Implementation
                 foreach (var detail in salesMaster.SalesDetails)
                 {
                     var product = await _context.Products.FindAsync(detail.ProductId);
-                    if (product == null) continue;
+                    if (product == null)
+                    {
+                        throw new Exception($"Product with ID {detail.ProductId} not found.");
+                    }
 
                     // Skip stock logic for Services
                     if (!product.IsService)
@@ -100,9 +103,14 @@ namespace IPCS_Service.Implementation
                         var branchStock = await _context.BranchLotStocks
                             .FirstOrDefaultAsync(s => s.BranchId == salesMaster.BranchId && s.ProductId == detail.ProductId && s.LotId == detail.LotId);
 
-                        if (branchStock == null || branchStock.CurrentStock < detail.Quantity)
+                        if (branchStock == null)
                         {
-                            throw new Exception($"Insufficient stock for {product.ProductName}. Available: {branchStock?.CurrentStock ?? 0}");
+                            throw new Exception($"No stock information found for {product.ProductName} in this branch/lot.");
+                        }
+
+                        if (branchStock.CurrentStock < detail.Quantity)
+                        {
+                            throw new Exception($"Insufficient stock for {product.ProductName}. Available: {branchStock.CurrentStock}");
                         }
 
                         // Deduct Stock
@@ -135,8 +143,25 @@ namespace IPCS_Service.Implementation
                         await _context.StockLedgers.AddAsync(ledger);
                     }
 
-                    // Get Cost Price from Lot for Profit Calculation (Services usually have 0 cost)
+                    // Validate UOMId
+                    if (detail.UOMId <= 0)
+                    {
+                         // Use Product's BaseUOM as fallback if not provided
+                         detail.UOMId = product.UOMId; 
+                    }
+                    
+                    var uom = await _context.UOMs.FindAsync(detail.UOMId);
+                    if (uom == null)
+                    {
+                         throw new Exception($"Unit of Measure (UOM) not found for {product.ProductName}. Please check product setup.");
+                    }
+
+                    // Get Cost Price from Lot for Profit Calculation
                     var lot = await _context.LotInfos.AsNoTracking().FirstOrDefaultAsync(l => l.LotId == detail.LotId);
+                    if (lot == null && !product.IsService)
+                    {
+                         throw new Exception($"Lot information not found for {product.ProductName}. Please select a valid lot.");
+                    }
                     detail.CostPriceAtSale = lot?.PurchasePrice ?? 0;
                     
                     // Simple Profit: Revenue - (Cost * Qty)
@@ -210,7 +235,7 @@ namespace IPCS_Service.Implementation
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                throw new Exception("Sales Error: " + ex.Message);
+                throw new Exception("Sales Error Trace: " + ex.ToString());
             }
         }
 

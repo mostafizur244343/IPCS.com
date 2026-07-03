@@ -24,6 +24,10 @@ public class BranchLotStockController : ControllerBase
     [HttpGet("low-stock/{branchId}")]
     public async Task<IActionResult> GetLowStock(int branchId) => Ok(await _stockService.GetLowStockAlertAsync(branchId));
 
+    [HttpGet("product/{productId}/branch/{branchId}")]
+    public async Task<IActionResult> GetLotsByProductAndBranch(int productId, int branchId) 
+        => Ok(await _stockService.GetActiveLotsByProductAndBranchAsync(productId, branchId));
+
     [HttpPost("adjust")]
     public async Task<IActionResult> AdjustStock([FromBody] BranchLotStockDTO model)
     {

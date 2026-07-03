@@ -244,17 +244,44 @@ namespace IPCS_Service.Implementation
             }
         }
 
-        public async Task<IEnumerable<Product>> GetAllActiveAsync()
+        public async Task<IEnumerable<Product>> GetAllActiveAsync(string? search = null, int? branchId = null)
         {
             try
             {
-                return await _context.Products.AsNoTracking()
+                var query = _context.Products.AsNoTracking();
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    search = search.ToLower().Trim();
+                    query = query.Where(p => p.ProductName.ToLower().Contains(search) || (p.SKU != null && p.SKU.ToLower().Contains(search)));
+                }
+
+                if (branchId.HasValue)
+                {
+                    // Only show products that have at least one stock entry in this branch, or are Services
+                    query = query.Where(p => _context.BranchLotStocks.Any(s => s.BranchId == branchId.Value && s.ProductId == p.ProductId && s.CurrentStock > 0) || p.IsService);
+                }
+
+                var products = await query
                     .Include(p => p.Category)
                     .Include(p => p.Brand)
                     .Include(p => p.UOM)
                     .Include(p => p.BaseUOM)
                     .Include(p => p.Generic)
                     .ToListAsync();
+
+                // If branchId is provided, override CurrentStock with branch-specific stock from BranchLotStocks
+                if (branchId.HasValue)
+                {
+                    foreach (var product in products)
+                    {
+                        product.CurrentStock = await _context.BranchLotStocks
+                            .Where(s => s.BranchId == branchId.Value && s.ProductId == product.ProductId)
+                            .SumAsync(s => (decimal?)s.CurrentStock) ?? 0;
+                    }
+                }
+
+                return products;
             }
             catch (Exception ex)
             {
@@ -346,8 +373,15 @@ namespace IPCS_Service.Implementation
 
                 if (!string.IsNullOrWhiteSpace(product.SKU))
                 {
-                    var skuExists = await _context.Products.AnyAsync(p => p.SKU == product.SKU && p.ProductId != product.ProductId && !p.IsDeleted);
-                    if (skuExists) throw new Exception("This SKU is already assigned to another product.");
+                    var duplicateProduct = await _context.Products.AsNoTracking()
+                        .FirstOrDefaultAsync(p => 
+                            p.ProductId != product.ProductId && 
+                            !p.IsDeleted && 
+                            p.SKU != null && 
+                            p.SKU.Trim().ToLower() == product.SKU.Trim().ToLower());
+
+                    if (duplicateProduct != null) 
+                        throw new Exception($"This SKU is already assigned to another product: '{duplicateProduct.ProductName}'.");
                 }
 
                 if (!string.IsNullOrWhiteSpace(newGenericName))
@@ -399,4 +433,4 @@ namespace IPCS_Service.Implementation
             }
         }
     }
-}
+}

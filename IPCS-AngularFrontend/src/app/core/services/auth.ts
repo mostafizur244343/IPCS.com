@@ -46,9 +46,28 @@ export class AuthService {
   }
 
   /**
-   * Checks if the user is currently authenticated
+   * Checks if the user is currently authenticated and the token is not expired
    */
   isAuthenticated(): boolean {
-    return !!localStorage.getItem('token');
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+
+    try {
+      // Decode JWT payload (middle part) to check expiration
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const expiry = payload.exp;
+      const now = Math.floor(Date.now() / 1000);
+      
+      if (expiry && now >= expiry) {
+        // Token has expired
+        this.logout();
+        return false;
+      }
+      return true;
+    } catch (e) {
+      // Invalid token format
+      this.logout();
+      return false;
+    }
   }
 }

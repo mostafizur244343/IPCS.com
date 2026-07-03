@@ -13,8 +13,7 @@ namespace IPCS_Model.DTOs
         [Required(ErrorMessage = "Branch is Required")]
         public int BranchId { get; set; }
 
-        [Required(ErrorMessage = "Customer is Required")]
-        public int CustomerId { get; set; }
+        public int? CustomerId { get; set; }
 
         public decimal TotalAmount { get; set; }
         public decimal DiscountAmount { get; set; }
@@ -33,17 +32,27 @@ namespace IPCS_Model.DTOs
 
     public class SalesDetailsDTO
     {
-        [Required]
         public int ProductId { get; set; }
-        [Required]
+        public string? ProductName { get; set; }
         public int LotId { get; set; }
-        [Required]
         public decimal Quantity { get; set; }
-        [Required]
-        public int UOMId { get; set; }
-        [Required]
+        public int? UOMId { get; set; } 
+        public string? UomName { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal DiscountPerUnit { get; set; }
         public decimal LineTotal { get; set; }
+    }
+
+    public class SalesListDTO
+    {
+        public int SalesId { get; set; }
+        public string InvoiceNo { get; set; } = string.Empty;
+        public DateTime SalesDate { get; set; }
+        public string CustomerName { get; set; } = string.Empty;
+        public decimal TotalAmount { get; set; }
+        public decimal NetAmount { get; set; }
+        public decimal PaidAmount { get; set; }
+        public decimal DueAmount { get; set; }
+        public string PaymentStatus { get; set; } = "Paid";
     }
 }

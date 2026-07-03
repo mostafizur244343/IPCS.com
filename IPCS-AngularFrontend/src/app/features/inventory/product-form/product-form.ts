@@ -39,6 +39,7 @@ export class ProductFormComponent implements OnInit {
     isService: false,
     isActive: true
   };
+  isSalesPriceSameAsMRP = false;
 
   // Lists for dropdown options (Lookup Data)
   categories: any[] = [];
@@ -139,6 +140,21 @@ export class ProductFormComponent implements OnInit {
 
   onImageRemoved() {
     this.product.picturePath = '';
+  }
+
+  /**
+   * Syncs Sales Price with MRP if checkbox is checked
+   */
+  onPriceSync() {
+    if (this.isSalesPriceSameAsMRP) {
+      this.product.salesPrice = this.product.mrp;
+    }
+  }
+
+  onMRPInput() {
+    if (this.isSalesPriceSameAsMRP) {
+      this.product.salesPrice = this.product.mrp;
+    }
   }
 
   /**

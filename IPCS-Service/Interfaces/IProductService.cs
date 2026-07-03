@@ -4,7 +4,7 @@ namespace IPCS_Service.Interfaces
 {
     public interface IProductService
     {
-        Task<IEnumerable<Product>> GetAllActiveAsync();
+        Task<IEnumerable<Product>> GetAllActiveAsync(string? search = null, int? branchId = null);
         Task<IEnumerable<Product>> GetDeletedListAsync();
         Task<Product?> GetByIdAsync(int id);
         Task<bool> CreateAsync(Product product, decimal openingQty, decimal openingCost, int selectedUnitId, string? newGenericName = null, string? newCategoryName = null, string? newBrandName = null, string? newLocationName = null, string? newUomName = null, string? userName = null);

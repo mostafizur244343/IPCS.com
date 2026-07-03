@@ -4,6 +4,7 @@ namespace IPCS_Model.DTOs
 {
     public class GenericInfoDTO
     {
+        public int GenericId { get; set; }
         [Required(ErrorMessage = "Must input Generic Name")]
         public string GenericName { get; set; } = string.Empty;
         public string? Indication { get; set; }

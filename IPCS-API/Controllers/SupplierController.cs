@@ -104,7 +104,7 @@ namespace IPCS_API.Controllers
             return Ok(new { Message = "Restored successfully" });
         }
 
-        private static SupplierDTO MapToDTO(Supplier s) => new SupplierDTO
+        private static SupplierResponseDTO MapToDTO(Supplier s) => new SupplierResponseDTO
         {
             SupplierId = s.SupplierId,
             SupplierCode = s.SupplierCode,

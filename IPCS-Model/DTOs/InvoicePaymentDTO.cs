@@ -15,7 +15,7 @@ namespace IPCS_Model.DTOs
         public string? PaymentMethodName { get; set; }
 
         [Required]
-        [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be greater than 0")]
+        [Range(0, double.MaxValue, ErrorMessage = "Amount must be greater than or equal to 0")]
         public decimal Amount { get; set; }
 
         public DateTime PaymentDate { get; set; } = DateTime.Now;

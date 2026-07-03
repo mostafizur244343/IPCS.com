@@ -6,6 +6,13 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
       </button>
       <h1>New POS Sale</h1>
+      
+      <!-- Branch Selection Dropdown -->
+      <div class="branch-selector">
+        <select [(ngModel)]="sale.branchId" (change)="onBranchChange()">
+          <option *ngFor="let b of branches" [value]="b.branchId">{{ b.branchName }}</option>
+        </select>
+      </div>
     </div>
     <div class="right">
       <span class="date-badge">{{ sale.salesDate | date:'fullDate' }}</span>
@@ -34,7 +41,7 @@
             >
               <div class="info">
                 <span class="name">{{ p.productName }}</span>
-                <span class="meta">{{ p.sku }} | Stock: {{ p.currentStock }}</span>
+                <span class="meta">{{ p.sku }} | Branch Stock: {{ p.currentStock }}</span>
               </div>
               <span class="price">৳{{ p.salesPrice }}</span>
             </div>
@@ -48,9 +55,10 @@
           <thead>
             <tr>
               <th>Product</th>
-              <th width="120">Qty</th>
-              <th width="120">Price</th>
-              <th width="120">Disc/Unit</th>
+              <th width="150">Lot / Batch</th>
+              <th width="100">Qty</th>
+              <th width="100">Price</th>
+              <th width="100">Disc/Unit</th>
               <th width="120">Total</th>
               <th width="50"></th>
             </tr>
@@ -60,6 +68,14 @@
               <td>
                 <div class="p-name">{{ item.productName }}</div>
                 <small>{{ item.sku }}</small>
+              </td>
+              <td>
+                <select [(ngModel)]="item.lotId" class="table-input">
+                  <option *ngFor="let lot of item.availableLots" [value]="lot.lotId">
+                    {{ lot.lotNumber }} (Exp: {{ lot.expiryDate | date:'MM/yy' }} | Stock: {{ lot.currentStock }})
+                  </option>
+                  <option *ngIf="item.availableLots.length === 0" [ngValue]="null">No Lot Available</option>
+                </select>
               </td>
               <td>
                 <input type="number" [(ngModel)]="item.quantity" (change)="calculateLineTotal(item)" class="table-input">
@@ -77,7 +93,7 @@
             </tr>
             <!-- Empty state for the table -->
             <tr *ngIf="sale.salesDetails.length === 0">
-              <td colspan="6" class="empty-items-msg">
+              <td colspan="7" class="empty-items-msg">
                 No products added yet. Use the search bar above to add items.
               </td>
             </tr>
@@ -93,10 +109,10 @@
         <h3>Customer Details</h3>
         <div class="input-group">
           <label>Select Customer</label>
-          <select [(ngModel)]="sale.customerId">
-            <option [ngValue]="null">Walk-in Customer</option>
-            <option *ngFor="let c of customers" [value]="c.customerId">{{ c.customerName }} - {{ c.mobile }}</option>
-          </select>
+            <select class="form-control" [(ngModel)]="sale.customerId" name="customerId">
+              <option [ngValue]="null">--- Select Customer ---</option>
+              <option *ngFor="let c of customers" [ngValue]="c.customerId">{{c.customerName}}</option>
+            </select>
         </div>
       </div>
 
@@ -204,6 +220,23 @@
     font-size: 14px;
     color: var(--text-muted);
     border: 1px solid #e2e8f0;
+  }
+
+  .branch-selector select {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--primary);
+    background: white;
+    color: var(--primary);
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .branch-selector select:hover {
+    background: var(--primary);
+    color: white;
   }
 
   .pos-content {

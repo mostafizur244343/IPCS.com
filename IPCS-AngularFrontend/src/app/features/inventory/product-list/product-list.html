@@ -70,7 +70,7 @@
           </td>
           <td>{{ product.productName }}</td>
           <td>{{ product.sku || product.sKU }}</td>
-          <td>{{ product.category?.categoryName }}</td>
+          <td>{{ product.categoryName }}</td>
           <td>৳{{ product.salesPrice | number:'1.2-2' }}</td>
           <td>
             <span class="stock-badge" [class.low]="product.currentStock <= product.reorderLevel">
@@ -136,13 +136,13 @@
           <div class="detail-value">{{ selectedProductForDetails.sku || selectedProductForDetails.sKU }}</div>
 
           <div class="detail-label">Category</div>
-          <div class="detail-value">{{ selectedProductForDetails.category?.categoryName }}</div>
+          <div class="detail-value">{{ selectedProductForDetails.categoryName }}</div>
 
           <div class="detail-label">Generic Name</div>
-          <div class="detail-value">{{ selectedProductForDetails.generic?.genericName || '-' }}</div>
+          <div class="detail-value">{{ selectedProductForDetails.genericName || '-' }}</div>
 
           <div class="detail-label">Manufacturer</div>
-          <div class="detail-value">{{ selectedProductForDetails.brand?.brandName || '-' }}</div>
+          <div class="detail-value">{{ selectedProductForDetails.brandName || '-' }}</div>
 
           <div class="detail-label">Purchase Price</div>
           <div class="detail-value">৳{{ selectedProductForDetails.costPrice | number:'1.2-2' }}</div>
@@ -158,10 +158,10 @@
           </div>
 
           <div class="detail-label">UOM (Sales)</div>
-          <div class="detail-value">{{ selectedProductForDetails.uom?.uomName || '-' }}</div>
+          <div class="detail-value">{{ selectedProductForDetails.uomName || '-' }}</div>
 
           <div class="detail-label">UOM (Purchase)</div>
-          <div class="detail-value">{{ selectedProductForDetails.baseUOM?.uomName || selectedProductForDetails.baseUom?.uomName || '-' }}</div>
+          <div class="detail-value">{{ selectedProductForDetails.baseUOMName || '-' }}</div>
 
           <div class="detail-label">Status</div>
           <div class="detail-value">

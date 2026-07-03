@@ -173,7 +173,10 @@ namespace IPCS_Service.Implementation
             {
                 // Validate if Product exists
                 var product = await _context.Products.FindAsync(detail.ProductId);
-                if (product == null) continue;
+                if (product == null)
+                {
+                    throw new Exception($"Product with ID {detail.ProductId} not found. Inventory update failed for purchase: {purchaseMaster.PurchaseCode}");
+                }
 
                 // 1. Handle Lot/Batch
                 var lot = await _context.LotInfos.AsNoTracking().FirstOrDefaultAsync(l => l.ProductId == detail.ProductId && l.LotNumber == detail.BatchNo);

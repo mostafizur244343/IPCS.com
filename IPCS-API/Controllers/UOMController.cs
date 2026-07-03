@@ -26,7 +26,7 @@ namespace IPCS_API.Controllers
         public async Task<IActionResult> GetAll()
         {
             var uoms = await _uomService.GetAllAsync();
-            var dtos = uoms.Select(u => new UOMDTO
+            var dtos = uoms.Select(u => new UOMResponseDTO
             {
                 UOMId = u.UOMId,
                 UOMName = u.UOMName,
@@ -52,8 +52,14 @@ namespace IPCS_API.Controllers
             };
 
             await _uomService.CreateAsync(uom);
-            model.UOMId = uom.UOMId;
-            return Ok(model);
+            var response = new UOMResponseDTO
+            {
+                UOMId = uom.UOMId,
+                UOMName = uom.UOMName,
+                Description = uom.Description,
+                IsActive = uom.IsActive
+            };
+            return Ok(response);
         }
 
         [PermissionAuthorize(Permissions.UOM.Edit)]

@@ -40,10 +40,25 @@ export class PurchaseFormComponent implements OnInit {
   suppliers: any[] = [];
   products: any[] = [];
   units: any[] = [];
+  categories: any[] = [];
+  brands: any[] = [];
+  generics: any[] = [];
   paymentMethods: any[] = [];
   searchTerm: string = '';
   searchResults: any[] = [];
   isLoading = false;
+
+  // Quick Product Modal State
+  showQuickProductModal = false;
+  isSavingQuickProduct = false;
+  quickProduct: any = this.resetQuickProduct();
+
+  // Quick Add Toggle States
+  showNewCategoryInput = false;
+  showNewBrandInput = false;
+  showNewGenericInput = false;
+  showNewUOMInput = false;
+  showNewLocationInput = false;
 
   constructor(private api: ApiService, private router: Router) {}
 
@@ -58,13 +73,16 @@ export class PurchaseFormComponent implements OnInit {
     this.api.get<any[]>('Supplier/active').subscribe(data => this.suppliers = data);
     this.api.get<any[]>('UOM').subscribe(data => this.units = data);
     this.api.get<any[]>('PaymentMethod').subscribe(data => this.paymentMethods = data);
+    this.api.get<any[]>('Category').subscribe(data => this.categories = data);
+    this.api.get<any[]>('Manufacturer').subscribe(data => this.brands = data);
+    this.api.get<any[]>('GenericInfo').subscribe(data => this.generics = data);
   }
 
   /**
    * Searches for products to add to the purchase
    */
   searchProduct() {
-    if (this.searchTerm.length < 2) {
+    if (this.searchTerm.length < 1) {
       this.searchResults = [];
       return;
     }
@@ -137,6 +155,77 @@ export class PurchaseFormComponent implements OnInit {
     this.calculateExtraCharge();
     this.purchase.dueAmount = this.purchase.netAmount - this.purchase.paidAmount;
     this.purchase.paymentStatus = this.purchase.dueAmount <= 0 ? 'Paid' : 'Due';
+  }
+
+  /**
+   * Quick Product Creation Logic
+   */
+  resetQuickProduct() {
+     return {
+       productName: '',
+       sku: '',
+       mrp: 0,
+       salesPrice: 0,
+       uomId: null,
+       baseUOMId: null,
+       categoryId: null,
+       brandId: null,
+       genericId: null,
+       newCategoryName: '',
+       newBrandName: '',
+       newGenericName: '',
+       newUOMName: '',
+       isActive: true
+     };
+  }
+
+  openQuickProductModal() {
+    this.quickProduct = this.resetQuickProduct();
+    this.showQuickProductModal = true;
+    this.showNewCategoryInput = false;
+    this.showNewBrandInput = false;
+    this.showNewGenericInput = false;
+    this.showNewUOMInput = false;
+    this.showNewLocationInput = false;
+  }
+
+  saveQuickProduct() {
+      if (!this.quickProduct.productName) {
+          alert('Product name is required');
+          return;
+      }
+      
+      this.isSavingQuickProduct = true;
+
+      // Handle UOM consistency if new UOM is added
+      if (this.showNewUOMInput && this.quickProduct.newUOMName) {
+          this.quickProduct.uomId = 0;
+          this.quickProduct.baseUOMId = 0;
+      } else if (this.quickProduct.uomId) {
+          this.quickProduct.baseUOMId = this.quickProduct.uomId;
+      }
+
+      this.api.post('Product', this.quickProduct).subscribe({
+          next: (res: any) => {
+              alert(res.message || 'Product created successfully');
+              this.showQuickProductModal = false;
+              this.isSavingQuickProduct = false;
+              
+              // Find the newly created product and add to purchase
+              this.api.get<any[]>(`Product?search=${this.quickProduct.productName}`).subscribe(data => {
+                  if (data && data.length > 0) {
+                      // Find exact match or first item
+                      const newProd = data.find(p => p.productName === this.quickProduct.productName) || data[0];
+                      this.addProduct(newProd);
+                  }
+                  this.loadLookups(); // Refresh lookups for future use
+              });
+          },
+          error: (err) => {
+              alert(err.error?.message || 'Failed to create product');
+              this.isSavingQuickProduct = false;
+          }
+      });
   }
 
   /**

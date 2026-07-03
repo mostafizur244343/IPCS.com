@@ -1,7 +1,5 @@
 namespace IPCS_Model.DTOs
 {
-namespace IPCS_Model.DTOs
-{
     public class StoreLocationDTO
     {
         public int LocationId { get; set; }
@@ -12,7 +10,7 @@ namespace IPCS_Model.DTOs
         public string? RoomNumber { get; set; }
         public int? Capacity { get; set; }
         public string? Notes { get; set; }
-        public int? BranchId { get; set; } 
+        public int? BranchId { get; set; }
         public bool IsActive { get; set; } = true;
 
         public string? LocationName

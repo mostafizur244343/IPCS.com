@@ -139,5 +139,23 @@ namespace IPCS_Service.Implementation
                 .Where(s => s.BranchId == branchId && s.ProductId == productId)
                 .SumAsync(s => s.CurrentStock);
         }
+
+        public async Task<IEnumerable<object>> GetActiveLotsByProductAndBranchAsync(int productId, int branchId)
+        {
+            return await _context.BranchLotStocks
+                .AsNoTracking()
+                .Where(s => s.BranchId == branchId && s.ProductId == productId && s.CurrentStock > 0)
+                .Include(s => s.Lot)
+                .Select(s => new
+                {
+                    s.LotId,
+                    s.Lot!.LotNumber,
+                    s.Lot.ExpiryDate,
+                    s.CurrentStock,
+                    s.Lot.PurchasePrice
+                })
+                .OrderBy(s => s.ExpiryDate) // Show soon-to-expire lots first
+                .ToListAsync();
+        }
     }
 }

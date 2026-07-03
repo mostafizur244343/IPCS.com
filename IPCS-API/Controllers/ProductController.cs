@@ -23,9 +23,9 @@ namespace IPCS_API.Controllers
 
         [PermissionAuthorize(Permissions.Product.View)]
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] string? search = null, [FromQuery] int? branchId = null)
         {
-            var products = await _productService.GetAllActiveAsync();
+            var products = await _productService.GetAllActiveAsync(search, branchId);
             var dtos = products.Select(MapToDTO);
             return Ok(dtos);
         }
@@ -65,10 +65,10 @@ namespace IPCS_API.Controllers
                 BaseUOMId = model.BaseUOMId,
                 ReorderLevel = model.ReorderLevel,
                 MinOrderQuantity = model.MinOrderQuantity,
-                CategoryId = model.CategoryId ?? 0,
-                BrandId = model.BrandId ?? 0,
-                UOMId = model.UOMId ?? 0,
-                GenericId = model.GenericId ?? 0,
+                CategoryId = model.CategoryId > 0 ? (int)model.CategoryId : 0,
+                BrandId = model.BrandId > 0 ? (int)model.BrandId : 0,
+                UOMId = model.UOMId > 0 ? (int)model.UOMId : 0,
+                GenericId = model.GenericId > 0 ? (int)model.GenericId : 0,
                 LocationId = model.LocationId,
                 IsService = model.IsService,
                 IsActive = model.IsActive,
@@ -76,19 +76,26 @@ namespace IPCS_API.Controllers
                 CreatedDate = DateTime.Now
             };
 
-            await _productService.CreateAsync(
-                product, 
-                model.OpeningQuantity, 
-                model.OpeningCostPrice, 
-                model.SelectedPurchaseUnitId,
-                model.NewGenericName,
-                model.NewCategoryName,
-                model.NewBrandName,
-                model.NewLocationName,
-                model.NewUOMName,
-                User.Identity?.Name
-            );
-            return Ok(new { Message = "Created successfully", ProductCode = product.ProductCode });
+            try
+            {
+                await _productService.CreateAsync(
+                    product, 
+                    model.OpeningQuantity, 
+                    model.OpeningCostPrice, 
+                    model.SelectedPurchaseUnitId,
+                    model.NewGenericName,
+                    model.NewCategoryName,
+                    model.NewBrandName,
+                    model.NewLocationName,
+                    model.NewUOMName,
+                    User.Identity?.Name
+                );
+                return Ok(new { Message = "Created successfully", ProductCode = product.ProductCode });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [PermissionAuthorize(Permissions.Product.Edit)]
@@ -109,24 +116,31 @@ namespace IPCS_API.Controllers
             product.BaseUOMId = model.BaseUOMId;
             product.ReorderLevel = model.ReorderLevel;
             product.MinOrderQuantity = model.MinOrderQuantity;
-            product.CategoryId = model.CategoryId ?? 0;
-            product.BrandId = model.BrandId ?? 0;
-            product.UOMId = model.UOMId ?? 0;
-            product.GenericId = model.GenericId ?? 0;
+            product.CategoryId = model.CategoryId > 0 ? (int)model.CategoryId : 0;
+            product.BrandId = model.BrandId > 0 ? (int)model.BrandId : 0;
+            product.UOMId = model.UOMId > 0 ? (int)model.UOMId : 0;
+            product.GenericId = model.GenericId > 0 ? (int)model.GenericId : 0;
             product.LocationId = model.LocationId;
             product.IsService = model.IsService;
             product.IsActive = model.IsActive;
 
-            await _productService.UpdateAsync(
-                product,
-                model.NewGenericName,
-                model.NewCategoryName,
-                model.NewBrandName,
-                model.NewLocationName,
-                model.NewUOMName,
-                User.Identity?.Name
-            );
-            return Ok(new { Message = "Updated successfully" });
+            try
+            {
+                await _productService.UpdateAsync(
+                    product,
+                    model.NewGenericName,
+                    model.NewCategoryName,
+                    model.NewBrandName,
+                    model.NewLocationName,
+                    model.NewUOMName,
+                    User.Identity?.Name
+                );
+                return Ok(new { Message = "Updated successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [PermissionAuthorize(Permissions.Product.Delete)]
@@ -165,6 +179,7 @@ namespace IPCS_API.Controllers
             BrandId = p.BrandId,
             BrandName = p.Brand?.BrandName,
             UOMId = p.UOMId,
+            UOMName = p.UOM?.UOMName,
             GenericId = p.GenericId,
             GenericName = p.Generic?.GenericName,
             LocationId = p.LocationId,

@@ -9,6 +9,7 @@ namespace IPCS_Model.DTOs
 {
     public class ManufacturerDTO
     {
+        public int BrandId { get; set; }
         [Required(ErrorMessage = "Please input a BrandName")]
         public string BrandName { get; set; } = string.Empty;
 

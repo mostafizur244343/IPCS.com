@@ -26,18 +26,100 @@ namespace IPCS_API.Controllers
 
         [PermissionAuthorize(Permissions.Sales.View)]
         [HttpGet]
-        public async Task<IActionResult> GetAll() => Ok(await _salesService.GetAllActiveAsync());
+        public async Task<IActionResult> GetAll()
+        {
+            try
+            {
+                var sales = await _salesService.GetAllActiveAsync();
+                var data = sales.Select(s => new SalesListDTO
+                {
+                    SalesId = s.SalesId,
+                    InvoiceNo = s.InvoiceNo,
+                    SalesDate = s.SalesDate,
+                    CustomerName = s.Customer?.CustomerName ?? "Walk-in Customer",
+                    TotalAmount = s.TotalAmount,
+                    NetAmount = s.NetAmount,
+                    PaidAmount = s.PaidAmount,
+                    DueAmount = s.DueAmount,
+                    PaymentStatus = s.PaymentStatus
+                }).ToList();
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = "Sales List Error: " + ex.Message, Trace = ex.StackTrace });
+            }
+        }
 
         [HttpGet("trash")]
-        public async Task<IActionResult> GetTrash() => Ok(await _salesService.GetDeletedListAsync());
+        public async Task<IActionResult> GetTrash()
+        {
+            var sales = await _salesService.GetDeletedListAsync();
+            return Ok(sales.Select(s => new SalesListDTO
+            {
+                SalesId = s.SalesId,
+                InvoiceNo = s.InvoiceNo,
+                SalesDate = s.SalesDate,
+                CustomerName = s.Customer?.CustomerName ?? "Walk-in Customer",
+                TotalAmount = s.TotalAmount,
+                NetAmount = s.NetAmount,
+                PaidAmount = s.PaidAmount,
+                DueAmount = s.DueAmount,
+                PaymentStatus = s.PaymentStatus
+            }).ToList());
+        }
 
         [PermissionAuthorize(Permissions.Sales.View)]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var sale = await _salesService.GetByIdAsync(id);
-            if (sale == null) return NotFound("Sale not found");
-            return Ok(sale);
+            var s = await _salesService.GetByIdAsync(id);
+            if (s == null) return NotFound("Sale not found");
+
+            var dto = new SalesMasterDTO
+            {
+                SalesId = s.SalesId,
+                InvoiceNo = s.InvoiceNo,
+                SalesDate = s.SalesDate,
+                BranchId = s.BranchId,
+                CustomerId = s.CustomerId,
+                TotalAmount = s.TotalAmount,
+                DiscountAmount = s.DiscountAmount,
+                NetAmount = s.NetAmount,
+                PaidAmount = s.PaidAmount,
+                DueAmount = s.DueAmount,
+                ChangeAmount = s.ChangeAmount,
+                IsChangeConvertedToCredit = s.IsChangeConvertedToCredit,
+                IsChangeTakenAsIncome = s.IsChangeTakenAsIncome,
+                PaymentStatus = s.PaymentStatus,
+                Remarks = s.Remarks,
+
+                SalesDetails = s.SalesDetails.Select(d => new SalesDetailsDTO
+                {
+                    ProductId = d.ProductId,
+                    ProductName = d.Product?.ProductName,
+                    LotId = d.LotId,
+                    Quantity = d.Quantity,
+                    UOMId = d.UOMId,
+                    UomName = d.UOM?.UOMName,
+                    UnitPrice = d.UnitPrice,
+                    DiscountPerUnit = d.DiscountPerUnit,
+                    LineTotal = d.LineTotal
+                }).ToList(),
+
+                Payments = s.Payments.Select(p => new InvoicePaymentDTO
+                {
+                    PaymentId = p.PaymentId,
+                    PaymentMethodId = p.PaymentMethodId,
+                    PaymentMethodName = p.PaymentMethod?.MethodName,
+                    Amount = p.Amount,
+                    PaymentDate = p.PaymentDate,
+                    TransactionNo = p.TransactionNo,
+                    Remarks = p.Remarks
+                }).ToList()
+            };
+
+            return Ok(dto);
         }
 
         [PermissionAuthorize(Permissions.Sales.Create)]
@@ -53,7 +135,7 @@ namespace IPCS_API.Controllers
                 {
                     SalesDate = dto.SalesDate,
                     BranchId = dto.BranchId,
-                    CustomerId = dto.CustomerId,
+                    CustomerId = dto.CustomerId ?? 1, // Defaulting to 1 (usually Walk-in) if nothing selected, but UI should provide it
                     TotalAmount = dto.TotalAmount,
                     DiscountAmount = dto.DiscountAmount,
                     NetAmount = dto.NetAmount,
@@ -71,7 +153,7 @@ namespace IPCS_API.Controllers
                         ProductId = d.ProductId,
                         LotId = d.LotId,
                         Quantity = d.Quantity,
-                        UOMId = d.UOMId,
+                        UOMId = d.UOMId ?? 0,
                         UnitPrice = d.UnitPrice,
                         DiscountPerUnit = d.DiscountPerUnit,
                         LineTotal = d.LineTotal
