@@ -120,15 +120,15 @@ builder.Services.AddSwaggerGen();
 // 1. Add CORS Policy
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        builder =>
+    options.AddPolicy("VercelPolicy",
+        policy =>
         {
-            builder.AllowAnyOrigin()
-                   .AllowAnyMethod()
-                   .AllowAnyHeader();
+            policy.WithOrigins("https://ipcs-com-lwmf.vercel.app") //  Give Real Vercel URL
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials(); //  if use coockies then required
         });
 });
-
 var app = builder.Build();
 
 // 2. Use Global Exception Middleware
@@ -145,7 +145,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // 3. Use CORS
-app.UseCors("AllowAll");
+app.UseCors("VercelPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -135,10 +135,23 @@ namespace IPCS_Service.Implementation
 
                 var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecurityKey"]!));
 
+                var expiryMinutesStr = _configuration["JwtSettings:ExpiryInMinutes"];
+                double expiryInMinutes = 240; // Default to 4 hours (240 minutes)
+                if (!string.IsNullOrEmpty(expiryMinutesStr) && double.TryParse(expiryMinutesStr, out double parsedExpiry) && parsedExpiry > 0)
+                {
+                    expiryInMinutes = parsedExpiry;
+                }
+                
+                // Ensure at least 4 hours (240 minutes)
+                if (expiryInMinutes < 240)
+                {
+                    expiryInMinutes = 240;
+                }
+
                 var token = new JwtSecurityToken(
                     issuer: _configuration["JwtSettings:ValidIssuer"],
                     audience: _configuration["JwtSettings:ValidAudience"],
-                    expires: DateTime.Now.AddMinutes(Convert.ToDouble(_configuration["JwtSettings:ExpiryInMinutes"])),
+                    expires: DateTime.UtcNow.AddMinutes(expiryInMinutes),
                     claims: authClaims,
                     signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
                 );
