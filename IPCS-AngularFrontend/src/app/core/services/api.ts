@@ -14,6 +14,10 @@ import { environment } from '../../../environments/environment';
 export class ApiService {
   private baseUrl = environment.apiUrl; 
 
+  public getFileServerUrl(): string {
+    return (environment as any).fileServerUrl || this.baseUrl.replace('/api', '');
+  }
+
   constructor(private http: HttpClient) {}
 
   /**

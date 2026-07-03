@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ImageCropperComponent } from '../image-cropper/image-cropper';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-image-upload',
@@ -284,7 +285,8 @@ export class ImageUploadComponent {
     if (this.imageUrl.startsWith('http') || this.imageUrl.startsWith('data:')) {
       return this.imageUrl;
     }
-    return `https://localhost:7054${this.imageUrl}`;
+    const fileServerUrl = (environment as any).fileServerUrl || environment.apiUrl.replace('/api', '');
+    return `${fileServerUrl}${this.imageUrl}`;
   }
 
   async dataUrlToFile(dataUrl: string): Promise<File> {

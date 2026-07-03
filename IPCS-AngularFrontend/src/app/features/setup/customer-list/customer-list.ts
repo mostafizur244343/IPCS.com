@@ -196,7 +196,7 @@ export class CustomerListComponent implements OnInit {
     if (path.startsWith('http') || path.startsWith('data:')) {
       return path;
     }
-    return `https://localhost:7054${path}`;
+    return `${this.api.getFileServerUrl()}${path}`;
   }
 }
 
