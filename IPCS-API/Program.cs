@@ -47,7 +47,6 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 
-// যদি SecurityKey এর মান খালি বা ডামি থাকে, তবে একটি ডিফল্ট স্ট্রং কি ব্যবহার করবে
 var secretKey = jwtSettings["SecurityKey"];
 if (string.IsNullOrEmpty(secretKey) || secretKey == "YOUR_SECRET_KEY_MIN_32_CHARS_LONG")
 {
