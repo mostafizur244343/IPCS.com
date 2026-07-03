@@ -120,7 +120,7 @@ builder.Services.AddSwaggerGen();
 // 1. Add CORS Policy
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
+    options.AddPolicy("VercelPolicy",
         policy =>
         {
             policy.WithOrigins("https://ipcs-com-lwmf.vercel.app") //  Give Real Vercel URL
@@ -145,7 +145,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // 3. Use CORS
-app.UseCors("AllowAll");
+app.UseCors("VercelPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();
