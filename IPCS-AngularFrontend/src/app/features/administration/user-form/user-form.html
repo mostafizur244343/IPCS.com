@@ -3,7 +3,20 @@
   <div class="page-header">
     <div class="title-section">
       <button class="back-btn" routerLink="/dashboard/administration/users">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
       </button>
       <h1>Register New User</h1>
     </div>
@@ -15,39 +28,84 @@
         <!-- Personnel Details -->
         <div class="input-group">
           <label>Full Name *</label>
-          <input type="text" [(ngModel)]="user.name" name="name" required placeholder="e.g. John Doe">
+          <input
+            type="text"
+            [(ngModel)]="user.fullName"
+            name="fullName"
+            required
+            placeholder="e.g. John Doe"
+          />
         </div>
         <div class="input-group">
           <label>Email Address *</label>
-          <input type="email" [(ngModel)]="user.email" name="email" required placeholder="john@example.com">
+          <input
+            type="email"
+            [(ngModel)]="user.email"
+            name="email"
+            required
+            placeholder="john@example.com"
+          />
         </div>
-        
+
         <div class="input-group">
-          <label>Username *</label>
-          <input type="text" [(ngModel)]="user.username" name="username" required placeholder="johndoe123">
+          <label>Mobile Number *</label>
+          <input
+            type="tel"
+            [(ngModel)]="user.mobileNumber"
+            name="mobileNumber"
+            required
+            placeholder="01XXXXXXXXX"
+          />
         </div>
+
         <div class="input-group">
           <label>Password *</label>
-          <input type="password" [(ngModel)]="user.password" name="password" required placeholder="••••••••">
+          <input
+            type="password"
+            [(ngModel)]="user.password"
+            name="password"
+            required
+            placeholder="••••••••"
+          />
+        </div>
+
+        <div class="input-group">
+          <label>Confirm Password *</label>
+          <input
+            type="password"
+            [(ngModel)]="user.confirmPassword"
+            name="confirmPassword"
+            required
+            placeholder="••••••••"
+          />
         </div>
 
         <!-- Role & Branch Selection -->
         <div class="input-group">
           <label>Security Role *</label>
-          <select [(ngModel)]="user.roleName" name="role" required>
+          <select [(ngModel)]="user.roleName" name="roleName" required>
+            <option value="">--Select Role--</option>
             <option *ngFor="let r of roles" [value]="r.roleName">{{ r.roleName }}</option>
           </select>
         </div>
+
         <div class="input-group">
           <label>Assigned Branch *</label>
-          <select [(ngModel)]="user.branchId" name="branch" required>
+          <select [(ngModel)]="user.branchId" name="branchId" required>
+            <option value="">--Select Branch--</option>
             <option *ngFor="let b of branches" [value]="b.branchId">{{ b.branchName }}</option>
           </select>
         </div>
       </div>
 
       <div class="form-actions">
-        <button type="button" class="btn btn-secondary" routerLink="/dashboard/administration/users">Cancel</button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          routerLink="/dashboard/administration/users"
+        >
+          Cancel
+        </button>
         <button type="submit" class="btn btn-primary" [disabled]="!userForm.valid || isLoading">
           <span *ngIf="!isLoading">Create User Account</span>
           <span *ngIf="isLoading" class="spinner"></span>
@@ -62,10 +120,29 @@
     User Form Specific Styles (CSS)
     Clean, focused layout for personnel onboarding.
   */
-  .form-card { padding: 32px; max-width: 800px; margin: 0 auto; }
-  .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 32px; }
+  .form-card {
+    padding: 32px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-bottom: 32px;
+  }
 
-  .form-actions { display: flex; justify-content: flex-end; gap: 16px; padding-top: 24px; border-top: 1px solid #f1f5f9; }
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    padding-top: 24px;
+    border-top: 1px solid #f1f5f9;
+  }
 
-  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
 </style>
