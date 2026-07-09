@@ -7,7 +7,7 @@ namespace IPCS_Service.Interfaces
     public interface IAccountService
     {
         //Registration Method in time just simple after Completing i use DTO
-        Task<IdentityResult> RegisterAsync(User user, string password);
+        Task<IdentityResult> RegisterAsync(User user, string password, string roleName);
 
 
         //Login Method Which Return Token
@@ -30,4 +30,4 @@ namespace IPCS_Service.Interfaces
         Task<IList<string>> GetUserRolesAsync(string email);
         Task<IdentityResult> DeleteUserAsync(string userId, string currentUserId);
     }
-}
+}

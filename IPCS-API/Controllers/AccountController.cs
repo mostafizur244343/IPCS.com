@@ -63,7 +63,7 @@ namespace IPCS_API.Controllers
                     IsActive = true
                 };
 
-                var result = await _accountService.RegisterAsync(user, model.Password);
+                var result = await _accountService.RegisterAsync(user, model.Password, model.RoleName);
 
                 if (result.Succeeded)
                 {

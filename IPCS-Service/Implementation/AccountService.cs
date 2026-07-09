@@ -33,7 +33,7 @@ namespace IPCS_Service.Implementation
         /// <summary>
         /// Registers a new user in the system.
         /// </summary>
-        public async Task<IdentityResult> RegisterAsync (User user, string password)
+        public async Task<IdentityResult> RegisterAsync(User user, string password, string roleName)
         {
             try
             {
@@ -41,14 +41,34 @@ namespace IPCS_Service.Implementation
                 {
                     throw new ArgumentNullException("Please Enter User Information");
                 }
-                return await _userManager.CreateAsync(user, password);
+
+                if (string.IsNullOrEmpty(roleName))
+                {
+                    throw new ArgumentNullException("Role is required");
+                }
+
+                // Provided role exist checking
+                if (!await _roleManager.RoleExistsAsync(roleName))
+                {
+                    throw new Exception($"Role '{roleName}' does not exist");
+                }
+
+                // 1. User creating
+                var result = await _userManager.CreateAsync(user, password);
+                if (!result.Succeeded)
+                {
+                    return result;
+                }
+
+                // 2.assign provided role to  User
+                await _userManager.AddToRoleAsync(user, roleName);
+
+                return IdentityResult.Success;
             }
             catch (Exception ex)
             {
-                
                 throw new Exception(" Error Registration..!" + ex.Message);
             }
-           
         }
 
         /// <summary>

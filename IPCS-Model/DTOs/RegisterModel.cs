@@ -26,7 +26,13 @@ namespace IPCS_Model.DTOs
         [DataType(DataType.Password)]
         public string ConfirmPassword { get; set; } = string.Empty;
 
-        public string? MobileNumber { get; set; }
+        [Required(ErrorMessage = "Role is Required")]
+        public string RoleName { get; set; } = string.Empty;
+
+
+        [Required(ErrorMessage = "Mobile Number is Required")]
+        [Phone(ErrorMessage = "Invalid phone number format")]
+        public string MobileNumber { get; set; } = string.Empty;
         public string? PresentAddress { get; set; }
         public string? PermanentAddress { get; set; }
         public string? Description { get; set; }
