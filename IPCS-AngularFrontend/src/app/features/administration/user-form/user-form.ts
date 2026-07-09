@@ -13,17 +13,18 @@ import { ApiService } from '../../../core/services/api';
   selector: 'app-user-form',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
-  templateUrl: './user-form.html'
+  templateUrl: './user-form.html',
 })
 export class UserFormComponent implements OnInit {
   // New User data model
   user: any = {
-    name: '',
+    fullName: '',
     email: '',
-    username: '',
+    mobileNumber: '',
     password: '',
-    branchId: 1,
-    roleName: 'Staff'
+    confirmPassword: '',
+    branchId: null,
+    roleName: '',
   };
 
   // Lookup data
@@ -31,7 +32,10 @@ export class UserFormComponent implements OnInit {
   branches: any[] = [];
   isLoading = false;
 
-  constructor(private api: ApiService, private router: Router) {}
+  constructor(
+    private api: ApiService,
+    private router: Router,
+  ) {}
 
   ngOnInit() {
     this.loadLookups();
@@ -41,8 +45,8 @@ export class UserFormComponent implements OnInit {
    * Fetches roles and branches to populate dropdowns
    */
   loadLookups() {
-    this.api.get<any[]>('Role/get-all-roles').subscribe(data => this.roles = data);
-    this.api.get<any[]>('Branch').subscribe(data => this.branches = data);
+    this.api.get<any[]>('Role/get-all-roles').subscribe((data) => (this.roles = data));
+    this.api.get<any[]>('Branch').subscribe((data) => (this.branches = data));
   }
 
   /**
@@ -52,13 +56,13 @@ export class UserFormComponent implements OnInit {
     this.isLoading = true;
     this.api.post('Account/register', this.user).subscribe({
       next: (res: any) => {
-        alert(res.message);
+        alert(res.message || res.Message);
         this.router.navigate(['/dashboard/administration/users']);
       },
       error: (err) => {
-        alert(err.error?.message || 'Failed to create user');
+        alert(err.error?.message || err.error?.Message || 'Failed to create user');
         this.isLoading = false;
-      }
+      },
     });
   }
 }

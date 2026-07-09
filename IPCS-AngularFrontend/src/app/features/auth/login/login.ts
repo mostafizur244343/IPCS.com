@@ -55,7 +55,7 @@ export class LoginComponent {
       error: (err) => {
         this.isLoading = false;
         // Displaying error message from API if available
-        this.errorMsg = err.error?.message || 'Invalid Username or Password';
+        this.errorMsg = err.error?.message || err.error?.Message || 'Invalid Username or Password';
       },
     });
   }
