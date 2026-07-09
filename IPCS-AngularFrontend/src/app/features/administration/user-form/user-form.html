@@ -35,7 +35,7 @@
         <div class="input-group">
           <label>Security Role *</label>
           <select [(ngModel)]="user.roleName" name="role" required>
-            <option *ngFor="let r of roles" [value]="r.name">{{ r.name }}</option>
+            <option *ngFor="let r of roles" [value]="r.roleName">{{ r.roleName }}</option>
           </select>
         </div>
         <div class="input-group">
