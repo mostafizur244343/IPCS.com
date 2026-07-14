@@ -32,7 +32,12 @@ export class LoginComponent {
     this.isLoading = true;
     this.errorMsg = '';
 
-    this.auth.login(this.loginData).subscribe({
+    const payload = {
+      emailOrMobile: this.loginData.emailOrMobile.trim(),
+      password: this.loginData.password.trim()
+    };
+
+    this.auth.login(payload).subscribe({
       next: (res) => {
         this.isLoading = false;
         const token = res.token || res.Token || res.securityKey || res.SecurityKey;
