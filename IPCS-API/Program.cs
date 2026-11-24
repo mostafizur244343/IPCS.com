@@ -53,7 +53,11 @@ if (string.IsNullOrEmpty(secretKey) || secretKey == "YOUR_SECRET_KEY_MIN_32_CHAR
     secretKey = "ThisIsASecretFallbackKeyForIPCSAPI2026SecureTokenGeneration!!";
 }
 
-var key = Encoding.ASCII.GetBytes(secretKey);
+// Share the resolved key with the rest of the app (AccountService signs tokens
+// with JwtSettings:SecurityKey) so signing and validation always use the same key.
+builder.Configuration["JwtSettings:SecurityKey"] = secretKey;
+
+var key = Encoding.UTF8.GetBytes(secretKey);
 
 
 builder.Services.AddAuthentication(options =>
@@ -157,49 +161,84 @@ app.UseStaticFiles();
 
 app.MapControllers();
 
-// Automatic Permission Seeding on Startup
-using (var scope = app.Services.CreateScope())
+// Apply pending EF Core migrations at startup so a fresh database gets its
+// schema automatically (the app never ran Migrate() before). Guarded: if the
+// database is unreachable, log and continue — the API still starts, and the
+// migration runs again on the next restart.
+try
 {
-    var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
-    await permissionService.SeedPermissionsAsync();
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<IPCSDBContext>();
+        await dbContext.Database.MigrateAsync();
+    }
+}
+catch (Exception ex)
+{
+    Log.Error(ex, "Database migration failed at startup. The API will start without an up-to-date schema; check the database connection.");
+}
+
+// Automatic Permission Seeding on Startup
+// Wrapped in try/catch: if the database is unreachable at startup, seeding must
+// not crash the whole app (otherwise Render enters a crash loop and the API
+// never answers any request). The API still starts; DB-backed calls fail
+// individually until the database is back, and seeding re-runs on next restart.
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
+        await permissionService.SeedPermissionsAsync();
+    }
+}
+catch (Exception ex)
+{
+    Log.Error(ex, "Permission seeding failed at startup. The API will start without seeded permissions; check the database connection.");
 }
 
 // Automatic SuperAdmin Seeding on Startup
-using (var scope = app.Services.CreateScope())
+try
 {
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-
-    const string superAdminRole = "SuperAdmin";
-    const string superAdminEmail = "superadmin@ipcs.com";
-    const string superAdminPassword = "Admin@1234";
-
-    // 1. Create SuperAdmin role if it doesn't exist
-    if (!await roleManager.RoleExistsAsync(superAdminRole))
+    using (var scope = app.Services.CreateScope())
     {
-        await roleManager.CreateAsync(new IdentityRole(superAdminRole));
-    }
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
-    // 2. Create SuperAdmin user if it doesn't exist
-    var existingUser = await userManager.FindByEmailAsync(superAdminEmail);
-    if (existingUser == null)
-    {
-        var superAdminUser = new User
-        {
-            UserName = "superadmin",
-            Email = superAdminEmail,
-            FullName = "Super Administrator",
-            IsActive = true,
-            EmailConfirmed = true,
-            JoiningDate = DateTime.Now
-        };
+        const string superAdminRole = "SuperAdmin";
+        const string superAdminEmail = "superadmin@ipcs.com";
+        const string superAdminPassword = "Admin@1234";
 
-        var result = await userManager.CreateAsync(superAdminUser, superAdminPassword);
-        if (result.Succeeded)
+        // 1. Create SuperAdmin role if it doesn't exist
+        if (!await roleManager.RoleExistsAsync(superAdminRole))
         {
-            await userManager.AddToRoleAsync(superAdminUser, superAdminRole);
+            await roleManager.CreateAsync(new IdentityRole(superAdminRole));
+        }
+
+        // 2. Create SuperAdmin user if it doesn't exist
+        var existingUser = await userManager.FindByEmailAsync(superAdminEmail);
+        if (existingUser == null)
+        {
+            var superAdminUser = new User
+            {
+                UserName = "superadmin",
+                Email = superAdminEmail,
+                FullName = "Super Administrator",
+                IsActive = true,
+                EmailConfirmed = true,
+                JoiningDate = DateTime.Now
+            };
+
+            var result = await userManager.CreateAsync(superAdminUser, superAdminPassword);
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(superAdminUser, superAdminRole);
+            }
         }
     }
+}
+catch (Exception ex)
+{
+    Log.Error(ex, "SuperAdmin seeding failed at startup. The API will start without the seeded SuperAdmin account; check the database connection.");
 }
 
 app.Run();
