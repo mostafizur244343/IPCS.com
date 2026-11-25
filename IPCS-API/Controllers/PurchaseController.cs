@@ -144,6 +144,17 @@ namespace IPCS_API.Controllers
             }
         }
 
+        [PermissionAuthorize(Permissions.Purchase.Edit)]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateHeader(int id, [FromBody] DocumentHeaderUpdateDTO dto)
+        {
+            // Header-only: Remarks / PurchaseDate. Quantities, amounts, supplier,
+            // branch and lines are not editable through this endpoint.
+            var result = await _purchaseService.UpdateHeaderAsync(id, dto);
+            if (!result) return NotFound(new { Message = "Purchase not found" });
+            return Ok(new { Message = "Purchase header updated successfully" });
+        }
+
         [PermissionAuthorize(Permissions.Purchase.Delete)]
         [HttpDelete("{id}")]
         public async Task<IActionResult> SoftDelete(int id)

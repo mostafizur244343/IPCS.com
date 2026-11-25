@@ -36,6 +36,21 @@ namespace IPCS_API.Controllers
             return Ok(dtos);
         }
 
+        [PermissionAuthorize(Permissions.Category.View)]
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var category = await _categoryService.GetByIdAsync(id);
+            if (category == null) return NotFound("Category not found");
+            return Ok(new CategoryDTO
+            {
+                CategoryId = category.CategoryId,
+                CategoryName = category.CategoryName,
+                Description = category.Description,
+                IsActive = category.IsActive
+            });
+        }
+
         [PermissionAuthorize(Permissions.Category.Create)]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CategoryDTO model)

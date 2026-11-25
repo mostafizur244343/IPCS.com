@@ -34,7 +34,6 @@ namespace IPCS_Service.Implementation
             try
             {
                 var loc = await _context.StoreLocations.FindAsync(id);
-                if (loc == null) throw new Exception($"Store location with ID {id} not found.");
                 return loc;
             }
             catch (Exception ex) 
@@ -93,4 +92,4 @@ namespace IPCS_Service.Implementation
             }
         }
     }
-}
+}

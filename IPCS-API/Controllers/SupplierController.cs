@@ -47,6 +47,15 @@ namespace IPCS_API.Controllers
             return Ok(dtos);
         }
 
+        [PermissionAuthorize(Permissions.Supplier.View)]
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var supplier = await _supService.GetByIdAsync(id);
+            if (supplier == null) return NotFound("Supplier not found");
+            return Ok(MapToDTO(supplier));
+        }
+
         [PermissionAuthorize(Permissions.Supplier.Create)]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] SupplierDTO model)

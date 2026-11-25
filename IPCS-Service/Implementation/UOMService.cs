@@ -35,7 +35,6 @@ namespace IPCS_Service.Implementation
             try
             {
                 var uom = await _context.UOMs.FindAsync(id);
-                if (uom == null) throw new Exception($"UOM with ID {id} not found.");
                 return uom;
             }
             catch (Exception ex)

@@ -37,6 +37,24 @@ namespace IPCS_API.Controllers
             return Ok(await _service.AddConversionAsync(model));
         }
 
+        [PermissionAuthorize(Permissions.Product.Edit)]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, ProductUnitConversionDTO dto)
+        {
+            var existing = await _service.GetByIdAsync(id);
+            if (existing == null) return NotFound("Conversion not found");
+
+            existing.ProductId = dto.ProductId;
+            existing.FromUnitId = dto.FromUnitId;
+            existing.ToUnitId = dto.ToUnitId;
+            existing.Factor = dto.Factor;
+            existing.Level = dto.Level;
+
+            var result = await _service.UpdateAsync(existing);
+            if (result) return Ok(new { Message = "Conversion updated successfully" });
+            return BadRequest("Error updating conversion");
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id) => Ok(await _service.DeleteConversionAsync(id));
     }

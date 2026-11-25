@@ -79,12 +79,31 @@ namespace IPCS_API.Controllers
             }
         }
 
+        [PermissionAuthorize(Permissions.PurchaseReturn.Create)]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateHeader(int id, [FromBody] DocumentHeaderUpdateDTO dto)
+        {
+            // Header-only: Reason / ReturnDate. Quantities, amounts, refund type
+            // and lines are not editable through this endpoint.
+            // (No PurchaseReturn.Edit permission exists, so Create guards this edit.)
+            var result = await _returnService.UpdateHeaderAsync(id, dto);
+            if (!result) return NotFound(new { Message = "Return not found" });
+            return Ok(new { Message = "Return header updated successfully" });
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var result = await _returnService.SoftDeleteAsync(id);
-            if (result) return Ok(new { Message = "Return put in trash" });
-            return BadRequest("Error deleting return record");
+            try
+            {
+                var result = await _returnService.SoftDeleteAsync(id);
+                if (result) return Ok(new { Message = "Return put in trash" });
+                return NotFound(new { Message = "Return not found" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
     }
 }

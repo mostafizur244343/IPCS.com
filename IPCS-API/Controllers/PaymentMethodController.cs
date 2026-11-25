@@ -31,7 +31,12 @@ namespace IPCS_API.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            try { return Ok(await _methodService.GetByIdAsync(id)); }
+            try
+            {
+                var method = await _methodService.GetByIdAsync(id);
+                if (method == null) return NotFound(new { Message = "Payment method not found." });
+                return Ok(method);
+            }
             catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
         }
 

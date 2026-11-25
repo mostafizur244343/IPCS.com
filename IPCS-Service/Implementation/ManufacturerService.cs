@@ -35,7 +35,6 @@ namespace IPCS_Service.Implementation
             try
             {
                 var manufacturer = await _context.Manufacturers.FindAsync(id);
-                if (manufacturer == null) throw new Exception($"Manufacturer with ID {id} not found.");
                 return manufacturer;
             }
             catch (Exception ex)
@@ -105,4 +104,4 @@ namespace IPCS_Service.Implementation
             }
         }
     }
-}
+}

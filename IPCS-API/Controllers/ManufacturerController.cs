@@ -38,6 +38,23 @@ namespace IPCS_API.Controllers
             return Ok(dtos);
         }
 
+        [PermissionAuthorize(Permissions.Manufacturer.View)]
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var brand = await _mfgService.GetByIdAsync(id);
+            if (brand == null) return NotFound("Manufacturer not found");
+            return Ok(new ManufacturerDTO
+            {
+                BrandId = brand.BrandId,
+                BrandName = brand.BrandName,
+                Origin = brand.Origin,
+                ContactPerson = brand.ContactPerson,
+                PhoneNumber = brand.PhoneNumber,
+                IsActive = brand.IsActive
+            });
+        }
+
         [PermissionAuthorize(Permissions.Manufacturer.Create)]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] ManufacturerDTO model)

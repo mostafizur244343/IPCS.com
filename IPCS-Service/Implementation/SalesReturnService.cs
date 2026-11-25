@@ -1,4 +1,5 @@
 using IPCS_Model.Entities;
+using IPCS_Model.DTOs;
 using IPCS_Repo.Data;
 using IPCS_Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -126,16 +127,30 @@ namespace IPCS_Service.Implementation
                 if (returnMaster.RefundType == "Adjustment")
                 {
                     var customer = await _context.Customers.FindAsync(returnMaster.CustomerId);
+                    // Split the refund: first offset what the customer still
+                    // owes (due); the excess is money the customer already
+                    // paid, so credit it to their advance balance instead of
+                    // driving CurrentDue negative.
+                    decimal fromDue = 0;
+                    decimal toAdvance = returnMaster.RefundAmount;
                     if (customer != null)
                     {
-                        customer.CurrentDue -= returnMaster.RefundAmount;
+                        fromDue = Math.Min(customer.CurrentDue, returnMaster.RefundAmount);
+                        toAdvance = returnMaster.RefundAmount - fromDue;
+                        customer.CurrentDue -= fromDue;
+                        if (toAdvance > 0) customer.AdvanceBalance += toAdvance;
                         _context.Customers.Update(customer);
                     }
-                    
-                    if (summary != null) 
+
+                    if (summary != null)
                     {
-                        summary.TotalDueSales -= returnMaster.RefundAmount;
+                        // The due part comes out of due sales; the cash-backed
+                        // part comes out of cash sales (that revenue is
+                        // returned to the customer).
+                        summary.TotalDueSales -= fromDue;
                         if (summary.TotalDueSales < 0) summary.TotalDueSales = 0;
+                        summary.TotalCashSales -= toAdvance;
+                        if (summary.TotalCashSales < 0) summary.TotalCashSales = 0;
                     }
                 }
                 else if (returnMaster.RefundType == "Cash")
@@ -208,6 +223,19 @@ namespace IPCS_Service.Implementation
                 await transaction.RollbackAsync();
                 throw new Exception("Sales Return Failed: " + ex.Message);
             }
+        }
+
+        // Header-only edit: Reason and ReturnDate only. Quantities, amounts,
+        // refund type and lines are never touched, so stock and books
+        // cannot be corrupted by this update.
+        public async Task<bool> UpdateHeaderAsync(int id, DocumentHeaderUpdateDTO dto)
+        {
+            var ret = await _context.SalesReturnMasters.FindAsync(id);
+            if (ret == null) return false;
+
+            if (dto.Reason != null) ret.Reason = dto.Reason;
+            if (dto.DocumentDate.HasValue) ret.ReturnDate = dto.DocumentDate.Value;
+            return await _context.SaveChangesAsync() > 0;
         }
 
         public async Task<bool> SoftDeleteAsync(int id)

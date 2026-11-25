@@ -30,9 +30,31 @@ namespace IPCS_Service.Implementation
                 .ToListAsync();
         }
 
+        public async Task<ProductUnitConversion?> GetByIdAsync(int id)
+        {
+            return await _context.ProductUnitConversions
+                .Include(c => c.Product)
+                .Include(c => c.FromUnit)
+                .Include(c => c.ToUnit)
+                .FirstOrDefaultAsync(c => c.ConversionId == id);
+        }
+
         public async Task<bool> AddConversionAsync(ProductUnitConversion conversion)
         {
             await _context.ProductUnitConversions.AddAsync(conversion);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> UpdateAsync(ProductUnitConversion conversion)
+        {
+            var existing = await _context.ProductUnitConversions.FindAsync(conversion.ConversionId);
+            if (existing == null) return false;
+
+            existing.ProductId = conversion.ProductId;
+            existing.FromUnitId = conversion.FromUnitId;
+            existing.ToUnitId = conversion.ToUnitId;
+            existing.Factor = conversion.Factor;
+            existing.Level = conversion.Level;
             return await _context.SaveChangesAsync() > 0;
         }
 

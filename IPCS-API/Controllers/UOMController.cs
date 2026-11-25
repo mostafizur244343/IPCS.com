@@ -36,6 +36,21 @@ namespace IPCS_API.Controllers
             return Ok(dtos);
         }
 
+        [PermissionAuthorize(Permissions.UOM.View)]
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var uom = await _uomService.GetByIdAsync(id);
+            if (uom == null) return NotFound("UOM not found");
+            return Ok(new UOMResponseDTO
+            {
+                UOMId = uom.UOMId,
+                UOMName = uom.UOMName,
+                Description = uom.Description,
+                IsActive = uom.IsActive
+            });
+        }
+
         [PermissionAuthorize(Permissions.UOM.Create)]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] UOMDTO model)

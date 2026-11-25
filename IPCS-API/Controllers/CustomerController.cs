@@ -16,6 +16,10 @@ public class CustomerController : ControllerBase
     public CustomerController(ICustomerService custService) { _custService = custService; }
 
     [PermissionAuthorize(Permissions.Customer.View)]
+    [HttpGet]
+    public async Task<IActionResult> GetAll() => Ok(await _custService.GetAllActiveAsync());
+
+    [PermissionAuthorize(Permissions.Customer.View)]
     [HttpGet("active")]
     public async Task<IActionResult> GetActive() => Ok(await _custService.GetAllActiveAsync());
 

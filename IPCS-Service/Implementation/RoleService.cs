@@ -60,6 +60,14 @@ namespace IPCS_Service.Implementation
                 return IdentityResult.Failed(new IdentityError { Description = "The 'SuperAdmin' role is a core system role and cannot be deleted." });
             }
 
+            // Remove all users from the role first: deleting a role that still
+            // has members fails on the AspNetUserRoles foreign key.
+            var usersInRole = await _userManager.GetUsersInRoleAsync(role.Name);
+            foreach (var user in usersInRole)
+            {
+                await _userManager.RemoveFromRoleAsync(user, role.Name);
+            }
+
             return await _roleManager.DeleteAsync(role);
         }
 

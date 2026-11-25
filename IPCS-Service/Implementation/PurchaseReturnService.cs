@@ -1,4 +1,5 @@
 using IPCS_Model.Entities;
+using IPCS_Model.DTOs;
 using IPCS_Repo.Data;
 using IPCS_Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -177,12 +178,133 @@ namespace IPCS_Service.Implementation
             }
         }
 
+        // Header-only edit: Reason and ReturnDate only. Quantities, amounts,
+        // refund type and lines are never touched, so stock and books
+        // cannot be corrupted by this update.
+        public async Task<bool> UpdateHeaderAsync(int id, DocumentHeaderUpdateDTO dto)
+        {
+            var ret = await _context.PurchaseReturnMasters.FindAsync(id);
+            if (ret == null) return false;
+
+            if (dto.Reason != null) ret.Reason = dto.Reason;
+            if (dto.DocumentDate.HasValue) ret.ReturnDate = dto.DocumentDate.Value;
+            return await _context.SaveChangesAsync() > 0;
+        }
+
         public async Task<bool> SoftDeleteAsync(int id)
         {
-            var r = await _context.PurchaseReturnMasters.FindAsync(id);
-            if (r == null) return false;
-            r.IsDeleted = true;
-            return await _context.SaveChangesAsync() > 0;
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var r = await _context.PurchaseReturnMasters
+                    .Include(x => x.ReturnDetails)
+                    .FirstOrDefaultAsync(x => x.ReturnId == id);
+                if (r == null) return false;
+
+                // 1. Reverse stock: add the returned quantities back to their lots.
+                foreach (var detail in r.ReturnDetails)
+                {
+                    var stock = await _context.BranchLotStocks
+                        .FirstOrDefaultAsync(s => s.BranchId == r.BranchId && s.ProductId == detail.ProductId && s.LotId == detail.LotId);
+                    if (stock == null)
+                        throw new Exception($"Cannot delete return {r.ReturnNo}: stock record not found for Product ID {detail.ProductId}.");
+
+                    if (detail.FromDamagedPool)
+                    {
+                        stock.DamagedStock += detail.Quantity;
+                    }
+                    else
+                    {
+                        stock.CurrentStock += detail.Quantity;
+
+                        var product = await _context.Products.FindAsync(detail.ProductId);
+                        if (product != null)
+                        {
+                            product.CurrentStock += detail.Quantity;
+                            _context.Products.Update(product);
+                        }
+                    }
+                    _context.BranchLotStocks.Update(stock);
+
+                    var lastLedger = await _context.StockLedgers
+                        .Where(l => l.BranchId == r.BranchId && l.ProductId == detail.ProductId && l.LotId == detail.LotId)
+                        .OrderByDescending(l => l.LedgerId)
+                        .FirstOrDefaultAsync();
+                    await _context.StockLedgers.AddAsync(new StockLedger
+                    {
+                        BranchId = r.BranchId,
+                        ProductId = detail.ProductId,
+                        LotId = detail.LotId,
+                        TransactionType = "PurchaseReturn Delete",
+                        ReferenceNo = r.ReturnNo,
+                        TransactionDate = DateTime.Now,
+                        PreviousBalance = lastLedger?.CurrentBalance ?? 0,
+                        QuantityIn = detail.Quantity,
+                        QuantityOut = 0
+                    });
+                }
+
+                // 2. Reverse the financial effects (mirror of CreateReturnAsync).
+                if (r.RefundAmount > 0)
+                {
+                    if (r.RefundType == "Adjustment")
+                    {
+                        var supplier = await _context.Suppliers.FindAsync(r.SupplierId);
+                        if (supplier != null)
+                        {
+                            supplier.CurrentDue += r.RefundAmount;
+                            _context.Suppliers.Update(supplier);
+                        }
+                    }
+                    else if (r.RefundType == "Cash")
+                    {
+                        bool isDigital = false;
+                        if (r.PaymentMethodId.HasValue)
+                        {
+                            var method = await _context.PaymentMethods.FindAsync(r.PaymentMethodId.Value);
+                            if (method != null && method.IsDigital) isDigital = true;
+                        }
+
+                        if (!isDigital)
+                        {
+                            var summaryCash = await _context.DailyTransactionSummaries
+                                .FirstOrDefaultAsync(d => d.TransactionDate == r.ReturnDate.Date && d.BranchId == r.BranchId);
+                            if (summaryCash != null)
+                            {
+                                summaryCash.TotalCash -= r.RefundAmount;
+                                _context.DailyTransactionSummaries.Update(summaryCash);
+                            }
+                        }
+
+                        // Remove the refund audit payment created for this return.
+                        var refundPayment = await _context.InvoicePayments
+                            .FirstOrDefaultAsync(p => p.TransactionNo == "PREF-" + r.ReturnNo);
+                        if (refundPayment != null)
+                        {
+                            _context.InvoicePayments.Remove(refundPayment);
+                        }
+                    }
+                }
+
+                // 3. Reverse the DailySummary inventory adjustment.
+                var summary = await _context.DailyTransactionSummaries
+                    .FirstOrDefaultAsync(d => d.TransactionDate == r.ReturnDate.Date && d.BranchId == r.BranchId);
+                if (summary != null)
+                {
+                    summary.TotalPurchase += r.TotalAmount;
+                    _context.DailyTransactionSummaries.Update(summary);
+                }
+
+                r.IsDeleted = true;
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw new Exception("Purchase Return Delete Failed: " + ex.Message);
+            }
         }
     }
 }

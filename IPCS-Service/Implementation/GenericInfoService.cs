@@ -34,7 +34,6 @@ namespace IPCS_Service.Implementation
             try
             {
                 var info = await _context.GenericInfos.FindAsync(id);
-                if (info == null) throw new Exception($"Generic info with ID {id} not found.");
                 return info;
             }
             catch (Exception ex) 
@@ -95,4 +94,4 @@ namespace IPCS_Service.Implementation
             }
         }
     }
-}
+}

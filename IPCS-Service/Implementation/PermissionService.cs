@@ -59,6 +59,17 @@ namespace IPCS_Service.Implementation
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null) return new List<string>();
 
+            // Super Admin bypass (mirrors HasPermissionAsync): a SuperAdmin
+            // holds every permission, even though none are assigned in
+            // RolePermissions/UserPermissions.
+            var roles = await _userManager.GetRolesAsync(user);
+            if (roles.Contains("SuperAdmin"))
+            {
+                return await _context.AppPermissions
+                    .Select(p => p.PermissionKey)
+                    .ToListAsync();
+            }
+
             // Get direct permissions
             var directPermissions = await _context.UserPermissions
                 .Include(up => up.Permission)
@@ -67,7 +78,6 @@ namespace IPCS_Service.Implementation
                 .ToListAsync();
 
             // Get role permissions
-            var roles = await _userManager.GetRolesAsync(user);
             var roleIds = await _context.Roles
                 .Where(r => roles.Contains(r.Name))
                 .Select(r => r.Id)

@@ -20,12 +20,32 @@ namespace IPCS_API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
 
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var conversion = await _service.GetByIdAsync(id);
+            if (conversion == null) return NotFound("Conversion not found");
+            return Ok(conversion);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Create(GlobalUnitConversion model)
         {
             var result = await _service.CreateAsync(model);
             if (result) return Ok(new { Message = "Global Conversion Added Successfully!" });
             return BadRequest("Error saving data");
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, GlobalUnitConversion model)
+        {
+            var existing = await _service.GetByIdAsync(id);
+            if (existing == null) return NotFound("Conversion not found");
+
+            model.Id = id;
+            var result = await _service.UpdateAsync(model);
+            if (result) return Ok(new { Message = "Global Conversion Updated Successfully!" });
+            return BadRequest("Error updating data");
         }
 
         [HttpDelete("{id}")]

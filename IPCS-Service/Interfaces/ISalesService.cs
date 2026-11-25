@@ -1,4 +1,5 @@
 using IPCS_Model.Entities;
+using IPCS_Model.DTOs;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -11,6 +12,7 @@ namespace IPCS_Service.Interfaces
         Task<SalesMaster?> GetByIdAsync(int id);
         Task<bool> CreateSalesAsync(SalesMaster salesMaster);
         Task<bool> SoftDeleteAsync(int id);
+        Task<bool> UpdateHeaderAsync(int id, DocumentHeaderUpdateDTO dto);
         Task<bool> RestoreAsync(int id);
     }
 }

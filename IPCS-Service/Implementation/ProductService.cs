@@ -349,7 +349,6 @@ namespace IPCS_Service.Implementation
                     .Include(p => p.UnitConversions)
                     .FirstOrDefaultAsync(x => x.ProductId == id);
                 
-                if (product == null) throw new Exception($"Product with ID {id} not found.");
                 return product;
             }
             catch (Exception ex)

@@ -119,7 +119,6 @@ namespace IPCS_Service.Implementation
             try
             {
                 var supplier = await _context.Suppliers.FindAsync(id);
-                if (supplier == null) throw new Exception($"Supplier with ID {id} not found.");
                 return supplier;
             }
             catch (Exception ex)
@@ -150,4 +149,4 @@ namespace IPCS_Service.Implementation
             }
         }
     }
-}
+}

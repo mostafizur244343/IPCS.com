@@ -33,9 +33,39 @@ namespace IPCS_Service.Implementation
                 }).ToListAsync();
         }
 
+        public async Task<GlobalUnitConversionDTO?> GetByIdAsync(int id)
+        {
+            return await _context.GlobalUnitConversions
+                .Include(g => g.FromUnit)
+                .Include(g => g.ToUnit)
+                .Where(g => g.Id == id)
+                .Select(g => new GlobalUnitConversionDTO
+                {
+                    Id = g.Id,
+                    FromUnitId = g.FromUnitId,
+                    FromUnitName = g.FromUnit.UOMName,
+                    ToUnitId = g.ToUnitId,
+                    ToUnitName = g.ToUnit.UOMName,
+                    ConversionFactor = g.ConversionFactor,
+                    IsActive = g.IsActive
+                }).FirstOrDefaultAsync();
+        }
+
         public async Task<bool> CreateAsync(GlobalUnitConversion entity)
         {
             _context.GlobalUnitConversions.Add(entity);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> UpdateAsync(GlobalUnitConversion entity)
+        {
+            var existing = await _context.GlobalUnitConversions.FindAsync(entity.Id);
+            if (existing == null) return false;
+
+            existing.FromUnitId = entity.FromUnitId;
+            existing.ToUnitId = entity.ToUnitId;
+            existing.ConversionFactor = entity.ConversionFactor;
+            existing.IsActive = entity.IsActive;
             return await _context.SaveChangesAsync() > 0;
         }
 

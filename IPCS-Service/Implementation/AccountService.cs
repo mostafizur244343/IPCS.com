@@ -323,6 +323,13 @@ namespace IPCS_Service.Implementation
                 }
             }
 
+            // Remove the user from all roles first: deleting a user that still
+            // holds roles fails on the AspNetUserRoles foreign key.
+            if (roles.Count > 0)
+            {
+                await _userManager.RemoveFromRolesAsync(user, roles);
+            }
+
             return await _userManager.DeleteAsync(user);
         }
     }

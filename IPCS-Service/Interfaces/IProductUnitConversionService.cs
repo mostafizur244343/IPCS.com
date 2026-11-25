@@ -6,7 +6,9 @@ namespace IPCS_Service.Interfaces
     {
         Task<IEnumerable<ProductUnitConversion>> GetByProductIdAsync(int productId);
         Task<IEnumerable<ProductUnitConversion>> GetAllConversionsAsync();
+        Task<ProductUnitConversion?> GetByIdAsync(int id);
         Task<bool> AddConversionAsync(ProductUnitConversion conversion);
+        Task<bool> UpdateAsync(ProductUnitConversion conversion);
         Task<bool> DeleteConversionAsync(int id);
     }
 }

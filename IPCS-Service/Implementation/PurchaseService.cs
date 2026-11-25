@@ -1,4 +1,5 @@
 using IPCS_Model.Entities;
+using IPCS_Model.DTOs;
 using IPCS_Repo.Data;
 using IPCS_Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -265,9 +266,127 @@ namespace IPCS_Service.Implementation
 
         public async Task<bool> SoftDeleteAsync(int id)
         {
-            var p = await _context.Set<PurchaseMaster>().FindAsync(id);
-            if (p == null) return false;
-            p.IsDeleted = true;
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var p = await _context.Set<PurchaseMaster>()
+                    .Include(x => x.PurchaseDetails)
+                    .Include(x => x.Payments)
+                    .FirstOrDefaultAsync(x => x.PurchaseId == id);
+                if (p == null) return false;
+
+                // 1. Reverse stock (only if the goods were received into inventory).
+                if (!p.IsShipment || p.ShipmentStatus == "Received")
+                {
+                    // Guard first: every lot must still hold the purchased
+                    // quantity. If any of it was already sold/used, refuse
+                    // instead of driving stock negative.
+                    var reversals = new List<(PurchaseDetails Detail, LotInfo Lot, BranchLotStock Stock)>();
+                    foreach (var detail in p.PurchaseDetails)
+                    {
+                        var lot = await _context.LotInfos.AsNoTracking()
+                            .FirstOrDefaultAsync(l => l.ProductId == detail.ProductId && l.LotNumber == detail.BatchNo);
+                        if (lot == null)
+                            throw new Exception($"Cannot delete purchase {p.PurchaseCode}: lot {detail.BatchNo} for Product ID {detail.ProductId} no longer exists.");
+
+                        var stock = await _context.BranchLotStocks
+                            .FirstOrDefaultAsync(s => s.BranchId == p.BranchId && s.ProductId == detail.ProductId && s.LotId == lot.LotId);
+                        if (stock == null || stock.CurrentStock < detail.TotalQtyInPcs)
+                            throw new Exception($"Cannot delete purchase {p.PurchaseCode}: stock for Product ID {detail.ProductId} (lot {detail.BatchNo}) has already been sold or used.");
+
+                        reversals.Add((detail, lot, stock));
+                    }
+
+                    foreach (var (detail, lot, stock) in reversals)
+                    {
+                        stock.CurrentStock -= detail.TotalQtyInPcs;
+                        _context.BranchLotStocks.Update(stock);
+
+                        var product = await _context.Products.FindAsync(detail.ProductId);
+                        if (product != null)
+                        {
+                            product.CurrentStock -= detail.TotalQtyInPcs;
+                            _context.Products.Update(product);
+                        }
+
+                        var lastLedger = await _context.StockLedgers.AsNoTracking()
+                            .Where(l => l.BranchId == p.BranchId && l.ProductId == detail.ProductId && l.LotId == lot.LotId)
+                            .OrderByDescending(l => l.LedgerId)
+                            .FirstOrDefaultAsync();
+                        await _context.StockLedgers.AddAsync(new StockLedger
+                        {
+                            BranchId = p.BranchId,
+                            ProductId = detail.ProductId,
+                            LotId = lot.LotId,
+                            TransactionType = "Purchase Delete",
+                            ReferenceNo = p.PurchaseCode,
+                            TransactionDate = DateTime.Now,
+                            PreviousBalance = lastLedger?.CurrentBalance ?? 0,
+                            QuantityIn = 0,
+                            QuantityOut = detail.TotalQtyInPcs
+                        });
+                    }
+                }
+
+                // 2. Reverse supplier due (only what is still owed).
+                if (p.DueAmount > 0)
+                {
+                    var supplier = await _context.Suppliers.FindAsync(p.SupplierId);
+                    if (supplier != null)
+                    {
+                        supplier.CurrentDue -= p.DueAmount;
+                        _context.Suppliers.Update(supplier);
+                    }
+                }
+
+                // 3. Reverse the DailySummary effects (mirror of CreatePurchaseAsync).
+                // The summary row is the one for the purchase date + branch.
+                var summary = await _context.DailyTransactionSummaries
+                    .FirstOrDefaultAsync(d => d.TransactionDate == p.PurchaseDate.Date && d.BranchId == p.BranchId);
+                if (summary != null)
+                {
+                    summary.TotalPurchase -= p.TotalAmount;
+                    if (summary.TotalPurchase < 0) summary.TotalPurchase = 0;
+                    // The purchase's payments (inline at creation and any later
+                    // split payments) are unwound together with the voided
+                    // purchase; the payment rows themselves are kept as records.
+                    foreach (var payment in p.Payments ?? Enumerable.Empty<InvoicePayment>())
+                    {
+                        var method = await _context.PaymentMethods.FindAsync(payment.PaymentMethodId);
+                        if (method != null)
+                        {
+                            string name = method.MethodName.ToLower();
+                            if (name.Contains("cash")) summary.TotalCash += payment.Amount;
+                            else if (name.Contains("bkash")) summary.TotalBkash += payment.Amount;
+                            else if (name.Contains("nagad")) summary.TotalNagad += payment.Amount;
+                            else if (name.Contains("card") || name.Contains("bank")) summary.TotalCard += payment.Amount;
+                        }
+                    }
+                    _context.DailyTransactionSummaries.Update(summary);
+                }
+
+                p.IsDeleted = true;
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw new Exception("Purchase Delete Failed: " + ex.Message, ex);
+            }
+        }
+
+        // Header-only edit: Remarks and PurchaseDate only. Quantities, amounts,
+        // supplier, branch and lines are never touched, so stock and books
+        // cannot be corrupted by this update.
+        public async Task<bool> UpdateHeaderAsync(int id, DocumentHeaderUpdateDTO dto)
+        {
+            var purchase = await _context.PurchaseMasters.FindAsync(id);
+            if (purchase == null) return false;
+
+            if (dto.Remarks != null) purchase.Remarks = dto.Remarks;
+            if (dto.DocumentDate.HasValue) purchase.PurchaseDate = dto.DocumentDate.Value;
             return await _context.SaveChangesAsync() > 0;
         }
 

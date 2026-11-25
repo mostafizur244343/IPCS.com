@@ -38,6 +38,18 @@ namespace IPCS_API.Controllers
             return BadRequest("Error Processing Payments");
         }
 
+        [PermissionAuthorize(Permissions.Payment.Create)]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateHeader(int id, [FromBody] PaymentHeaderUpdateDTO dto)
+        {
+            // Header-only: Remarks / TransactionNo. Amount, payment method and
+            // invoice links are not editable through this endpoint.
+            // (No Payment.Edit permission exists, so Create guards this edit.)
+            var result = await _paymentService.UpdateHeaderAsync(id, dto);
+            if (!result) return NotFound(new { Message = "Payment not found" });
+            return Ok(new { Message = "Payment header updated successfully" });
+        }
+
         [PermissionAuthorize(Permissions.Payment.Delete)]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)

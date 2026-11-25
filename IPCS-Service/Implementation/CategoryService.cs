@@ -35,10 +35,6 @@ namespace IPCS_Service.Implementation
             try
             {
                 var category = await _context.Categories.FindAsync(id);
-                if (category == null)
-                {
-                    throw new Exception($"Category with ID {id} not found.");
-                }
                 return category;
             }
             catch (Exception ex)

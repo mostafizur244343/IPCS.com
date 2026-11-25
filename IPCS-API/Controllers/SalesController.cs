@@ -37,6 +37,7 @@ namespace IPCS_API.Controllers
                     InvoiceNo = s.InvoiceNo,
                     SalesDate = s.SalesDate,
                     CustomerName = s.Customer?.CustomerName ?? "Walk-in Customer",
+                    CustomerId = s.CustomerId,
                     TotalAmount = s.TotalAmount,
                     NetAmount = s.NetAmount,
                     PaidAmount = s.PaidAmount,
@@ -61,6 +62,7 @@ namespace IPCS_API.Controllers
                 InvoiceNo = s.InvoiceNo,
                 SalesDate = s.SalesDate,
                 CustomerName = s.Customer?.CustomerName ?? "Walk-in Customer",
+                CustomerId = s.CustomerId,
                 TotalAmount = s.TotalAmount,
                 NetAmount = s.NetAmount,
                 PaidAmount = s.PaidAmount,
@@ -130,12 +132,18 @@ namespace IPCS_API.Controllers
             {
                 if (!ModelState.IsValid) return BadRequest(ModelState);
 
+                // A sale must belong to a real customer. Previously a missing
+                // customerId was silently defaulted to customer 1 (walk-in),
+                // attributing sales to the wrong customer with no error.
+                if (!dto.CustomerId.HasValue || dto.CustomerId.Value <= 0)
+                    return BadRequest(new { Message = "Customer is required. Please select a customer." });
+
                 // Mapping DTO to Entity
                 var salesMaster = new SalesMaster
                 {
                     SalesDate = dto.SalesDate,
                     BranchId = dto.BranchId,
-                    CustomerId = dto.CustomerId ?? 1, // Defaulting to 1 (usually Walk-in) if nothing selected, but UI should provide it
+                    CustomerId = dto.CustomerId.Value,
                     TotalAmount = dto.TotalAmount,
                     DiscountAmount = dto.DiscountAmount,
                     NetAmount = dto.NetAmount,
@@ -182,13 +190,31 @@ namespace IPCS_API.Controllers
             }
         }
 
+        [PermissionAuthorize(Permissions.Sales.Edit)]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateHeader(int id, [FromBody] DocumentHeaderUpdateDTO dto)
+        {
+            // Header-only: Remarks / SalesDate. Quantities, amounts, customer,
+            // branch and lines are not editable through this endpoint.
+            var result = await _salesService.UpdateHeaderAsync(id, dto);
+            if (!result) return NotFound(new { Message = "Sale not found" });
+            return Ok(new { Message = "Sale header updated successfully" });
+        }
+
         [PermissionAuthorize(Permissions.Sales.Delete)]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var result = await _salesService.SoftDeleteAsync(id);
-            if (result) return Ok(new { Message = "Sale put in trash" });
-            return BadRequest("Error deleting sale");
+            try
+            {
+                var result = await _salesService.SoftDeleteAsync(id);
+                if (result) return Ok(new { Message = "Sale put in trash" });
+                return NotFound(new { Message = "Sale not found" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpPost("restore/{id}")]

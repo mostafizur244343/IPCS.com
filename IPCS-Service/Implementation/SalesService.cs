@@ -1,4 +1,5 @@
 using IPCS_Model.Entities;
+using IPCS_Model.DTOs;
 using IPCS_Repo.Data;
 using IPCS_Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -241,9 +242,130 @@ namespace IPCS_Service.Implementation
 
         public async Task<bool> SoftDeleteAsync(int id)
         {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var sale = await _context.SalesMasters
+                    .Include(s => s.SalesDetails)
+                    .Include(s => s.Payments)
+                    .FirstOrDefaultAsync(s => s.SalesId == id);
+                if (sale == null) return false;
+
+                // 1. Reverse stock: add the sold quantities back to their lots.
+                // Guard: the lot/branch-stock row must still exist, and a
+                // converted change credit must still be held by the customer.
+                var reversals = new List<(SalesDetails Detail, BranchLotStock Stock, Product Product)>();
+                foreach (var detail in sale.SalesDetails)
+                {
+                    var product = await _context.Products.FindAsync(detail.ProductId);
+                    if (product != null && !product.IsService)
+                    {
+                        var stock = await _context.BranchLotStocks
+                            .FirstOrDefaultAsync(s => s.BranchId == sale.BranchId && s.ProductId == detail.ProductId && s.LotId == detail.LotId);
+                        if (stock == null)
+                            throw new Exception($"Cannot delete sale {sale.InvoiceNo}: stock record not found for Product ID {detail.ProductId} (lot {detail.LotId}).");
+                        reversals.Add((detail, stock, product));
+                    }
+                }
+
+                if (sale.ChangeAmount > 0 && sale.IsChangeConvertedToCredit)
+                {
+                    var advanceCustomer = await _context.Customers.FindAsync(sale.CustomerId);
+                    if (advanceCustomer != null && advanceCustomer.AdvanceBalance < sale.ChangeAmount)
+                        throw new Exception($"Cannot delete sale {sale.InvoiceNo}: the change credit of {sale.ChangeAmount} has already been used.");
+                }
+
+                foreach (var (detail, stock, product) in reversals)
+                {
+                    stock.CurrentStock += detail.Quantity;
+                    _context.BranchLotStocks.Update(stock);
+
+                    product.CurrentStock += detail.Quantity;
+                    _context.Products.Update(product);
+
+                    var lastLedger = await _context.StockLedgers.AsNoTracking()
+                        .Where(l => l.BranchId == sale.BranchId && l.ProductId == detail.ProductId && l.LotId == detail.LotId)
+                        .OrderByDescending(l => l.LedgerId)
+                        .FirstOrDefaultAsync();
+                    await _context.StockLedgers.AddAsync(new StockLedger
+                    {
+                        BranchId = sale.BranchId,
+                        ProductId = detail.ProductId,
+                        LotId = detail.LotId,
+                        TransactionType = "Sale Delete",
+                        ReferenceNo = sale.InvoiceNo,
+                        TransactionDate = DateTime.Now,
+                        PreviousBalance = lastLedger?.CurrentBalance ?? 0,
+                        QuantityIn = detail.Quantity,
+                        QuantityOut = 0
+                    });
+                }
+
+                // 2. Reverse customer due / advance credit.
+                var customer = await _context.Customers.FindAsync(sale.CustomerId);
+                if (customer != null)
+                {
+                    if (sale.DueAmount > 0) customer.CurrentDue -= sale.DueAmount;
+                    if (sale.ChangeAmount > 0 && sale.IsChangeConvertedToCredit) customer.AdvanceBalance -= sale.ChangeAmount;
+                    _context.Customers.Update(customer);
+                }
+
+                // 3. Reverse the DailySummary effects (mirror of CreateSalesAsync).
+                var summary = await _context.DailyTransactionSummaries
+                    .FirstOrDefaultAsync(d => d.TransactionDate == sale.SalesDate.Date && d.BranchId == sale.BranchId);
+                if (summary != null)
+                {
+                    summary.TotalCashSales -= sale.PaidAmount;
+                    if (sale.ChangeAmount > 0 && sale.IsChangeTakenAsIncome) summary.TotalCashSales -= sale.ChangeAmount;
+                    if (summary.TotalCashSales < 0) summary.TotalCashSales = 0;
+
+                    summary.TotalDueSales -= sale.DueAmount;
+                    if (summary.TotalDueSales < 0) summary.TotalDueSales = 0;
+
+                    // Recompute the profit this sale added, exactly as creation did.
+                    decimal totalProfit = sale.SalesDetails.Sum(d => d.LineTotal - (d.CostPriceAtSale * d.Quantity));
+                    if (sale.ChangeAmount > 0 && sale.IsChangeTakenAsIncome) totalProfit += sale.ChangeAmount;
+                    summary.NetProfit -= totalProfit;
+
+                    // The sale's payments are unwound together with the voided
+                    // sale; the payment rows themselves are kept as records.
+                    foreach (var payment in sale.Payments ?? Enumerable.Empty<InvoicePayment>())
+                    {
+                        var method = await _context.PaymentMethods.AsNoTracking().FirstOrDefaultAsync(m => m.MethodId == payment.PaymentMethodId);
+                        if (method != null)
+                        {
+                            string name = method.MethodName.ToLower();
+                            if (name.Contains("cash")) summary.TotalCash -= payment.Amount;
+                            else if (name.Contains("bkash")) summary.TotalBkash -= payment.Amount;
+                            else if (name.Contains("nagad")) summary.TotalNagad -= payment.Amount;
+                            else if (name.Contains("card") || name.Contains("bank")) summary.TotalCard -= payment.Amount;
+                        }
+                    }
+                    _context.DailyTransactionSummaries.Update(summary);
+                }
+
+                sale.IsDeleted = true;
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw new Exception("Sale Delete Failed: " + ex.Message, ex);
+            }
+        }
+
+        // Header-only edit: Remarks and SalesDate only. Quantities, amounts,
+        // customer, branch and lines are never touched, so stock and books
+        // cannot be corrupted by this update.
+        public async Task<bool> UpdateHeaderAsync(int id, DocumentHeaderUpdateDTO dto)
+        {
             var sale = await _context.SalesMasters.FindAsync(id);
             if (sale == null) return false;
-            sale.IsDeleted = true;
+
+            if (dto.Remarks != null) sale.Remarks = dto.Remarks;
+            if (dto.DocumentDate.HasValue) sale.SalesDate = dto.DocumentDate.Value;
             return await _context.SaveChangesAsync() > 0;
         }
 

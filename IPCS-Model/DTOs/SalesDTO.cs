@@ -49,6 +49,7 @@ namespace IPCS_Model.DTOs
         public string InvoiceNo { get; set; } = string.Empty;
         public DateTime SalesDate { get; set; }
         public string CustomerName { get; set; } = string.Empty;
+        public int CustomerId { get; set; }
         public decimal TotalAmount { get; set; }
         public decimal NetAmount { get; set; }
         public decimal PaidAmount { get; set; }

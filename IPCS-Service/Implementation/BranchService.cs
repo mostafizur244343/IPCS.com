@@ -90,7 +90,6 @@ namespace IPCS_Service.Implementation
                         TotalPurchases = b.PurchaseMasters.Count()
                     }).FirstOrDefaultAsync();
 
-                if (branch == null) throw new Exception($"Branch with ID {id} not found.");
                 return branch;
             }
             catch (Exception ex) 
@@ -104,7 +103,6 @@ namespace IPCS_Service.Implementation
             try 
             { 
                 var branch = await _context.Branches.FindAsync(id);
-                if (branch == null) throw new Exception($"Branch with ID {id} not found.");
                 return branch;
             }
             catch (Exception ex) 
@@ -166,4 +164,4 @@ namespace IPCS_Service.Implementation
             }
         }
     }
-}
+}
