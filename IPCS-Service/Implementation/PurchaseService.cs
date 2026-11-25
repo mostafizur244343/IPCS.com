@@ -96,19 +96,27 @@ namespace IPCS_Service.Implementation
                     }
                 }
 
-                // 3. Financial Update: Daily Transaction Summary (Today)
+                // 3. Financial Update: Daily Transaction Summary (Today, per branch)
+                // Create the row if missing (same as SalesService) — otherwise the
+                // payment-bucket update in 3.1 throws NullReferenceException when
+                // this is the first transaction of the day on a fresh database.
                 var today = DateTime.Now.Date;
-                var dailySummary = await _context.DailyTransactionSummaries.FirstOrDefaultAsync(d => d.TransactionDate == today);
-                if (dailySummary != null)
+                var dailySummary = await _context.DailyTransactionSummaries.FirstOrDefaultAsync(d => d.TransactionDate == today && d.BranchId == purchaseMaster.BranchId);
+                if (dailySummary == null)
                 {
-                    dailySummary.TotalPurchase += purchaseMaster.TotalAmount;
-                    
-                    // Update specific buckets if needed, or we just track total purchase here
-                    _context.DailyTransactionSummaries.Update(dailySummary);
+                    dailySummary = new DailyTransactionSummary
+                    {
+                        TransactionDate = today,
+                        BranchId = purchaseMaster.BranchId,
+                        OpeningBalance = 0
+                    };
+                    await _context.DailyTransactionSummaries.AddAsync(dailySummary);
                 }
 
+                dailySummary.TotalPurchase += purchaseMaster.TotalAmount;
+
                 // 3.1 Update Daily Summary for each Split Payment (Actual Cash Outflow)
-                foreach(var payment in purchaseMaster.Payments)
+                foreach(var payment in purchaseMaster.Payments ?? Enumerable.Empty<InvoicePayment>())
                 {
                      var method = await _context.PaymentMethods.FindAsync(payment.PaymentMethodId);
                      if (method != null)

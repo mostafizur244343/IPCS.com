@@ -208,7 +208,7 @@ builder.Entity<ProductUnitConversion>()
 
             builder.Entity<InvoicePayment>()
                 .HasOne(p => p.Purchase)
-                .WithMany()
+                .WithMany(p => p.Payments)
                 .HasForeignKey(p => p.PurchaseId)
                 .OnDelete(DeleteBehavior.Restrict);
 

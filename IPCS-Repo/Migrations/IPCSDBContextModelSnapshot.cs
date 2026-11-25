@@ -361,9 +361,6 @@ namespace IPCS_Repo.Migrations
                     b.Property<int?>("PurchaseId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("PurchaseMasterPurchaseId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Remarks")
                         .HasColumnType("nvarchar(max)");
 
@@ -383,8 +380,6 @@ namespace IPCS_Repo.Migrations
                     b.HasIndex("PaymentMethodId");
 
                     b.HasIndex("PurchaseId");
-
-                    b.HasIndex("PurchaseMasterPurchaseId");
 
                     b.HasIndex("SaleId");
 
@@ -1937,13 +1932,9 @@ namespace IPCS_Repo.Migrations
                         .IsRequired();
 
                     b.HasOne("IPCS_Model.Entities.PurchaseMaster", "Purchase")
-                        .WithMany()
+                        .WithMany("Payments")
                         .HasForeignKey("PurchaseId")
                         .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("IPCS_Model.Entities.PurchaseMaster", null)
-                        .WithMany("Payments")
-                        .HasForeignKey("PurchaseMasterPurchaseId");
 
                     b.HasOne("IPCS_Model.Entities.SalesMaster", "Sale")
                         .WithMany("Payments")
