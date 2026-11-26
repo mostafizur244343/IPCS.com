@@ -60,9 +60,11 @@ import { FormsModule } from '@angular/forms';
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
+      transition: all 0.18s ease;
     }
-    .page-btn:hover:not(:disabled) { border-color: var(--primary, #0f766e); color: var(--primary, #0f766e); }
-    .page-btn.active { background: var(--primary, #0f766e); border-color: var(--primary, #0f766e); color: #fff; }
+    .page-btn:hover:not(:disabled) { border-color: var(--primary, #0f766e); color: var(--primary, #0f766e); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(15, 118, 110, 0.12); }
+    .page-btn.active { background: var(--primary, #0f766e); border-color: var(--primary, #0f766e); color: #fff; box-shadow: 0 4px 10px rgba(15, 118, 110, 0.25); }
+    .page-btn:active:not(:disabled) { transform: scale(0.94); }
     .page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
     .page-ellipsis { color: #94a3b8; padding: 0 2px; }
     .pagination-size { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted, #64748b); }

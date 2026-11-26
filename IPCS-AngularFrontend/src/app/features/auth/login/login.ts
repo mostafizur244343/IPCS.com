@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth';
+import { LogoComponent } from '../../../shared/components/logo/logo';
 
 /**
  * LoginComponent
@@ -12,18 +13,24 @@ import { AuthService } from '../../../core/services/auth';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LogoComponent],
   templateUrl: './login.html',
 })
 export class LoginComponent {
   loginData = { emailOrMobile: '', password: '' };
   isLoading = false;
   errorMsg = '';
+  showPassword = false;
 
   constructor(
     private auth: AuthService,
     private router: Router,
   ) {}
+
+  /** Show/hide the password (UI-only state). */
+  togglePassword() {
+    this.showPassword = !this.showPassword;
+  }
 
   /**
    * Submit the login form to the AuthService

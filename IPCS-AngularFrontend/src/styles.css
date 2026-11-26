@@ -369,23 +369,7 @@ p { color: var(--text-muted); }
   border: 1px solid rgba(226, 232, 240, 0.8) !important;
 }
 
-/* Slower and smoother premium zoom-in / zoom-out transitions */
-.swal2-show {
-  animation: swal2-show-slow 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-}
-.swal2-hide {
-  animation: swal2-hide-slow 0.35s cubic-bezier(0.36, 0, 0.66, -0.56) !important;
-}
-
-@keyframes swal2-show-slow {
-  0% { transform: scale(0.85); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-@keyframes swal2-hide-slow {
-  0% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(0.9); opacity: 0; }
-}
+/* SweetAlert2 entrance is tuned in the UI POLISH section at the end of this file. */
 
 .swal2-title {
   font-weight: 700 !important;
@@ -446,6 +430,162 @@ p { color: var(--text-muted); }
 .swal2-confirm:hover {
   transform: translateY(-1px) !important;
   box-shadow: 0 6px 16px rgba(15, 118, 110, 0.3) !important;
+}
+
+/* ==========================================================================
+   UI POLISH — Shared motion system (2026-11-26)
+   One subtle animation layer for the whole app. Everything is 150–300ms,
+   ease-out, and never blocks input. No behaviour changes here — look only.
+   ========================================================================== */
+
+/* --- Keyframes --- */
+@keyframes pc-page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pc-row-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pc-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+@keyframes pc-error-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pc-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pc-pop-in {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes pc-float-soft {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(0, -14px); }
+}
+
+/* --- Page transitions: every routed view glides in once --- */
+.page-container > *:not(router-outlet) {
+  animation: pc-page-in 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* --- Staggered entrance for grouped children (dashboard stats, etc.) --- */
+.pc-stagger > * { animation: pc-page-in 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.pc-stagger > *:nth-child(1) { animation-delay: 0.02s; }
+.pc-stagger > *:nth-child(2) { animation-delay: 0.07s; }
+.pc-stagger > *:nth-child(3) { animation-delay: 0.12s; }
+.pc-stagger > *:nth-child(4) { animation-delay: 0.17s; }
+.pc-stagger > *:nth-child(5) { animation-delay: 0.22s; }
+.pc-stagger > *:nth-child(6) { animation-delay: 0.27s; }
+
+/* --- Table rows: gentle fade with a small stagger on (re)render --- */
+.data-table tbody tr { animation: pc-row-in 0.3s ease-out both; }
+.data-table tbody tr:nth-child(1) { animation-delay: 0.01s; }
+.data-table tbody tr:nth-child(2) { animation-delay: 0.03s; }
+.data-table tbody tr:nth-child(3) { animation-delay: 0.05s; }
+.data-table tbody tr:nth-child(4) { animation-delay: 0.07s; }
+.data-table tbody tr:nth-child(5) { animation-delay: 0.09s; }
+.data-table tbody tr:nth-child(6) { animation-delay: 0.11s; }
+.data-table tbody tr:nth-child(7) { animation-delay: 0.13s; }
+.data-table tbody tr:nth-child(8) { animation-delay: 0.15s; }
+.data-table tbody tr:nth-child(9) { animation-delay: 0.17s; }
+.data-table tbody tr:nth-child(10) { animation-delay: 0.19s; }
+.data-table tbody tr:nth-child(11) { animation-delay: 0.21s; }
+.data-table tbody tr:nth-child(12) { animation-delay: 0.23s; }
+.data-table td { transition: background-color 0.15s ease; }
+
+/* --- Button press feedback (subtle, never blocks input) --- */
+.btn:active { transform: scale(0.97); }
+.btn-primary:active { transform: scale(0.97); }
+.icon-btn:active { transform: scale(0.9); }
+.btn:focus-visible, .icon-btn:focus-visible, a:focus-visible,
+.page-btn:focus-visible, .back-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* --- Card hover lift (opt-in, for dashboard/report cards) --- */
+.card-lift { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+.card-lift:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+
+/* --- Shared back button (every form/list page uses this class) --- */
+.back-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid #e2e8f0; background: white;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+.back-btn:hover {
+  background: #f0fdfa; color: var(--primary);
+  border-color: var(--primary); transform: translateX(-2px);
+}
+.back-btn:active { transform: scale(0.92); }
+
+/* --- Form validation: soft, delightful, never harsh ---
+   Angular adds ng-touched/ng-invalid automatically on template-driven
+   controls, so this works on every form with zero template changes.
+   Invalid field: soft red border + tint + one short shake.
+   Message: slides/fades in below the field (CSS ::after, generic text). */
+.input-group input.ng-touched.ng-invalid,
+.input-group select.ng-touched.ng-invalid,
+.input-group textarea.ng-touched.ng-invalid,
+.float-field input.ng-touched.ng-invalid {
+  border-color: #ef4444 !important;
+  background-color: #fef2f2 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+  animation: pc-shake 0.3s ease-out;
+}
+.input-group:not(.has-inline-error):has(> input.ng-touched.ng-invalid)::after,
+.input-group:not(.has-inline-error):has(> select.ng-touched.ng-invalid)::after,
+.input-group:not(.has-inline-error):has(> textarea.ng-touched.ng-invalid)::after,
+.float-field:has(> input.ng-touched.ng-invalid)::after {
+  content: 'This field is required';
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 6px; font-size: 0.8rem; font-weight: 500; color: #dc2626;
+  animation: pc-error-in 0.2s ease-out both;
+}
+/* Explicit inline error message (use in templates when a specific text is needed) */
+.field-error {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 6px; font-size: 0.8rem; font-weight: 500; color: #dc2626;
+  animation: pc-error-in 0.2s ease-out both;
+}
+
+/* --- Modals: backdrop fades, dialog pops in gently --- */
+.modal-backdrop { animation: pc-backdrop-in 0.18s ease-out both; }
+.modal-content { animation: pc-pop-in 0.22s cubic-bezier(0.34, 1.4, 0.64, 1) both; }
+
+/* --- SweetAlert2: quicker, gentler entrance than the old 0.45s zoom --- */
+.swal2-show {
+  animation: swal2-show-slow 0.3s cubic-bezier(0.34, 1.4, 0.64, 1) !important;
+}
+.swal2-hide {
+  animation: swal2-hide-slow 0.22s ease-in !important;
+}
+@keyframes swal2-show-slow {
+  0% { transform: scale(0.93); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes swal2-hide-slow {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0; }
+}
+
+/* --- Respect users who prefer no motion --- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 

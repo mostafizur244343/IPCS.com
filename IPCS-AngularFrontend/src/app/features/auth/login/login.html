@@ -1,15 +1,21 @@
-<!--  
-  Login Screen UI 
-  Main login page of the application using custom CSS for a premium design.
+<!--
+  Login Screen UI
+  Premium first look: layered teal gradient with soft floating blobs and a
+  dot texture, glass card with a staggered entrance, floating labels,
+  show/hide password, loading state and a gentle shake on failed login.
+  The test-credentials note below is kept exactly as it was.
 -->
 <div class="login-container">
-  <div class="login-card animate-fade-in">
+  <div class="login-bg-decor" aria-hidden="true">
+    <span class="blob b1"></span>
+    <span class="blob b2"></span>
+    <span class="dots"></span>
+  </div>
+
+  <div class="login-card" [class.shake]="!!errorMsg">
     <!-- Logo and Title Section -->
     <div class="logo-section">
-      <div class="logo-icon">
-        <!-- SVG icon included directly to minimize external dependencies -->
-        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2a2 2 0 0 0-2 2v5H4a2 2 0 0 0-2 2v2c0 1.1.9 2 2 2h5v5c0 1.1.9 2 2 2h2a2 2 0 0 0 2-2v-5h5a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-5V4a2 2 0 0 0-2-2h-2z"/></svg>
-      </div>
+      <app-logo [size]="72"></app-logo>
       <h1>PharmaCare</h1>
       <p>Inventory Management System</p>
     </div>
@@ -25,30 +31,37 @@
 
     <!-- Login Form -->
     <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
-      <!-- Username Input -->
-      <div class="input-group">
-        <label for="username">Email or Mobile Number</label>
-        <input 
-          type="text" 
-          id="username" 
-          name="emailOrMobile" 
-          [(ngModel)]="loginData.emailOrMobile" 
-          placeholder="Enter email or mobile number"
+      <!-- Email / Mobile Input (floating label) -->
+      <div class="float-field">
+        <input
+          type="text"
+          id="username"
+          name="emailOrMobile"
+          [(ngModel)]="loginData.emailOrMobile"
+          placeholder=" "
           required
+          autocomplete="username"
         >
+        <label for="username">Email or Mobile Number</label>
       </div>
 
-      <!-- Password Input -->
-      <div class="input-group">
-        <label for="password">Password</label>
-        <input 
-          type="password" 
-          id="password" 
-          name="password" 
-          [(ngModel)]="loginData.password" 
-          placeholder="••••••••"
+      <!-- Password Input (floating label + show/hide) -->
+      <div class="float-field">
+        <input
+          [type]="showPassword ? 'text' : 'password'"
+          id="password"
+          name="password"
+          [(ngModel)]="loginData.password"
+          placeholder=" "
           required
+          autocomplete="current-password"
         >
+        <label for="password">Password</label>
+        <button type="button" class="pw-toggle" (click)="togglePassword()" tabindex="-1"
+                [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
+          <svg *ngIf="!showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          <svg *ngIf="showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+        </button>
       </div>
 
       <!-- Error message displayed for invalid credentials -->
@@ -59,8 +72,8 @@
       <!-- Submit Button: Disabled while loading or if form is invalid -->
       <button type="submit" class="btn btn-primary w-full" [disabled]="isLoading || !loginForm.valid">
         <span *ngIf="!isLoading">Login to System</span>
-        <!-- Loading Spinner -->
         <span *ngIf="isLoading" class="spinner"></span>
+        <span *ngIf="isLoading">Signing in…</span>
       </button>
     </form>
 
@@ -71,64 +84,73 @@
 </div>
 
 <style>
-  /* 
-    Component Specific Styles (CSS)
-    Specific styling for the login page.
+  /*
+    Login page styles — premium first look.
+    Brand teal gradient, soft floating blobs, glass card.
   */
   .login-container {
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%); /* Gradient background */
+    background: linear-gradient(140deg, #0f766e 0%, #115e59 45%, #134e4a 100%);
     overflow: hidden;
     position: relative;
-    font-family: sans-serif;
+    padding: 24px;
   }
 
-  /* Decorative circle in the background */
-  .login-container::before {
-    content: '';
+  /* Soft background decor: blurred blobs drifting slowly + dot texture */
+  .login-bg-decor { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+  .login-bg-decor .blob {
     position: absolute;
-    width: 600px;
-    height: 600px;
-    background: rgba(45, 212, 191, 0.1);
     border-radius: 50%;
-    top: -100px;
-    right: -100px;
+    filter: blur(70px);
+    animation: pc-float-soft 11s ease-in-out infinite;
+  }
+  .login-bg-decor .b1 { width: 480px; height: 480px; background: rgba(45, 212, 191, 0.28); top: -140px; right: -80px; }
+  .login-bg-decor .b2 { width: 380px; height: 380px; background: rgba(14, 165, 233, 0.20); bottom: -120px; left: -60px; animation-delay: -4s; }
+  .login-bg-decor .dots {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: radial-gradient(ellipse 90% 80% at 50% 50%, black 30%, transparent 75%);
   }
 
   .login-card {
-    background: white;
-    padding: 42px 48px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    padding: 40px 44px 36px;
     border-radius: 24px;
     width: 100%;
-    max-width: 440px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    max-width: 460px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
     z-index: 10;
+    animation: loginCardIn 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) both;
   }
+
+  @keyframes loginCardIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* Gentle shake on a failed login (replays: errorMsg is cleared on submit) */
+  .login-card.shake { animation: pc-shake 0.35s ease-out; }
 
   .logo-section {
     text-align: center;
     margin-bottom: 24px;
+    animation: pc-page-in 0.4s 0.08s ease-out both;
   }
 
-  .logo-icon {
-    width: 64px;
-    height: 64px;
-    background: rgba(15, 118, 110, 0.1);
-    color: #0f766e;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 16px;
-  }
+  .logo-section app-logo { display: inline-block; margin-bottom: 16px; }
 
   .logo-section h1 {
-    font-size: 28px;
+    font-size: 30px;
     margin-bottom: 4px;
     color: #1e293b;
+    letter-spacing: -0.02em;
   }
 
   .logo-section p {
@@ -137,7 +159,7 @@
     margin: 0;
   }
 
-  /* Red Highlighted Note Styling */
+  /* Red Highlighted Note Styling (kept as-is) */
   .test-credentials-note {
     background-color: #fef2f2;
     border: 2px dashed #dc2626;
@@ -148,6 +170,7 @@
     text-align: center;
     font-size: 13.5px;
     line-height: 1.5;
+    animation: pc-page-in 0.4s 0.14s ease-out both;
   }
 
   .credentials-details {
@@ -158,52 +181,79 @@
     font-size: 14px;
   }
 
-  .input-group {
+  /* Floating-label fields */
+  .float-field {
+    position: relative;
     margin-bottom: 20px;
   }
 
-  .input-group label {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: #334155;
-    margin-bottom: 8px;
-  }
-
-  .input-group input {
+  .float-field input {
     width: 100%;
-    padding: 12px 16px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
+    padding: 14px 16px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    background: #f8fafc;
     font-size: 15px;
     box-sizing: border-box;
-    transition: border-color 0.2s;
-  }
-
-  .input-group input:focus {
+    transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
     outline: none;
+    color: #1e293b;
+  }
+
+  .float-field input:focus {
     border-color: #0f766e;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.1);
   }
 
-  .btn-primary {
-    background: #0f766e;
-    color: white;
-    border: none;
-    padding: 14px;
-    border-radius: 8px;
-    font-size: 16px;
+  .float-field label {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 0 6px;
+    font-size: 15px;
+    color: #64748b;
+    pointer-events: none;
+    transition: all 0.18s ease-out;
+  }
+
+  .float-field input:focus + label,
+  .float-field input:not(:placeholder-shown) + label {
+    top: -1px;
+    font-size: 12px;
     font-weight: 600;
+    color: #0f766e;
+    background: white;
+  }
+
+  /* Password fields need room for the eye button */
+  .float-field input[type="password"],
+  .float-field input[type="text"] { padding-right: 48px; }
+  .float-field input[type="text"]#username { padding-right: 16px; }
+
+  .pw-toggle {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: none;
+    color: #94a3b8;
     cursor: pointer;
-    transition: background 0.2s;
+    border-radius: 8px;
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
+    transition: color 0.2s, background-color 0.2s;
   }
+  .pw-toggle:hover { color: #0f766e; background: #f0fdfa; }
+  .pw-toggle:active { transform: translateY(-50%) scale(0.92); }
 
-  .btn-primary:hover:not(:disabled) {
-    background: #115e59;
-  }
-
+  /* Button look comes from the global .btn / .btn-primary rules; only the
+     disabled state is local so an invalid form reads clearly. */
   .btn-primary:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -222,6 +272,7 @@
     margin-bottom: 16px;
     text-align: center;
     border: 1px solid #fee2e2;
+    animation: pc-error-in 0.2s ease-out both;
   }
 
   .footer-links {
@@ -251,5 +302,9 @@
 
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+
+  @media (max-width: 480px) {
+    .login-card { padding: 32px 24px 28px; }
   }
 </style>

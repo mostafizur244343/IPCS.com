@@ -16,7 +16,7 @@
   </div>
 
   <!-- Grid of 4 Status Cards -->
-  <div class="stats-grid">
+  <div class="stats-grid pc-stagger">
     <div *ngFor="let stat of stats" class="stat-card premium-card" [ngClass]="stat.color">
       <div class="stat-visual">
         <div class="icon-circle">
@@ -38,9 +38,9 @@
   </div>
 
   <!-- Main Grid: Data table on the left and Quick Actions on the right -->
-  <div class="main-grid">
+  <div class="main-grid pc-stagger">
     <!-- Recent Sales Table Card -->
-    <div class="card recent-transactions">
+    <div class="card card-lift recent-transactions">
       <div class="card-header">
         <h3>Recent Sales</h3>
         <button class="btn btn-secondary">View All</button>
@@ -71,7 +71,7 @@
     </div>
 
     <!-- Quick Action Button List -->
-    <div class="card quick-actions">
+    <div class="card card-lift quick-actions">
       <h3>Quick Actions</h3>
       <div class="actions-list">
         <button class="action-btn" routerLink="/dashboard/sales/new">

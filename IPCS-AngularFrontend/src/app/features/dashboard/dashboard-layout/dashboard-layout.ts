@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { PermissionService } from '../../../core/services/permission';
 import { AuthService } from '../../../core/services/auth';
+import { LogoComponent } from '../../../shared/components/logo/logo';
 
 /**
  * DashboardLayoutComponent
@@ -11,7 +12,7 @@ import { AuthService } from '../../../core/services/auth';
 @Component({
   selector: 'app-dashboard-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, LogoComponent],
   templateUrl: './dashboard-layout.html'
 })
 export class DashboardLayoutComponent implements OnInit {
