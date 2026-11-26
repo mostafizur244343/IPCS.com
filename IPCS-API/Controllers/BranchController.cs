@@ -87,8 +87,28 @@ namespace IPCS_API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _branchService.DeleteAsync(id);
-            return Ok(new { Message = "Deleted successfully" });
+            try
+            {
+                await _branchService.DeleteAsync(id);
+                return Ok(new { Message = "Deleted successfully" });
+            }
+            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+        }
+
+        [PermissionAuthorize(Permissions.Branch.View)]
+        [HttpGet("trash")]
+        public async Task<IActionResult> GetTrash() => Ok(await _branchService.GetDeletedListAsync());
+
+        [HttpPost("restore/{id}")]
+        public async Task<IActionResult> Restore(int id)
+        {
+            try
+            {
+                var result = await _branchService.RestoreAsync(id);
+                if (result) return Ok(new { Message = "Branch restored successfully" });
+                return NotFound(new { Message = "Branch not found or not deleted" });
+            }
+            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
         }
     }
 }

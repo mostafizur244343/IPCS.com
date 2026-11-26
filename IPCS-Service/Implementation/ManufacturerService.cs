@@ -94,7 +94,10 @@ namespace IPCS_Service.Implementation
                 var hasProducts = await _context.Products.AnyAsync(p => p.BrandId == id);
                 if (hasProducts) throw new Exception("Cannot delete manufacturer because it is being used by one or more products.");
 
-                _context.Manufacturers.Remove(manufacturer);
+                // Soft delete: the row stays in the DB (trash/restorable)
+                // instead of being hard-removed.
+                manufacturer.IsDeleted = true;
+                _context.Manufacturers.Update(manufacturer);
                 await _context.SaveChangesAsync();
                 return true;
             }
@@ -102,6 +105,26 @@ namespace IPCS_Service.Implementation
             {
                 throw new Exception(ex.Message);
             }
+        }
+
+        // Master data carries no books effects, so restore only flips the
+        // flag back.
+        public async Task<bool> RestoreAsync(int id)
+        {
+            var manufacturer = await _context.Manufacturers.IgnoreQueryFilters().FirstOrDefaultAsync(m => m.BrandId == id);
+            if (manufacturer == null) return false;
+            if (!manufacturer.IsDeleted) return false;
+            manufacturer.IsDeleted = false;
+            _context.Manufacturers.Update(manufacturer);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<IEnumerable<Manufacturer>> GetDeletedListAsync()
+        {
+            return await _context.Manufacturers.IgnoreQueryFilters()
+                .Where(m => m.IsDeleted)
+                .AsNoTracking()
+                .ToListAsync();
         }
     }
 }

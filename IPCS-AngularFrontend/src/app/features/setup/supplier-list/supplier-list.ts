@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { ImageUploadComponent } from '../../../shared/image-upload/image-upload';
 
 /**
@@ -11,7 +12,7 @@ import { ImageUploadComponent } from '../../../shared/image-upload/image-upload'
 @Component({
   selector: 'app-supplier-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ImageUploadComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ImageUploadComponent],
   templateUrl: './supplier-list.html'
 })
 export class SupplierListComponent implements OnInit {

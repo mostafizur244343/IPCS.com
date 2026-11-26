@@ -195,7 +195,93 @@ namespace IPCS_Service.Implementation
                 await UpdateDailySummaryAsync(payment.PaymentMethodId, -payment.Amount, payment.TransactionType, branchId);
             }
 
-            _context.InvoicePayments.Remove(payment);
+            // Soft delete: the row stays as a record (visible in trash and
+            // restorable) instead of being hard-removed.
+            payment.IsDeleted = true;
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<IEnumerable<InvoicePayment>> GetDeletedPaymentsAsync()
+        {
+            return await _context.InvoicePayments
+                .IgnoreQueryFilters()
+                .Include(p => p.PaymentMethod)
+                .Where(p => p.IsDeleted)
+                .ToListAsync();
+        }
+
+        // Restore re-applies the settlement exactly as ProcessSplitPaymentAsync
+        // did (and exactly undoes what DeletePaymentAsync reversed). Guard:
+        // the linked invoice must be live — if the invoice itself is deleted,
+        // its settlement was already unwound with it, so restoring the
+        // payment alone would double-apply. Restore the invoice first.
+        public async Task<bool> RestorePaymentAsync(int paymentId)
+        {
+            var payment = await _context.InvoicePayments.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.PaymentId == paymentId);
+            if (payment == null) return false;
+            if (!payment.IsDeleted) return false;
+
+            int? branchId = null;
+            bool invoiceFound = false;
+            if ((payment.TransactionType == "Purchase" || payment.TransactionType == "SupplierPayment") && payment.PurchaseId.HasValue)
+            {
+                // Guard (R5): the linked purchase must be live — if the
+                // purchase itself is deleted, its settlement was already
+                // unwound with it, so restoring the payment alone would
+                // double-apply. Restore the purchase first.
+                var purchase = await _context.PurchaseMasters.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.PurchaseId == payment.PurchaseId.Value);
+                if (purchase == null)
+                    throw new Exception($"Cannot restore payment #{payment.PaymentId}: the purchase linked to this payment no longer exists.");
+                if (purchase.IsDeleted)
+                    throw new Exception($"Cannot restore payment #{payment.PaymentId}: the purchase {purchase.PurchaseCode} is deleted. Restore the purchase first, then restore the payment.");
+                invoiceFound = true;
+                branchId = purchase.BranchId;
+                purchase.PaidAmount += payment.Amount;
+                purchase.DueAmount -= payment.Amount;
+                purchase.PaymentStatus = purchase.DueAmount <= 0 ? "Paid" : (purchase.PaidAmount > 0 ? "Partial" : "Due");
+                _context.PurchaseMasters.Update(purchase);
+
+                var supplier = await _context.Suppliers.FindAsync(purchase.SupplierId);
+                if (supplier != null)
+                {
+                    supplier.CurrentDue -= payment.Amount;
+                    _context.Suppliers.Update(supplier);
+                }
+            }
+            else if ((payment.TransactionType == "Sale" || payment.TransactionType == "CustomerReceive") && payment.SaleId.HasValue)
+            {
+                // Guard (R5): the linked sale must be live — if the sale
+                // itself is deleted, its settlement was already unwound
+                // with it, so restoring the payment alone would
+                // double-apply. Restore the sale first.
+                var sale = await _context.SalesMasters.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.SalesId == payment.SaleId.Value);
+                if (sale == null)
+                    throw new Exception($"Cannot restore payment #{payment.PaymentId}: the sale linked to this payment no longer exists.");
+                if (sale.IsDeleted)
+                    throw new Exception($"Cannot restore payment #{payment.PaymentId}: the sale {sale.InvoiceNo} is deleted. Restore the sale first, then restore the payment.");
+                invoiceFound = true;
+                branchId = sale.BranchId;
+                sale.PaidAmount += payment.Amount;
+                sale.DueAmount -= payment.Amount;
+                sale.PaymentStatus = sale.DueAmount <= 0 ? "Paid" : (sale.PaidAmount > 0 ? "Partial" : "Due");
+                _context.SalesMasters.Update(sale);
+
+                var customer = await _context.Customers.FindAsync(sale.CustomerId);
+                if (customer != null)
+                {
+                    customer.CurrentDue -= payment.Amount;
+                    _context.Customers.Update(customer);
+                }
+            }
+            // Refund / audit payments (PurchaseReturnRefund, Refund) have no
+            // invoice settlement to re-apply; only the row itself is restored.
+
+            if (invoiceFound)
+            {
+                await UpdateDailySummaryAsync(payment.PaymentMethodId, payment.Amount, payment.TransactionType, branchId);
+            }
+
+            payment.IsDeleted = false;
             return await _context.SaveChangesAsync() > 0;
         }
 

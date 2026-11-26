@@ -58,5 +58,24 @@ namespace IPCS_API.Controllers
             if (result) return Ok(new { Message = "Payment Deleted" });
             return BadRequest("Error Deleting Payment");
         }
+
+        [PermissionAuthorize(Permissions.Payment.View)]
+        [HttpGet("trash")]
+        public async Task<IActionResult> GetTrash() => Ok(await _paymentService.GetDeletedPaymentsAsync());
+
+        [HttpPost("restore/{id}")]
+        public async Task<IActionResult> Restore(int id)
+        {
+            try
+            {
+                var result = await _paymentService.RestorePaymentAsync(id);
+                if (result) return Ok(new { Message = "Payment restored successfully" });
+                return NotFound(new { Message = "Payment not found or not deleted" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
     }
 }

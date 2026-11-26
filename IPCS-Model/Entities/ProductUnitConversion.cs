@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IPCS_Model.Entities
@@ -24,5 +24,6 @@ namespace IPCS_Model.Entities
         public decimal Factor { get; set; } // 1 FromUnit = How ToUnit?
 
         public int Level { get; set; } // 1: Container, 2: Box etc
+        public bool IsDeleted { get; set; } = false;
     }
 }

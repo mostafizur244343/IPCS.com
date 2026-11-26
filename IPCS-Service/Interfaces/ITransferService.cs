@@ -12,6 +12,9 @@ namespace IPCS_Service.Interfaces
         Task<TransferRequisition?> GetRequisitionByIdAsync(int id);
         Task<bool> CreateRequisitionAsync(TransferRequisition requisition);
         Task<bool> UpdateRequisitionStatusAsync(int id, string status);
+        Task<bool> SoftDeleteRequisitionAsync(int id);
+        Task<IEnumerable<TransferRequisition>> GetDeletedRequisitionsAsync();
+        Task<bool> RestoreRequisitionAsync(int id);
 
         // Transfer Setup
         Task<IEnumerable<TransferMaster>> GetAllTransfersAsync();
@@ -26,5 +29,7 @@ namespace IPCS_Service.Interfaces
 
         // Soft Delete
         Task<bool> SoftDeleteTransferAsync(int id);
+        Task<bool> RestoreTransferAsync(int id);
+        Task<IEnumerable<TransferMaster>> GetDeletedTransfersAsync();
     }
 }

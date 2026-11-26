@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { BaseFeatureComponent } from '../../../shared/components/base-feature';
 
 /**
@@ -11,7 +12,7 @@ import { BaseFeatureComponent } from '../../../shared/components/base-feature';
 @Component({
   selector: 'app-category-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './category-list.html',
 })
 export class CategoryListComponent extends BaseFeatureComponent implements OnInit {

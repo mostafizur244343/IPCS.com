@@ -96,8 +96,28 @@ namespace IPCS_API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _categoryService.DeleteAsync(id);
-            return Ok(new { Message = "Successfully deleted" });
+            try
+            {
+                await _categoryService.DeleteAsync(id);
+                return Ok(new { Message = "Successfully deleted" });
+            }
+            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+        }
+
+        [PermissionAuthorize(Permissions.Category.View)]
+        [HttpGet("trash")]
+        public async Task<IActionResult> GetTrash() => Ok(await _categoryService.GetDeletedListAsync());
+
+        [HttpPost("restore/{id}")]
+        public async Task<IActionResult> Restore(int id)
+        {
+            try
+            {
+                var result = await _categoryService.RestoreAsync(id);
+                if (result) return Ok(new { Message = "Category restored successfully" });
+                return NotFound(new { Message = "Category not found or not deleted" });
+            }
+            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
         }
     }
 }

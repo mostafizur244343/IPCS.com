@@ -14,5 +14,7 @@ namespace IPCS_Service.Interfaces
         Task<bool> CreateAsync(Category category);
         Task<bool> UpdateAsync(Category category);
         Task<bool> DeleteAsync(int id);
+        Task<bool> RestoreAsync(int id);
+        Task<IEnumerable<Category>> GetDeletedListAsync();
     }
 }

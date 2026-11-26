@@ -11,6 +11,8 @@ namespace IPCS_Service.Interfaces
         Task<SalesReturnMaster?> GetByIdAsync(int id);
         Task<bool> CreateReturnAsync(SalesReturnMaster returnMaster);
         Task<bool> SoftDeleteAsync(int id);
+        Task<bool> RestoreAsync(int id);
+        Task<IEnumerable<SalesReturnMaster>> GetDeletedListAsync();
         Task<bool> UpdateHeaderAsync(int id, DocumentHeaderUpdateDTO dto);
     }
 }

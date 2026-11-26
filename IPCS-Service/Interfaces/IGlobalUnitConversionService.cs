@@ -10,5 +10,7 @@ namespace IPCS_Service.Interfaces
         Task<bool> CreateAsync(GlobalUnitConversion entity);
         Task<bool> UpdateAsync(GlobalUnitConversion entity);
         Task<bool> DeleteAsync(int id);
+        Task<bool> RestoreAsync(int id);
+        Task<IEnumerable<GlobalUnitConversionDTO>> GetDeletedListAsync();
     }
 }

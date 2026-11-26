@@ -251,6 +251,20 @@ namespace IPCS_Service.Implementation
                     .FirstOrDefaultAsync(s => s.SalesId == id);
                 if (sale == null) return false;
 
+                // Ordering guard (R4): a sale with a deleted return cannot
+                // be deleted — restore the return(s) first, so the
+                // return's refund audit payment (REF-) is visible again
+                // when the sale is restored later. Otherwise the restore
+                // would miss the refund and the daily totals would end up
+                // off by the refund amount.
+                var deletedReturns = await _context.SalesReturnMasters
+                    .IgnoreQueryFilters()
+                    .Where(x => x.SalesId == id && x.IsDeleted)
+                    .Select(x => x.ReturnNo)
+                    .ToListAsync();
+                if (deletedReturns.Count > 0)
+                    throw new Exception(DeletedReturnsMessage("delete", sale.InvoiceNo, deletedReturns));
+
                 // 1. Reverse stock: add the sold quantities back to their lots.
                 // Guard: the lot/branch-stock row must still exist, and a
                 // converted change credit must still be held by the customer.
@@ -369,12 +383,153 @@ namespace IPCS_Service.Implementation
             return await _context.SaveChangesAsync() > 0;
         }
 
+        // Restore re-applies the creation effects exactly as creation did
+        // (and exactly undoes what SoftDeleteAsync reversed), in one
+        // transaction. Guard: if the sold goods are no longer in stock
+        // (sold on or returned after the sale was deleted), the restore is
+        // rejected with a clear error instead of driving stock negative.
+        // Only payments that are still live are counted — a payment
+        // soft-deleted earlier already had its bucket effect reversed by
+        // its own delete, so it must not be counted here.
         public async Task<bool> RestoreAsync(int id)
         {
-            var sale = await _context.SalesMasters.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.SalesId == id);
-            if (sale == null) return false;
-            sale.IsDeleted = false;
-            return await _context.SaveChangesAsync() > 0;
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var sale = await _context.SalesMasters
+                    .Include(s => s.SalesDetails)
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(s => s.SalesId == id);
+                if (sale == null) return false;
+                if (!sale.IsDeleted) return false;
+
+                // Ordering guard (R2): a sale with a deleted return cannot
+                // be restored — restore the return(s) first, so the
+                // return's refund audit payment (REF-) is visible again
+                // and the restore re-applies the same payment set the
+                // delete unwound. Otherwise the daily totals would end up
+                // off by the refund amount.
+                var deletedReturns = await _context.SalesReturnMasters
+                    .IgnoreQueryFilters()
+                    .Where(x => x.SalesId == id && x.IsDeleted)
+                    .Select(x => x.ReturnNo)
+                    .ToListAsync();
+                if (deletedReturns.Count > 0)
+                    throw new Exception(DeletedReturnsMessage("restore", sale.InvoiceNo, deletedReturns));
+
+                // 1. Re-apply stock: remove the sold quantities again.
+                var reversals = new List<(SalesDetails Detail, BranchLotStock Stock, Product Product)>();
+                foreach (var detail in sale.SalesDetails)
+                {
+                    var product = await _context.Products.FindAsync(detail.ProductId);
+                    if (product != null && !product.IsService)
+                    {
+                        var stock = await _context.BranchLotStocks
+                            .FirstOrDefaultAsync(s => s.BranchId == sale.BranchId && s.ProductId == detail.ProductId && s.LotId == detail.LotId);
+                        if (stock == null)
+                            throw new Exception($"Cannot restore sale {sale.InvoiceNo}: stock record not found for Product ID {detail.ProductId} (lot {detail.LotId}).");
+                        if (stock.CurrentStock < detail.Quantity)
+                            throw new Exception($"Cannot restore sale {sale.InvoiceNo}: only {stock.CurrentStock} units of {product.ProductName} remain in stock (needs {detail.Quantity}). The goods were sold or returned after the sale was deleted.");
+                        reversals.Add((detail, stock, product));
+                    }
+                }
+
+                foreach (var (detail, stock, product) in reversals)
+                {
+                    stock.CurrentStock -= detail.Quantity;
+                    _context.BranchLotStocks.Update(stock);
+
+                    product.CurrentStock -= detail.Quantity;
+                    _context.Products.Update(product);
+
+                    var lastLedger = await _context.StockLedgers.AsNoTracking()
+                        .Where(l => l.BranchId == sale.BranchId && l.ProductId == detail.ProductId && l.LotId == detail.LotId)
+                        .OrderByDescending(l => l.LedgerId)
+                        .FirstOrDefaultAsync();
+                    await _context.StockLedgers.AddAsync(new StockLedger
+                    {
+                        BranchId = sale.BranchId,
+                        ProductId = detail.ProductId,
+                        LotId = detail.LotId,
+                        TransactionType = "Sale Restore",
+                        ReferenceNo = sale.InvoiceNo,
+                        TransactionDate = DateTime.Now,
+                        PreviousBalance = lastLedger?.CurrentBalance ?? 0,
+                        QuantityIn = 0,
+                        QuantityOut = detail.Quantity
+                    });
+                }
+
+                // 2. Re-apply customer due / advance credit.
+                var customer = await _context.Customers.FindAsync(sale.CustomerId);
+                if (customer != null)
+                {
+                    if (sale.DueAmount > 0) customer.CurrentDue += sale.DueAmount;
+                    if (sale.ChangeAmount > 0 && sale.IsChangeConvertedToCredit) customer.AdvanceBalance += sale.ChangeAmount;
+                    _context.Customers.Update(customer);
+                }
+
+                // 3. Re-apply the DailySummary effects (mirror of delete; the
+                // summary row is the one for the sale date + branch, created
+                // here if it is missing).
+                var summary = await _context.DailyTransactionSummaries
+                    .FirstOrDefaultAsync(d => d.TransactionDate == sale.SalesDate.Date && d.BranchId == sale.BranchId);
+                if (summary == null)
+                {
+                    summary = new DailyTransactionSummary
+                    {
+                        TransactionDate = sale.SalesDate.Date,
+                        BranchId = sale.BranchId,
+                        OpeningBalance = 0
+                    };
+                    await _context.DailyTransactionSummaries.AddAsync(summary);
+                }
+
+                summary.TotalCashSales += sale.PaidAmount;
+                if (sale.ChangeAmount > 0 && sale.IsChangeTakenAsIncome) summary.TotalCashSales += sale.ChangeAmount;
+                summary.TotalDueSales += sale.DueAmount;
+
+                // Recompute the profit this sale adds, exactly as creation did.
+                decimal totalProfit = sale.SalesDetails.Sum(d => d.LineTotal - (d.CostPriceAtSale * d.Quantity));
+                if (sale.ChangeAmount > 0 && sale.IsChangeTakenAsIncome) totalProfit += sale.ChangeAmount;
+                summary.NetProfit += totalProfit;
+
+                var payments = await _context.InvoicePayments
+                    .Where(p => p.SaleId == id)
+                    .ToListAsync();
+                foreach (var payment in payments)
+                {
+                    var method = await _context.PaymentMethods.AsNoTracking().FirstOrDefaultAsync(m => m.MethodId == payment.PaymentMethodId);
+                    if (method != null)
+                    {
+                        string name = method.MethodName.ToLower();
+                        if (name.Contains("cash")) summary.TotalCash += payment.Amount;
+                        else if (name.Contains("bkash")) summary.TotalBkash += payment.Amount;
+                        else if (name.Contains("nagad")) summary.TotalNagad += payment.Amount;
+                        else if (name.Contains("card") || name.Contains("bank")) summary.TotalCard += payment.Amount;
+                    }
+                }
+                _context.DailyTransactionSummaries.Update(summary);
+
+                sale.IsDeleted = false;
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw new Exception("Sale Restore Failed: " + ex.Message, ex);
+            }
+        }
+
+        // Shared wording for the R2/R4 ordering guards: a sale cannot be
+        // deleted or restored while one of its returns is deleted.
+        private static string DeletedReturnsMessage(string action, string invoiceNo, List<string> returnNos)
+        {
+            if (returnNos.Count == 1)
+                return $"Cannot {action} sale {invoiceNo}: sales return {returnNos[0]} is deleted. Restore the return first, then {action} the sale.";
+            return $"Cannot {action} sale {invoiceNo}: sales returns {string.Join(", ", returnNos)} are deleted. Restore the returns first, then {action} the sale.";
         }
     }
 }

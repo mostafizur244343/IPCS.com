@@ -147,8 +147,15 @@ namespace IPCS_API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _productService.SoftDeleteAsync(id);
-            return Ok(new { Message = "Successfully moved to trash" });
+            try
+            {
+                await _productService.SoftDeleteAsync(id);
+                return Ok(new { Message = "Successfully moved to trash" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpPost("restore/{id}")]

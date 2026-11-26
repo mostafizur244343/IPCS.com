@@ -101,5 +101,21 @@ namespace IPCS_API.Controllers
             }
             catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
         }
+
+        [PermissionAuthorize(Permissions.PaymentMethod.View)]
+        [HttpGet("trash")]
+        public async Task<IActionResult> GetTrash() => Ok(await _methodService.GetDeletedListAsync());
+
+        [HttpPost("restore/{id}")]
+        public async Task<IActionResult> Restore(int id)
+        {
+            try
+            {
+                var result = await _methodService.RestoreAsync(id);
+                if (result) return Ok(new { Message = "Payment method restored successfully" });
+                return NotFound(new { Message = "Payment method not found or not deleted" });
+            }
+            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+        }
     }
 }

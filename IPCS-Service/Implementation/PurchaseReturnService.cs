@@ -201,6 +201,23 @@ namespace IPCS_Service.Implementation
                     .FirstOrDefaultAsync(x => x.ReturnId == id);
                 if (r == null) return false;
 
+                // Ordering guard (R1): a return cannot be deleted while
+                // its purchase is deleted. Deleting it would hard-remove
+                // its refund audit payment (PREF-), so a later restore of
+                // the purchase could no longer see the refund and the
+                // daily totals would end up off by the refund amount.
+                // Restore the purchase first. (A return with no linked
+                // purchase has no invoice to order against, so the guard
+                // does not apply to it.)
+                if (r.PurchaseId.HasValue)
+                {
+                    var purchase = await _context.PurchaseMasters
+                        .IgnoreQueryFilters()
+                        .FirstOrDefaultAsync(x => x.PurchaseId == r.PurchaseId.Value);
+                    if (purchase != null && purchase.IsDeleted)
+                        throw new Exception($"Cannot delete purchase return {r.ReturnNo}: the purchase {purchase.PurchaseCode} is deleted. Restore the purchase first, then delete the return.");
+                }
+
                 // 1. Reverse stock: add the returned quantities back to their lots.
                 foreach (var detail in r.ReturnDetails)
                 {
@@ -305,6 +322,184 @@ namespace IPCS_Service.Implementation
                 await transaction.RollbackAsync();
                 throw new Exception("Purchase Return Delete Failed: " + ex.Message);
             }
+        }
+
+        public async Task<IEnumerable<PurchaseReturnMaster>> GetDeletedListAsync()
+        {
+            return await _context.PurchaseReturnMasters
+                .IgnoreQueryFilters()
+                .Include(r => r.Supplier)
+                .Include(r => r.Branch)
+                .Where(r => r.IsDeleted)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        // Restore re-applies the creation effects exactly as creation did
+        // (and exactly undoes what SoftDeleteAsync reversed), in one
+        // transaction. Guard: if the returned goods are no longer in stock
+        // (sold on after the return was deleted), the restore is rejected
+        // with a clear error instead of driving stock negative.
+        public async Task<bool> RestoreAsync(int id)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var r = await _context.PurchaseReturnMasters
+                    .Include(x => x.ReturnDetails)
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(x => x.ReturnId == id);
+                if (r == null) return false;
+                if (!r.IsDeleted) return false;
+
+                // Ordering guard (R3): a return cannot be restored while
+                // its purchase is deleted — the purchase delete already
+                // unwound the purchase, so re-applying the return alone
+                // would double-apply the refund. Restore the purchase
+                // first. (A return with no linked purchase has no invoice
+                // to order against, so the guard does not apply to it.)
+                if (r.PurchaseId.HasValue)
+                {
+                    var purchase = await _context.PurchaseMasters
+                        .IgnoreQueryFilters()
+                        .FirstOrDefaultAsync(x => x.PurchaseId == r.PurchaseId.Value);
+                    if (purchase != null && purchase.IsDeleted)
+                        throw new Exception($"Cannot restore purchase return {r.ReturnNo}: the purchase {purchase.PurchaseCode} is deleted. Restore the purchase first, then restore the return.");
+                }
+
+                // 1. Re-apply stock: remove the returned quantities again.
+                foreach (var detail in r.ReturnDetails)
+                {
+                    var stock = await _context.BranchLotStocks
+                        .FirstOrDefaultAsync(s => s.BranchId == r.BranchId && s.ProductId == detail.ProductId && s.LotId == detail.LotId);
+                    if (stock == null)
+                        throw new Exception($"Cannot restore return {r.ReturnNo}: stock record not found for Product ID {detail.ProductId}.");
+
+                    if (detail.FromDamagedPool)
+                    {
+                        if (stock.DamagedStock < detail.Quantity)
+                            throw new Exception($"Cannot restore return {r.ReturnNo}: only {stock.DamagedStock} damaged units of Product ID {detail.ProductId} remain (needs {detail.Quantity}).");
+                        stock.DamagedStock -= detail.Quantity;
+                    }
+                    else
+                    {
+                        if (stock.CurrentStock < detail.Quantity)
+                            throw new Exception($"Cannot restore return {r.ReturnNo}: only {stock.CurrentStock} units of Product ID {detail.ProductId} remain in stock (needs {detail.Quantity}). The returned goods were sold after the return was deleted.");
+                        stock.CurrentStock -= detail.Quantity;
+
+                        var product = await _context.Products.FindAsync(detail.ProductId);
+                        if (product != null)
+                        {
+                            product.CurrentStock -= detail.Quantity;
+                            _context.Products.Update(product);
+                        }
+                    }
+                    _context.BranchLotStocks.Update(stock);
+
+                    var lastLedger = await _context.StockLedgers
+                        .Where(l => l.BranchId == r.BranchId && l.ProductId == detail.ProductId && l.LotId == detail.LotId)
+                        .OrderByDescending(l => l.LedgerId)
+                        .FirstOrDefaultAsync();
+                    await _context.StockLedgers.AddAsync(new StockLedger
+                    {
+                        BranchId = r.BranchId,
+                        ProductId = detail.ProductId,
+                        LotId = detail.LotId,
+                        TransactionType = detail.FromDamagedPool ? "PurchaseReturn Restore(Damaged)" : "PurchaseReturn Restore",
+                        ReferenceNo = r.ReturnNo,
+                        TransactionDate = DateTime.Now,
+                        PreviousBalance = lastLedger?.CurrentBalance ?? 0,
+                        QuantityIn = 0,
+                        QuantityOut = detail.Quantity
+                    });
+                }
+
+                // 2. Re-apply the financial effects (mirror of CreateReturnAsync).
+                if (r.RefundAmount > 0)
+                {
+                    if (r.RefundType == "Adjustment")
+                    {
+                        var supplier = await _context.Suppliers.FindAsync(r.SupplierId);
+                        if (supplier != null)
+                        {
+                            supplier.CurrentDue -= r.RefundAmount;
+                            _context.Suppliers.Update(supplier);
+                        }
+                    }
+                    else if (r.RefundType == "Cash")
+                    {
+                        bool isDigital = false;
+                        if (r.PaymentMethodId.HasValue)
+                        {
+                            var method = await _context.PaymentMethods.FindAsync(r.PaymentMethodId.Value);
+                            if (method != null && method.IsDigital) isDigital = true;
+                        }
+
+                        if (!isDigital)
+                        {
+                            var summaryCash = await GetOrCreateSummaryAsync(r.ReturnDate.Date, r.BranchId);
+                            summaryCash.TotalCash += r.RefundAmount;
+                            _context.DailyTransactionSummaries.Update(summaryCash);
+                        }
+
+                        // Re-create the refund audit payment (delete removed
+                        // it); skip if one already exists for this return.
+                        var existing = await _context.InvoicePayments.IgnoreQueryFilters()
+                            .FirstOrDefaultAsync(p => p.TransactionNo == "PREF-" + r.ReturnNo);
+                        if (existing == null)
+                        {
+                            await _context.InvoicePayments.AddAsync(new InvoicePayment
+                            {
+                                PurchaseId = r.PurchaseId,
+                                PaymentDate = DateTime.Now,
+                                Amount = r.RefundAmount, // Positive because money is COMING BACK from supplier
+                                PaymentMethodId = r.PaymentMethodId ?? 1,
+                                TransactionType = "PurchaseReturnRefund",
+                                TransactionNo = "PREF-" + r.ReturnNo,
+                                Remarks = "Refund from Supplier for Return No: " + r.ReturnNo
+                            });
+                        }
+                        else if (existing.IsDeleted)
+                        {
+                            existing.IsDeleted = false;
+                            _context.InvoicePayments.Update(existing);
+                        }
+                    }
+                }
+
+                // 3. Re-apply the DailySummary inventory adjustment.
+                var summary = await GetOrCreateSummaryAsync(r.ReturnDate.Date, r.BranchId);
+                summary.TotalPurchase -= r.TotalAmount;
+                if (summary.TotalPurchase < 0) summary.TotalPurchase = 0;
+                _context.DailyTransactionSummaries.Update(summary);
+
+                r.IsDeleted = false;
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw new Exception("Purchase Return Restore Failed: " + ex.Message);
+            }
+        }
+
+        private async Task<DailyTransactionSummary> GetOrCreateSummaryAsync(DateTime date, int branchId)
+        {
+            var summary = await _context.DailyTransactionSummaries
+                .FirstOrDefaultAsync(d => d.TransactionDate == date && d.BranchId == branchId);
+            if (summary == null)
+            {
+                summary = new DailyTransactionSummary
+                {
+                    TransactionDate = date,
+                    BranchId = branchId,
+                    OpeningBalance = 0
+                };
+                await _context.DailyTransactionSummaries.AddAsync(summary);
+            }
+            return summary;
         }
     }
 }

@@ -220,9 +220,16 @@ namespace IPCS_API.Controllers
         [HttpPost("restore/{id}")]
         public async Task<IActionResult> Restore(int id)
         {
-            var result = await _salesService.RestoreAsync(id);
-            if (result) return Ok(new { Message = "Sale restored" });
-            return BadRequest("Error restoring sale");
+            try
+            {
+                var result = await _salesService.RestoreAsync(id);
+                if (result) return Ok(new { Message = "Sale restored" });
+                return NotFound(new { Message = "Sale not found or not deleted" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
     }
 }

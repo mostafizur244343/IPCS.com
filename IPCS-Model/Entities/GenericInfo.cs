@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace IPCS_Model.Entities
 {
@@ -19,6 +19,7 @@ namespace IPCS_Model.Entities
         public string? PregnancyCategory { get; set; } // Is it Applyable on Pregnency ? write descrively
 
         public bool IsActive { get; set; } = true;
+        public bool IsDeleted { get; set; } = false;
 
         public DateTime CreatedDate { get; set; } = DateTime.Now;
         public string? CreatedBy { get; set; }

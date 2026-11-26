@@ -102,8 +102,15 @@ namespace IPCS_API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _supService.SoftDeleteAsync(id);
-            return Ok(new { Message = "Deleted successfully" });
+            try
+            {
+                await _supService.SoftDeleteAsync(id);
+                return Ok(new { Message = "Deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpPost("restore/{id}")]

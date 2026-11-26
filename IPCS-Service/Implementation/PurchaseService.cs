@@ -275,6 +275,20 @@ namespace IPCS_Service.Implementation
                     .FirstOrDefaultAsync(x => x.PurchaseId == id);
                 if (p == null) return false;
 
+                // Ordering guard (R4): a purchase with a deleted return
+                // cannot be deleted — restore the return(s) first, so the
+                // return's refund audit payment (PREF-) is visible again
+                // when the purchase is restored later. Otherwise the
+                // restore would miss the refund and the daily totals
+                // would end up off by the refund amount.
+                var deletedReturns = await _context.PurchaseReturnMasters
+                    .IgnoreQueryFilters()
+                    .Where(x => x.PurchaseId == id && x.IsDeleted)
+                    .Select(x => x.ReturnNo)
+                    .ToListAsync();
+                if (deletedReturns.Count > 0)
+                    throw new Exception(DeletedReturnsMessage("delete", p.PurchaseCode, deletedReturns));
+
                 // 1. Reverse stock (only if the goods were received into inventory).
                 if (!p.IsShipment || p.ShipmentStatus == "Received")
                 {
@@ -390,12 +404,173 @@ namespace IPCS_Service.Implementation
             return await _context.SaveChangesAsync() > 0;
         }
 
+        // Restore re-applies the creation effects exactly as creation did
+        // (and exactly undoes what SoftDeleteAsync reversed), in one
+        // transaction. Stock is added back (lot re-created if it was
+        // hard-deleted meanwhile); supplier due, TotalPurchase and the
+        // payment buckets are re-applied. CostPrice/MRP are NOT recomputed:
+        // delete left them untouched, so restore must too, or the moving
+        // average cost would drift. Only payments that are still live are
+        // counted — a payment soft-deleted earlier already had its bucket
+        // effect reversed by its own delete, so it must not be counted here.
         public async Task<bool> RestoreAsync(int id)
         {
-            var p = await _context.Set<PurchaseMaster>().IgnoreQueryFilters().FirstOrDefaultAsync(x => x.PurchaseId == id);
-            if (p == null) return false;
-            p.IsDeleted = false;
-            return await _context.SaveChangesAsync() > 0;
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var p = await _context.Set<PurchaseMaster>()
+                    .Include(x => x.PurchaseDetails)
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(x => x.PurchaseId == id);
+                if (p == null) return false;
+                if (!p.IsDeleted) return false;
+
+                // Ordering guard (R2): a purchase with a deleted return
+                // cannot be restored — restore the return(s) first, so
+                // the return's refund audit payment (PREF-) is visible
+                // again and the restore re-applies the same payment set
+                // the delete unwound. Otherwise the daily totals would
+                // end up off by the refund amount.
+                var deletedReturns = await _context.PurchaseReturnMasters
+                    .IgnoreQueryFilters()
+                    .Where(x => x.PurchaseId == id && x.IsDeleted)
+                    .Select(x => x.ReturnNo)
+                    .ToListAsync();
+                if (deletedReturns.Count > 0)
+                    throw new Exception(DeletedReturnsMessage("restore", p.PurchaseCode, deletedReturns));
+
+                // 1. Re-apply stock (only if the goods were received into inventory).
+                if (!p.IsShipment || p.ShipmentStatus == "Received")
+                {
+                    foreach (var detail in p.PurchaseDetails)
+                    {
+                        var lot = await _context.LotInfos.AsNoTracking()
+                            .FirstOrDefaultAsync(l => l.ProductId == detail.ProductId && l.LotNumber == detail.BatchNo);
+                        if (lot == null)
+                        {
+                            lot = new LotInfo
+                            {
+                                ProductId = detail.ProductId,
+                                LotNumber = detail.BatchNo,
+                                ExpiryDate = detail.ExpiryDate,
+                                PurchasePrice = detail.UnitCostInPcs,
+                                IsActive = true
+                            };
+                            await _context.LotInfos.AddAsync(lot);
+                            await _context.SaveChangesAsync(); // Save to get LotId
+                        }
+
+                        var stock = await _context.BranchLotStocks
+                            .FirstOrDefaultAsync(s => s.BranchId == p.BranchId && s.ProductId == detail.ProductId && s.LotId == lot.LotId);
+                        if (stock == null)
+                        {
+                            stock = new BranchLotStock
+                            {
+                                BranchId = p.BranchId,
+                                ProductId = detail.ProductId,
+                                LotId = lot.LotId,
+                                CurrentStock = detail.TotalQtyInPcs
+                            };
+                            await _context.BranchLotStocks.AddAsync(stock);
+                        }
+                        else
+                        {
+                            stock.CurrentStock += detail.TotalQtyInPcs;
+                            _context.BranchLotStocks.Update(stock);
+                        }
+
+                        var product = await _context.Products.FindAsync(detail.ProductId);
+                        if (product == null)
+                            throw new Exception($"Cannot restore purchase {p.PurchaseCode}: Product ID {detail.ProductId} no longer exists.");
+                        product.CurrentStock += detail.TotalQtyInPcs;
+                        _context.Products.Update(product);
+
+                        var lastLedger = await _context.StockLedgers.AsNoTracking()
+                            .Where(l => l.BranchId == p.BranchId && l.ProductId == detail.ProductId && l.LotId == lot.LotId)
+                            .OrderByDescending(l => l.LedgerId)
+                            .FirstOrDefaultAsync();
+                        await _context.StockLedgers.AddAsync(new StockLedger
+                        {
+                            BranchId = p.BranchId,
+                            ProductId = detail.ProductId,
+                            LotId = lot.LotId,
+                            TransactionType = "Purchase Restore",
+                            ReferenceNo = p.PurchaseCode,
+                            TransactionDate = DateTime.Now,
+                            PreviousBalance = lastLedger?.CurrentBalance ?? 0,
+                            QuantityIn = detail.TotalQtyInPcs,
+                            QuantityOut = 0
+                        });
+                    }
+                }
+
+                // 2. Re-apply supplier due (only what is still owed).
+                if (p.DueAmount > 0)
+                {
+                    var supplier = await _context.Suppliers.FindAsync(p.SupplierId);
+                    if (supplier != null)
+                    {
+                        supplier.CurrentDue += p.DueAmount;
+                        _context.Suppliers.Update(supplier);
+                    }
+                }
+
+                // 3. Re-apply the DailySummary effects. The summary row is the
+                // one for the purchase date + branch (the same row delete
+                // reversed); create it if it is missing.
+                var summary = await _context.DailyTransactionSummaries
+                    .FirstOrDefaultAsync(d => d.TransactionDate == p.PurchaseDate.Date && d.BranchId == p.BranchId);
+                if (summary == null)
+                {
+                    summary = new DailyTransactionSummary
+                    {
+                        TransactionDate = p.PurchaseDate.Date,
+                        BranchId = p.BranchId,
+                        OpeningBalance = 0
+                    };
+                    await _context.DailyTransactionSummaries.AddAsync(summary);
+                }
+
+                summary.TotalPurchase += p.TotalAmount;
+
+                // Only live payments: soft-deleted payments were already
+                // unwound by their own delete and must not be counted again.
+                var payments = await _context.InvoicePayments
+                    .Where(pay => pay.PurchaseId == id)
+                    .ToListAsync();
+                foreach (var payment in payments)
+                {
+                    var method = await _context.PaymentMethods.FindAsync(payment.PaymentMethodId);
+                    if (method != null)
+                    {
+                        string name = method.MethodName.ToLower();
+                        if (name.Contains("cash")) summary.TotalCash -= payment.Amount;
+                        else if (name.Contains("bkash")) summary.TotalBkash -= payment.Amount;
+                        else if (name.Contains("nagad")) summary.TotalNagad -= payment.Amount;
+                        else if (name.Contains("card") || name.Contains("bank")) summary.TotalCard -= payment.Amount;
+                    }
+                }
+                _context.DailyTransactionSummaries.Update(summary);
+
+                p.IsDeleted = false;
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw new Exception("Purchase Restore Failed: " + ex.Message, ex);
+            }
+        }
+
+        // Shared wording for the R2/R4 ordering guards: a purchase cannot
+        // be deleted or restored while one of its returns is deleted.
+        private static string DeletedReturnsMessage(string action, string? purchaseCode, List<string> returnNos)
+        {
+            if (returnNos.Count == 1)
+                return $"Cannot {action} purchase {purchaseCode}: purchase return {returnNos[0]} is deleted. Restore the return first, then {action} the purchase.";
+            return $"Cannot {action} purchase {purchaseCode}: purchase returns {string.Join(", ", returnNos)} are deleted. Restore the returns first, then {action} the purchase.";
         }
     }
 }

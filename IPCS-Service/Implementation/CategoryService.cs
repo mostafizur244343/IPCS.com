@@ -112,7 +112,10 @@ namespace IPCS_Service.Implementation
                     throw new Exception("Cannot delete category because it is being used by one or more products.");
                 }
 
-                _context.Categories.Remove(category);
+                // Soft delete: the row stays in the DB (trash/restorable)
+                // instead of being hard-removed.
+                category.IsDeleted = true;
+                _context.Categories.Update(category);
                 await _context.SaveChangesAsync();
                 return true;
             }
@@ -120,6 +123,26 @@ namespace IPCS_Service.Implementation
             {
                 throw new Exception(ex.Message);
             }
+        }
+
+        // Master data carries no books effects, so restore only flips the
+        // flag back.
+        public async Task<bool> RestoreAsync(int id)
+        {
+            var category = await _context.Categories.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.CategoryId == id);
+            if (category == null) return false;
+            if (!category.IsDeleted) return false;
+            category.IsDeleted = false;
+            _context.Categories.Update(category);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<IEnumerable<Category>> GetDeletedListAsync()
+        {
+            return await _context.Categories.IgnoreQueryFilters()
+                .Where(c => c.IsDeleted)
+                .AsNoTracking()
+                .ToListAsync();
         }
     }
 }

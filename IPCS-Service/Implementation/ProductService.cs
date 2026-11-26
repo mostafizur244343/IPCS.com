@@ -309,8 +309,25 @@ namespace IPCS_Service.Implementation
                 if (product == null) throw new Exception("Product not found for deletion.");
 
                 // Check for dependencies (Stocks, Sales, Purchases)
-                var hasStock = await _context.BranchLotStocks.AnyAsync(s => s.ProductId == id && s.CurrentStock > 0);
+                var hasStock = await _context.BranchLotStocks.AnyAsync(s => s.ProductId == id && (s.CurrentStock > 0 || s.DamagedStock > 0));
                 if (hasStock) throw new Exception("Cannot delete product because it has remaining stock in branches.");
+
+                // Ordering guard: a product used by live documents cannot
+                // be deleted — the purchase / sale / return / transfer
+                // details look the product up by id, and deleting it
+                // would blank those lookups. Delete the documents first.
+                // (Only live documents count: the master queries below
+                // are filtered to non-deleted rows, so documents already
+                // in trash do not block the delete.)
+                var blockers = new List<string>();
+                if (await _context.PurchaseMasters.AnyAsync(p => p.PurchaseDetails.Any(d => d.ProductId == id))) blockers.Add("purchases");
+                if (await _context.SalesMasters.AnyAsync(s => s.SalesDetails.Any(d => d.ProductId == id))) blockers.Add("sales");
+                if (await _context.PurchaseReturnMasters.AnyAsync(r => r.ReturnDetails.Any(d => d.ProductId == id))) blockers.Add("purchase returns");
+                if (await _context.SalesReturnMasters.AnyAsync(r => r.ReturnDetails.Any(d => d.ProductId == id))) blockers.Add("sales returns");
+                if (await _context.TransferMasters.AnyAsync(t => t.TransferDetails.Any(d => d.ProductId == id))) blockers.Add("transfers");
+                if (await _context.TransferRequisitions.AnyAsync(r => r.RequisitionDetails.Any(d => d.ProductId == id))) blockers.Add("requisitions");
+                if (blockers.Count > 0)
+                    throw new Exception($"Cannot delete product {product.ProductName}: it is used by {string.Join(", ", blockers)}. Delete those records first, then delete the product.");
 
                 product.IsDeleted = true;
                 return await _context.SaveChangesAsync() > 0;

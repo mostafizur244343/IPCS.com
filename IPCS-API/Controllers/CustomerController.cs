@@ -80,7 +80,19 @@ public class CustomerController : ControllerBase
 
     [PermissionAuthorize(Permissions.Customer.Delete)]
     [HttpDelete("{id}")]
-    public async Task<IActionResult> SoftDelete(int id) => Ok(await _custService.SoftDeleteAsync(id));
+    public async Task<IActionResult> SoftDelete(int id)
+    {
+        try
+        {
+            var result = await _custService.SoftDeleteAsync(id);
+            if (!result) return NotFound(new { Message = "Customer not found" });
+            return Ok(new { Message = "Customer deleted successfully" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Message = ex.Message });
+        }
+    }
 
     [HttpPost("restore/{id}")]
     public async Task<IActionResult> Restore(int id) => Ok(await _custService.RestoreAsync(id));

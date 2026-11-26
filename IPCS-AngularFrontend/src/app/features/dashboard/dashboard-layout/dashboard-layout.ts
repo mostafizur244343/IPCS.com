@@ -36,7 +36,7 @@ export class DashboardLayoutComponent implements OnInit {
         { name: 'Sales Returns', icon: 'rotate-ccw', route: '/dashboard/returns/sales', permission: 'Permissions.SalesReturn.View' },
         { name: 'Purchase Returns', icon: 'rotate-ccw', route: '/dashboard/returns/purchase', permission: 'Permissions.PurchaseReturn.View' },
         { name: 'Transfers', icon: 'repeat', route: '/dashboard/transfers', permission: 'Permissions.Transfer.View' },
-        { name: 'Invoice Payments', icon: 'credit-card', route: '/dashboard/payments', permission: 'Permissions.InvoicePayment.View' }
+        { name: 'Invoice Payments', icon: 'credit-card', route: '/dashboard/payments/trash', permission: 'Permissions.InvoicePayment.View' }
       ]
     },
     {

@@ -55,6 +55,19 @@ namespace IPCS_Service.Implementation
         {
             var cust = await _context.Customers.FindAsync(id);
             if (cust == null) return false;
+
+            // Ordering guards: deleting a customer with money on their
+            // account would hide the balance, and deleting one with live
+            // sales would blank the customer lookup on the sales list and
+            // the customer ledger. Settle the balance and delete the sales
+            // first, then delete the customer.
+            if (cust.CurrentDue != 0)
+                throw new Exception($"Cannot delete customer {cust.CustomerName}: they have an outstanding balance of {cust.CurrentDue}. Settle the balance first, then delete the customer.");
+            if (cust.AdvanceBalance != 0)
+                throw new Exception($"Cannot delete customer {cust.CustomerName}: they have an advance balance of {cust.AdvanceBalance}. Settle the advance balance first, then delete the customer.");
+            if (await _context.SalesMasters.AnyAsync(s => s.CustomerId == id))
+                throw new Exception($"Cannot delete customer {cust.CustomerName}: they have existing sales records. Delete the sales first, then delete the customer.");
+
             cust.IsDeleted = true;
             return await _context.SaveChangesAsync() > 0;
         }

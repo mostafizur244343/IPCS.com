@@ -10,6 +10,8 @@ namespace IPCS_Service.Interfaces
         Task<IEnumerable<InvoicePayment>> GetPaymentsByInvoiceAsync(string type, int invoiceId);
         Task<bool> ProcessSplitPaymentAsync(List<InvoicePaymentDTO> payments);
         Task<bool> DeletePaymentAsync(int paymentId);
+        Task<bool> RestorePaymentAsync(int paymentId);
+        Task<IEnumerable<InvoicePayment>> GetDeletedPaymentsAsync();
         Task<bool> UpdateHeaderAsync(int paymentId, PaymentHeaderUpdateDTO dto);
         
         // Reporting

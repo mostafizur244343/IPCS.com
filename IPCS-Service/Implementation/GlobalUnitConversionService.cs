@@ -78,5 +78,35 @@ namespace IPCS_Service.Implementation
             _context.GlobalUnitConversions.Update(data);
             return await _context.SaveChangesAsync() > 0;
         }
+
+        // No model change: this table keeps its IsActive-based soft delete
+        // (no IsDeleted column). Restore just reactivates the row.
+        public async Task<bool> RestoreAsync(int id)
+        {
+            var data = await _context.GlobalUnitConversions.FindAsync(id);
+            if (data == null) return false;
+            if (data.IsActive) return false;
+            data.IsActive = true;
+            _context.GlobalUnitConversions.Update(data);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<IEnumerable<GlobalUnitConversionDTO>> GetDeletedListAsync()
+        {
+            return await _context.GlobalUnitConversions
+                .Include(g => g.FromUnit)
+                .Include(g => g.ToUnit)
+                .Where(g => !g.IsActive)
+                .Select(g => new GlobalUnitConversionDTO
+                {
+                    Id = g.Id,
+                    FromUnitId = g.FromUnitId,
+                    FromUnitName = g.FromUnit.UOMName,
+                    ToUnitId = g.ToUnitId,
+                    ToUnitName = g.ToUnit.UOMName,
+                    ConversionFactor = g.ConversionFactor,
+                    IsActive = g.IsActive
+                }).ToListAsync();
+        }
     }
 }

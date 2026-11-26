@@ -9,5 +9,7 @@ namespace IPCS_Service.Interfaces
         Task<bool> CreateAsync(PaymentMethod method);
         Task<bool> UpdateAsync(PaymentMethod method);
         Task<bool> DeleteAsync(int id);
+        Task<bool> RestoreAsync(int id);
+        Task<IEnumerable<PaymentMethod>> GetDeletedListAsync();
     }
 }

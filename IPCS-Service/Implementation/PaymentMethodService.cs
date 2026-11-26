@@ -54,11 +54,50 @@ namespace IPCS_Service.Implementation
             {
                 var method = await _context.PaymentMethods.FindAsync(id);
                 if (method == null) return false;
-                _context.PaymentMethods.Remove(method);
+
+                // Ordering guard: a payment method used by live records
+                // cannot be deleted — the DailySummary bucket math looks
+                // the method up by id, so a deleted method would silently
+                // skip buckets and the books would go off, and the payment
+                // / purchase / return lists would lose the method lookup.
+                // Delete the using records first.
+                if (await _context.InvoicePayments.AnyAsync(p => p.PaymentMethodId == id))
+                    throw new Exception($"Cannot delete payment method {method.MethodName}: it is used by one or more payments. Delete the payments first, then delete the payment method.");
+                if (await _context.PurchaseMasters.AnyAsync(p => p.MethodId == id))
+                    throw new Exception($"Cannot delete payment method {method.MethodName}: it is used by one or more purchases. Delete the purchases first, then delete the payment method.");
+                if (await _context.PurchaseReturnMasters.AnyAsync(r => r.PaymentMethodId == id))
+                    throw new Exception($"Cannot delete payment method {method.MethodName}: it is used by one or more purchase returns. Delete the returns first, then delete the payment method.");
+                if (await _context.SalesReturnMasters.AnyAsync(r => r.PaymentMethodId == id))
+                    throw new Exception($"Cannot delete payment method {method.MethodName}: it is used by one or more sales returns. Delete the returns first, then delete the payment method.");
+
+                // Soft delete: the row stays in the DB (trash/restorable)
+                // instead of being hard-removed.
+                method.IsDeleted = true;
+                _context.PaymentMethods.Update(method);
                 await _context.SaveChangesAsync();
                 return true;
             }
             catch (Exception ex) { throw new Exception("Delete Error... " + ex.Message); }
+        }
+
+        // Master data carries no books effects, so restore only flips the
+        // flag back.
+        public async Task<bool> RestoreAsync(int id)
+        {
+            var method = await _context.PaymentMethods.IgnoreQueryFilters().FirstOrDefaultAsync(m => m.MethodId == id);
+            if (method == null) return false;
+            if (!method.IsDeleted) return false;
+            method.IsDeleted = false;
+            _context.PaymentMethods.Update(method);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<IEnumerable<PaymentMethod>> GetDeletedListAsync()
+        {
+            return await _context.PaymentMethods.IgnoreQueryFilters()
+                .Where(m => m.IsDeleted)
+                .AsNoTracking()
+                .ToListAsync();
         }
     }
 }

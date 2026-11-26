@@ -83,13 +83,36 @@ namespace IPCS_Service.Implementation
                 var hasProducts = await _context.Products.AnyAsync(p => p.LocationId == id && !p.IsDeleted);
                 if (hasProducts) throw new Exception("Cannot delete this location because it is assigned to active products.");
 
-                _context.StoreLocations.Remove(loc);
+                // Soft delete: the row stays in the DB (trash/restorable)
+                // instead of being hard-removed.
+                loc.IsDeleted = true;
+                _context.StoreLocations.Update(loc);
                 return await _context.SaveChangesAsync() > 0;
             }
             catch (Exception ex) 
             { 
                 throw new Exception(ex.Message); 
             }
+        }
+
+        // Master data carries no books effects, so restore only flips the
+        // flag back.
+        public async Task<bool> RestoreAsync(int id)
+        {
+            var loc = await _context.StoreLocations.IgnoreQueryFilters().FirstOrDefaultAsync(l => l.LocationId == id);
+            if (loc == null) return false;
+            if (!loc.IsDeleted) return false;
+            loc.IsDeleted = false;
+            _context.StoreLocations.Update(loc);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<IEnumerable<StoreLocation>> GetDeletedListAsync()
+        {
+            return await _context.StoreLocations.IgnoreQueryFilters()
+                .Where(l => l.IsDeleted)
+                .AsNoTracking()
+                .ToListAsync();
         }
     }
 }

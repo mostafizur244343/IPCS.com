@@ -95,7 +95,16 @@ namespace IPCS_Service.Implementation
                 var hasProducts = await _context.Products.AnyAsync(p => p.BaseUOMId == id);
                 if (hasProducts) throw new Exception("Cannot delete UOM because it is being used by one or more products.");
 
-                _context.UOMs.Remove(uom);
+                // Ordering guard: a unit used by live unit conversions
+                // cannot be deleted — the conversions look both units up
+                // by id for quantity math. Delete the conversions first.
+                var hasConversions = await _context.ProductUnitConversions.AnyAsync(c => c.FromUnitId == id || c.ToUnitId == id);
+                if (hasConversions) throw new Exception("Cannot delete UOM because it is used by one or more unit conversions.");
+
+                // Soft delete: the row stays in the DB (trash/restorable)
+                // instead of being hard-removed.
+                uom.IsDeleted = true;
+                _context.UOMs.Update(uom);
                 await _context.SaveChangesAsync();
                 return true;
             }
@@ -103,6 +112,26 @@ namespace IPCS_Service.Implementation
             {
                 throw new Exception(ex.Message);
             }
+        }
+
+        // Master data carries no books effects, so restore only flips the
+        // flag back.
+        public async Task<bool> RestoreAsync(int id)
+        {
+            var uom = await _context.UOMs.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.UOMId == id);
+            if (uom == null) return false;
+            if (!uom.IsDeleted) return false;
+            uom.IsDeleted = false;
+            _context.UOMs.Update(uom);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<IEnumerable<UOM>> GetDeletedListAsync()
+        {
+            return await _context.UOMs.IgnoreQueryFilters()
+                .Where(u => u.IsDeleted)
+                .AsNoTracking()
+                .ToListAsync();
         }
     }
 }

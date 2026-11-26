@@ -89,6 +89,11 @@ namespace IPCS_Service.Implementation
                 var hasPurchases = await _context.PurchaseMasters.AnyAsync(p => p.SupplierId == id);
                 if (hasPurchases) throw new Exception("Cannot delete supplier because they have existing purchase records.");
 
+                // Ordering guard: deleting a supplier with money on their
+                // account would hide the balance. Settle it first.
+                if (sup.CurrentDue != 0)
+                    throw new Exception($"Cannot delete supplier {sup.SupplierName}: they have an outstanding balance of {sup.CurrentDue}. Settle the balance first, then delete the supplier.");
+
                 sup.IsDeleted = true;
                 return await _context.SaveChangesAsync() > 0;
             }

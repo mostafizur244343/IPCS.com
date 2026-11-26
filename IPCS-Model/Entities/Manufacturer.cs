@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,6 +24,7 @@ namespace IPCS_Model.Entities
         public string? PhoneNumber { get; set; }
 
         public bool IsActive { get; set; } = true;
+        public bool IsDeleted { get; set; } = false;
 
         public DateTime CreatedDate { get; set; } = DateTime.Now;
         public string? CreatedBy { get; set; }

@@ -11,6 +11,8 @@ namespace IPCS_Service.Interfaces
         Task<bool> CreateAsync(Branch branch);
         Task<bool> UpdateAsync(Branch branch);
         Task<bool> DeleteAsync(int id);
+        Task<bool> RestoreAsync(int id);
+        Task<IEnumerable<BranchResponseDTO>> GetDeletedListAsync();
         Task<string> GenerateBranchCodeAsync(); 
     }
 }

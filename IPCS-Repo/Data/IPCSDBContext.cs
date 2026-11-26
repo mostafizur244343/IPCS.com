@@ -284,6 +284,20 @@ builder.Entity<ProductUnitConversion>()
                 .HasForeignKey(rd => rd.LotId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Soft-delete query filters for master tables and payments.
+            // (Added with the restore-reapply work: these tables previously
+            // hard-deleted. Deleted rows are hidden everywhere by default;
+            // use IgnoreQueryFilters() to see them, e.g. in trash lists.)
+            builder.Entity<Branch>().HasQueryFilter(b => !b.IsDeleted);
+            builder.Entity<Category>().HasQueryFilter(c => !c.IsDeleted);
+            builder.Entity<GenericInfo>().HasQueryFilter(g => !g.IsDeleted);
+            builder.Entity<Manufacturer>().HasQueryFilter(m => !m.IsDeleted);
+            builder.Entity<PaymentMethod>().HasQueryFilter(m => !m.IsDeleted);
+            builder.Entity<StoreLocation>().HasQueryFilter(s => !s.IsDeleted);
+            builder.Entity<UOM>().HasQueryFilter(u => !u.IsDeleted);
+            builder.Entity<ProductUnitConversion>().HasQueryFilter(c => !c.IsDeleted);
+            builder.Entity<InvoicePayment>().HasQueryFilter(p => !p.IsDeleted);
+
         }
 
     }

@@ -91,8 +91,28 @@ namespace IPCS_API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _locationService.DeleteAsync(id);
-            return Ok(new { Message = "Deleted successfully" });
+            try
+            {
+                await _locationService.DeleteAsync(id);
+                return Ok(new { Message = "Deleted successfully" });
+            }
+            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+        }
+
+        [PermissionAuthorize(Permissions.StoreLocation.View)]
+        [HttpGet("trash")]
+        public async Task<IActionResult> GetTrash() => Ok(await _locationService.GetDeletedListAsync());
+
+        [HttpPost("restore/{id}")]
+        public async Task<IActionResult> Restore(int id)
+        {
+            try
+            {
+                var result = await _locationService.RestoreAsync(id);
+                if (result) return Ok(new { Message = "Store location restored successfully" });
+                return NotFound(new { Message = "Store location not found or not deleted" });
+            }
+            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
         }
 
         private static StoreLocationDTO MapToDTO(StoreLocation l) => new StoreLocationDTO

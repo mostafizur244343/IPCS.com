@@ -85,13 +85,36 @@ namespace IPCS_Service.Implementation
                 var hasProducts = await _context.Products.AnyAsync(p => p.GenericId == id && !p.IsDeleted);
                 if (hasProducts) throw new Exception("Cannot delete this generic info because it is assigned to active products.");
 
-                _context.GenericInfos.Remove(info);
+                // Soft delete: the row stays in the DB (trash/restorable)
+                // instead of being hard-removed.
+                info.IsDeleted = true;
+                _context.GenericInfos.Update(info);
                 return await _context.SaveChangesAsync() > 0;
             }
             catch (Exception ex) 
             { 
                 throw new Exception(ex.Message); 
             }
+        }
+
+        // Master data carries no books effects, so restore only flips the
+        // flag back.
+        public async Task<bool> RestoreAsync(int id)
+        {
+            var info = await _context.GenericInfos.IgnoreQueryFilters().FirstOrDefaultAsync(g => g.GenericId == id);
+            if (info == null) return false;
+            if (!info.IsDeleted) return false;
+            info.IsDeleted = false;
+            _context.GenericInfos.Update(info);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<IEnumerable<GenericInfo>> GetDeletedListAsync()
+        {
+            return await _context.GenericInfos.IgnoreQueryFilters()
+                .Where(g => g.IsDeleted)
+                .AsNoTracking()
+                .ToListAsync();
         }
     }
 }

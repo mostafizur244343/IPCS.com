@@ -14,5 +14,7 @@ namespace IPCS_Service.Interfaces
         Task<bool> CreateAsync(UOM uom);
         Task<bool> UpdateAsync(UOM uom);
         Task<bool> DeleteAsync(int id);
+        Task<bool> RestoreAsync(int id);
+        Task<IEnumerable<UOM>> GetDeletedListAsync();
     }
 }

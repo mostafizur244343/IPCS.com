@@ -89,8 +89,28 @@ namespace IPCS_API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _genericService.DeleteAsync(id);
-            return Ok(new { Message = "Deleted successfully" });
+            try
+            {
+                await _genericService.DeleteAsync(id);
+                return Ok(new { Message = "Deleted successfully" });
+            }
+            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+        }
+
+        [PermissionAuthorize(Permissions.GenericInfo.View)]
+        [HttpGet("trash")]
+        public async Task<IActionResult> GetTrash() => Ok(await _genericService.GetDeletedListAsync());
+
+        [HttpPost("restore/{id}")]
+        public async Task<IActionResult> Restore(int id)
+        {
+            try
+            {
+                var result = await _genericService.RestoreAsync(id);
+                if (result) return Ok(new { Message = "Generic info restored successfully" });
+                return NotFound(new { Message = "Generic info not found or not deleted" });
+            }
+            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
         }
 
         private static GenericInfoDTO MapToDTO(GenericInfo g) => new GenericInfoDTO

@@ -19,6 +19,7 @@ namespace IPCS_Model.Entities
         public string? PicturePath { get; set; } // Branch image
 
         public bool IsActive { get; set; } = true;
+        public bool IsDeleted { get; set; } = false;
 
         public virtual ICollection<TransferMaster> SentTransfers { get; set; } = new List<TransferMaster>();
         public virtual ICollection<TransferMaster> ReceivedTransfers { get; set; } = new List<TransferMaster>();

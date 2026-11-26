@@ -38,5 +38,6 @@ namespace IPCS_Model.Entities
 
         public string? Remarks { get; set; }
         public string? CreatedBy { get; set; }
+        public bool IsDeleted { get; set; } = false;
     }
 }

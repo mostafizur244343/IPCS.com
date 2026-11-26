@@ -55,6 +55,9 @@ namespace IPCS_Repo.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("ManagerName")
                         .HasColumnType("nvarchar(max)");
 
@@ -126,6 +129,9 @@ namespace IPCS_Repo.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.HasKey("CategoryId");
@@ -298,6 +304,9 @@ namespace IPCS_Repo.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("PregnancyCategory")
                         .HasColumnType("nvarchar(max)");
 
@@ -351,6 +360,9 @@ namespace IPCS_Repo.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<DateTime>("PaymentDate")
                         .HasColumnType("datetime2");
@@ -452,6 +464,9 @@ namespace IPCS_Repo.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Origin")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -491,6 +506,9 @@ namespace IPCS_Repo.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsDigital")
@@ -730,6 +748,9 @@ namespace IPCS_Repo.Migrations
 
                     b.Property<int>("FromUnitId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<int>("Level")
                         .HasColumnType("int");
@@ -1321,6 +1342,9 @@ namespace IPCS_Repo.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Notes")
                         .HasColumnType("nvarchar(max)");
 
@@ -1622,6 +1646,9 @@ namespace IPCS_Repo.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<string>("UOMName")

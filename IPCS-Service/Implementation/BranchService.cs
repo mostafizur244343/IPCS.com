@@ -152,16 +152,71 @@ namespace IPCS_Service.Implementation
                 if (branch == null) throw new Exception(" Branch not found for deletion.");
 
                 // Check for dependencies (Stocks, Users, Sales, Purchases)
-                var hasStock = await _context.BranchLotStocks.AnyAsync(s => s.BranchId == id && s.CurrentStock > 0);
+                var hasStock = await _context.BranchLotStocks.AnyAsync(s => s.BranchId == id && (s.CurrentStock > 0 || s.DamagedStock > 0));
                 if (hasStock) throw new Exception("Cannot delete branch because it has existing stock.");
 
-                _context.Branches.Remove(branch);
+                // Ordering guard: a branch with live documents cannot be
+                // deleted — the purchase / sale / return / transfer lists
+                // and branch reports look the branch up by id, and
+                // deleting it would blank those lookups. Delete the
+                // documents first.
+                var blockers = new List<string>();
+                if (await _context.PurchaseMasters.AnyAsync(p => p.BranchId == id)) blockers.Add("purchases");
+                if (await _context.SalesMasters.AnyAsync(s => s.BranchId == id)) blockers.Add("sales");
+                if (await _context.PurchaseReturnMasters.AnyAsync(r => r.BranchId == id)) blockers.Add("purchase returns");
+                if (await _context.SalesReturnMasters.AnyAsync(r => r.BranchId == id)) blockers.Add("sales returns");
+                if (await _context.TransferMasters.AnyAsync(t => t.FromBranchId == id || t.ToBranchId == id)) blockers.Add("transfers");
+                if (await _context.TransferRequisitions.AnyAsync(r => r.FromBranchId == id || r.ToBranchId == id)) blockers.Add("requisitions");
+                if (await _context.StoreLocations.AnyAsync(l => l.BranchId == id)) blockers.Add("store locations");
+                if (blockers.Count > 0)
+                    throw new Exception($"Cannot delete branch {branch.BranchName}: it still has {string.Join(", ", blockers)}. Delete those records first, then delete the branch.");
+
+                // Soft delete: the branch stays in the DB (trash/restorable)
+                // instead of being hard-removed.
+                branch.IsDeleted = true;
+                _context.Branches.Update(branch);
                 return await _context.SaveChangesAsync() > 0;
             }
             catch (Exception ex) 
             { 
                 throw new Exception(ex.Message); 
             }
+        }
+
+        // Master data carries no books effects, so restore only flips the
+        // flag back.
+        public async Task<bool> RestoreAsync(int id)
+        {
+            var branch = await _context.Branches.IgnoreQueryFilters().FirstOrDefaultAsync(b => b.BranchId == id);
+            if (branch == null) return false;
+            if (!branch.IsDeleted) return false;
+            branch.IsDeleted = false;
+            _context.Branches.Update(branch);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<IEnumerable<BranchResponseDTO>> GetDeletedListAsync()
+        {
+            return await _context.Branches.IgnoreQueryFilters()
+                .Where(b => b.IsDeleted)
+                .Select(b => new BranchResponseDTO
+                {
+                    BranchId = b.BranchId,
+                    BranchName = b.BranchName,
+                    BranchCode = b.BranchCode,
+                    Address = b.Address,
+                    ContactNumber = b.ContactNumber,
+                    Email = b.Email,
+                    ManagerName = b.ManagerName,
+                    PicturePath = b.PicturePath,
+                    IsActive = b.IsActive,
+                    TotalSentTransfers = 0,
+                    TotalReceivedTransfers = 0,
+                    TotalSentRequisitions = 0,
+                    TotalReceivedRequisitions = 0,
+                    TotalSales = 0,
+                    TotalPurchases = 0
+                }).ToListAsync();
         }
     }
 }

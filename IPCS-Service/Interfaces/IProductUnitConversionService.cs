@@ -10,5 +10,7 @@ namespace IPCS_Service.Interfaces
         Task<bool> AddConversionAsync(ProductUnitConversion conversion);
         Task<bool> UpdateAsync(ProductUnitConversion conversion);
         Task<bool> DeleteConversionAsync(int id);
+        Task<bool> RestoreConversionAsync(int id);
+        Task<IEnumerable<ProductUnitConversion>> GetDeletedConversionsAsync();
     }
 }

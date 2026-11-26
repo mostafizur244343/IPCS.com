@@ -9,5 +9,7 @@ namespace IPCS_Service.Interfaces
         Task<bool> CreateAsync(StoreLocation location);
         Task<bool> UpdateAsync(StoreLocation location);
         Task<bool> DeleteAsync(int id);
+        Task<bool> RestoreAsync(int id);
+        Task<IEnumerable<StoreLocation>> GetDeletedListAsync();
     }
 }

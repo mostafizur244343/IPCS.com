@@ -533,5 +533,60 @@ namespace IPCS_Service.Implementation
             transfer.IsDeleted = true;
             return await _context.SaveChangesAsync() > 0;
         }
+
+        public async Task<IEnumerable<TransferMaster>> GetDeletedTransfersAsync()
+        {
+            return await _context.Set<TransferMaster>().IgnoreQueryFilters()
+                .Where(t => t.IsDeleted)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        // Restore only flips the flag back: delete never reversed stock
+        // (transfers have a separate Cancel flow that returns stock), so
+        // there is nothing to re-apply here.
+        public async Task<bool> RestoreTransferAsync(int id)
+        {
+            var transfer = await _context.Set<TransferMaster>().IgnoreQueryFilters().FirstOrDefaultAsync(t => t.TransferId == id);
+            if (transfer == null) return false;
+            if (!transfer.IsDeleted) return false;
+            transfer.IsDeleted = false;
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> SoftDeleteRequisitionAsync(int id)
+        {
+            var req = await _context.Set<TransferRequisition>().FirstOrDefaultAsync(r => r.RequisitionId == id);
+            if (req == null) return false;
+
+            // Guard: a requisition that already produced transfers cannot be
+            // deleted — the transfers (and their stock effects) still exist.
+            var hasTransfers = await _context.Set<TransferMaster>().IgnoreQueryFilters()
+                .AnyAsync(t => t.RequisitionId == id);
+            if (hasTransfers)
+                throw new Exception("Cannot delete requisition: one or more transfers were created from it.");
+
+            req.IsDeleted = true;
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<IEnumerable<TransferRequisition>> GetDeletedRequisitionsAsync()
+        {
+            return await _context.Set<TransferRequisition>().IgnoreQueryFilters()
+                .Where(r => r.IsDeleted)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        // Requisitions carry no stock or money effects of their own, so
+        // restore only flips the flag back.
+        public async Task<bool> RestoreRequisitionAsync(int id)
+        {
+            var req = await _context.Set<TransferRequisition>().IgnoreQueryFilters().FirstOrDefaultAsync(r => r.RequisitionId == id);
+            if (req == null) return false;
+            if (!req.IsDeleted) return false;
+            req.IsDeleted = false;
+            return await _context.SaveChangesAsync() > 0;
+        }
     }
 }

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api';
 
 /**
@@ -11,7 +12,7 @@ import { ApiService } from '../../../core/services/api';
 @Component({
   selector: 'app-global-unit-conversion',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './global-unit-conversion.html'
 })
 export class GlobalUnitConversionComponent implements OnInit {

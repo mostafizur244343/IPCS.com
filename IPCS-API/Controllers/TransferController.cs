@@ -203,5 +203,49 @@ namespace IPCS_API.Controllers
             }
             catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
         }
+
+        [PermissionAuthorize(Permissions.Transfer.View)]
+        [HttpGet("trash")]
+        public async Task<IActionResult> GetTrash() => Ok(await _transferService.GetDeletedTransfersAsync());
+
+        [HttpPost("restore/{id}")]
+        public async Task<IActionResult> Restore(int id)
+        {
+            try
+            {
+                var success = await _transferService.RestoreTransferAsync(id);
+                if (!success) return NotFound(new { Message = "Transfer not found or not deleted" });
+                return Ok(new { Message = "Transfer restored successfully." });
+            }
+            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+        }
+
+        [HttpDelete("requisition/{id}")]
+        public async Task<IActionResult> SoftDeleteRequisition(int id)
+        {
+            try
+            {
+                var success = await _transferService.SoftDeleteRequisitionAsync(id);
+                if (!success) return NotFound(new { Message = "Requisition not found" });
+                return Ok(new { Message = "Requisition Deleted Softly." });
+            }
+            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+        }
+
+        [PermissionAuthorize(Permissions.Transfer.View)]
+        [HttpGet("requisition/trash")]
+        public async Task<IActionResult> GetRequisitionTrash() => Ok(await _transferService.GetDeletedRequisitionsAsync());
+
+        [HttpPost("requisition/restore/{id}")]
+        public async Task<IActionResult> RestoreRequisition(int id)
+        {
+            try
+            {
+                var success = await _transferService.RestoreRequisitionAsync(id);
+                if (!success) return NotFound(new { Message = "Requisition not found or not deleted" });
+                return Ok(new { Message = "Requisition restored successfully." });
+            }
+            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+        }
     }
 }

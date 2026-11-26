@@ -9,5 +9,7 @@ namespace IPCS_Service.Interfaces
         Task<bool> CreateAsync(GenericInfo genericInfo);
         Task<bool> UpdateAsync(GenericInfo genericInfo);
         Task<bool> DeleteAsync(int id);
+        Task<bool> RestoreAsync(int id);
+        Task<IEnumerable<GenericInfo>> GetDeletedListAsync();
     }
 }

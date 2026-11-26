@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 
 /**
  * PaymentMethodListComponent
@@ -10,7 +11,7 @@ import { FormsModule } from '@angular/forms';
 @Component({
   selector: 'app-payment-method-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './payment-method-list.html'
 })
 export class PaymentMethodListComponent implements OnInit {

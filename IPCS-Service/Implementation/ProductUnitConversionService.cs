@@ -62,8 +62,34 @@ namespace IPCS_Service.Implementation
         {
             var data = await _context.ProductUnitConversions.FindAsync(id);
             if (data == null) return false;
-            _context.ProductUnitConversions.Remove(data);
+            // Soft delete: the row stays in the DB (trash/restorable)
+            // instead of being hard-removed.
+            data.IsDeleted = true;
+            _context.ProductUnitConversions.Update(data);
             return await _context.SaveChangesAsync() > 0;
+        }
+
+        // Conversions carry no books effects, so restore only flips the
+        // flag back.
+        public async Task<bool> RestoreConversionAsync(int id)
+        {
+            var data = await _context.ProductUnitConversions.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.ConversionId == id);
+            if (data == null) return false;
+            if (!data.IsDeleted) return false;
+            data.IsDeleted = false;
+            _context.ProductUnitConversions.Update(data);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<IEnumerable<ProductUnitConversion>> GetDeletedConversionsAsync()
+        {
+            return await _context.ProductUnitConversions.IgnoreQueryFilters()
+                .Include(c => c.Product)
+                .Include(c => c.FromUnit)
+                .Include(c => c.ToUnit)
+                .Where(c => c.IsDeleted)
+                .OrderBy(c => c.Level)
+                .ToListAsync();
         }
     }
 }

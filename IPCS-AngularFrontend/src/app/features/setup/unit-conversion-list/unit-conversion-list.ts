@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 
 /**
  * UnitConversionListComponent
@@ -11,7 +12,7 @@ import { FormsModule } from '@angular/forms';
 @Component({
   selector: 'app-unit-conversion-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './unit-conversion-list.html'
 })
 export class UnitConversionListComponent implements OnInit {

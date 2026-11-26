@@ -98,8 +98,28 @@ namespace IPCS_API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _uomService.DeleteAsync(id);
-            return Ok(new { Message = "Successfully deleted" });
+            try
+            {
+                await _uomService.DeleteAsync(id);
+                return Ok(new { Message = "Successfully deleted" });
+            }
+            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+        }
+
+        [PermissionAuthorize(Permissions.UOM.View)]
+        [HttpGet("trash")]
+        public async Task<IActionResult> GetTrash() => Ok(await _uomService.GetDeletedListAsync());
+
+        [HttpPost("restore/{id}")]
+        public async Task<IActionResult> Restore(int id)
+        {
+            try
+            {
+                var result = await _uomService.RestoreAsync(id);
+                if (result) return Ok(new { Message = "UOM restored successfully" });
+                return NotFound(new { Message = "UOM not found or not deleted" });
+            }
+            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
         }
     }
 }

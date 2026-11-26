@@ -51,9 +51,28 @@ namespace IPCS_API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var result = await _service.DeleteAsync(id);
-            if (result) return Ok(new { Message = "Deleted successfully!" });
-            return BadRequest("Error deleting data");
+            try
+            {
+                var result = await _service.DeleteAsync(id);
+                if (result) return Ok(new { Message = "Deleted successfully!" });
+                return BadRequest("Error deleting data");
+            }
+            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+        }
+
+        [HttpGet("trash")]
+        public async Task<IActionResult> GetTrash() => Ok(await _service.GetDeletedListAsync());
+
+        [HttpPost("restore/{id}")]
+        public async Task<IActionResult> Restore(int id)
+        {
+            try
+            {
+                var result = await _service.RestoreAsync(id);
+                if (result) return Ok(new { Message = "Conversion restored successfully" });
+                return NotFound(new { Message = "Conversion not found or not deleted" });
+            }
+            catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
         }
     }
 }
