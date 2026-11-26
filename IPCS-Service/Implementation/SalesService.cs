@@ -353,6 +353,29 @@ namespace IPCS_Service.Implementation
                 // identical at both ends and the books reconcile
                 // exactly. See GUARD_RELAX.md.)
 
+                // Guard (Finding 1, 2026-11-26): a sale with a live
+                // return cannot be deleted. Deleting it reverses
+                // TotalCashSales by the full paid amount, but a live
+                // return has already taken its refund out of
+                // TotalCashSales; the >= 0 clamp then swallows the
+                // difference and restore adds the full amount back,
+                // stranding the refund amount in the day's summary
+                // (verified live: +2.40). Delete the return first —
+                // its own delete reverses the refund exactly — then
+                // delete the sale. This mirrors the purchase side,
+                // where the stock guard forces the same return-first
+                // order. Only live returns block: a return deleted
+                // before this sale's delete is already gone (its REF-
+                // payment with it), so delete/restore see the same
+                // payment set and reconcile exactly, and the old
+                // R2/R4 ordering deadlock cannot come back — the
+                // working order stays delete-return-first, then
+                // invoice; restore-invoice-first, then return.
+                var liveReturn = await _context.SalesReturnMasters
+                    .FirstOrDefaultAsync(x => x.SalesId == id && !x.IsDeleted);
+                if (liveReturn != null)
+                    throw new Exception($"Cannot delete sale {sale.InvoiceNo}: sales return {liveReturn.ReturnNo} is still active. Delete the return first, then delete the sale.");
+
                 // 1. Reverse stock: add the sold quantities back to their lots.
                 // Guard: the lot/branch-stock row must still exist, and a
                 // converted change credit must still be held by the customer.

@@ -110,6 +110,25 @@ namespace IPCS_Service.Implementation
             if (product.UOMId > 0 && !await _context.UOMs.AnyAsync(u => u.UOMId == product.UOMId))
                 throw new Exception($"UOM with ID {product.UOMId} does not exist. Please select a valid unit of measure.");
 
+            // Same class as the UOM check above: CategoryId, BrandId
+            // and GenericId are non-nullable FKs, so a missing value
+            // arrives as 0 (the controller maps missing to 0) and the
+            // insert fails with a bare EF error. Validate up front —
+            // unless a new name was given, in which case the sub-entity
+            // is created below (same pattern as UOM).
+            if (product.CategoryId <= 0 && string.IsNullOrWhiteSpace(newCategoryName))
+                throw new Exception("Category is required to create a product. Please select a category.");
+            if (product.CategoryId > 0 && !await _context.Categories.AnyAsync(c => c.CategoryId == product.CategoryId))
+                throw new Exception($"Category with ID {product.CategoryId} does not exist. Please select a valid category.");
+            if (product.BrandId <= 0 && string.IsNullOrWhiteSpace(newBrandName))
+                throw new Exception("Brand is required to create a product. Please select a brand.");
+            if (product.BrandId > 0 && !await _context.Manufacturers.AnyAsync(m => m.BrandId == product.BrandId))
+                throw new Exception($"Brand with ID {product.BrandId} does not exist. Please select a valid brand.");
+            if (product.GenericId <= 0 && string.IsNullOrWhiteSpace(newGenericName))
+                throw new Exception("Generic is required to create a product. Please select a generic.");
+            if (product.GenericId > 0 && !await _context.GenericInfos.AnyAsync(g => g.GenericId == product.GenericId))
+                throw new Exception($"Generic with ID {product.GenericId} does not exist. Please select a valid generic.");
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -161,6 +180,14 @@ namespace IPCS_Service.Implementation
                     product.BaseUOMId = uom.UOMId;
                     selectedUnitId = uom.UOMId;
                 }
+
+                // A product's base unit is its UOM unless the caller
+                // says otherwise (the new-UOM branch above already does
+                // this). Default it here so a caller who sends UOMId
+                // but not BaseUOMId does not hit a bare FK error on the
+                // non-nullable BaseUOMId. UOMId is already validated
+                // above, so it is > 0 at this point.
+                if (product.BaseUOMId <= 0) product.BaseUOMId = product.UOMId;
 
                 product.ProductCode = await GenerateProductCodeAsync();
                 await _context.Products.AddAsync(product);
