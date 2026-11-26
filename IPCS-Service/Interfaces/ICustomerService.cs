@@ -1,3 +1,4 @@
+using IPCS_Model.DTOs;
 using IPCS_Model.Entities;
 
 namespace IPCS_Service.Interfaces
@@ -5,6 +6,7 @@ namespace IPCS_Service.Interfaces
     public interface ICustomerService
     {
         Task<IEnumerable<Customer>> GetAllActiveAsync();
+        Task<PagedResult<Customer>> GetPagedAsync(int page, int pageSize, string? search = null);
         Task<IEnumerable<Customer>> GetDeletedListAsync(); // For Audit List of Dashboard
         Task<Customer?> GetByIdAsync(int id);
         Task<Customer?> GetWithSalesHistoryAsync(int id);

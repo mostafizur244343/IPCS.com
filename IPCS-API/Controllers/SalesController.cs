@@ -26,11 +26,18 @@ namespace IPCS_API.Controllers
 
         [PermissionAuthorize(Permissions.Sales.View)]
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] int? page = null, [FromQuery] int? pageSize = null, [FromQuery] string? search = null)
         {
             try
             {
-                var sales = await _salesService.GetAllActiveAsync();
+                // Paged shape (?page=) returns { items, totalCount, page, pageSize, totalPages }.
+                // Without paging params the old full-list array is returned unchanged.
+                if (page.HasValue)
+                {
+                    var paged = await _salesService.GetPagedListAsync(PagingDefaults.NormalizePage(page), PagingDefaults.NormalizePageSize(pageSize), search);
+                    return Ok(paged);
+                }
+                var sales = await _salesService.GetAllActiveAsync(search);
                 var data = sales.Select(s => new SalesListDTO
                 {
                     SalesId = s.SalesId,
@@ -49,6 +56,26 @@ namespace IPCS_API.Controllers
             catch (Exception ex)
             {
                 return BadRequest(new { Message = "Sales List Error: " + ex.Message, Trace = ex.StackTrace });
+            }
+        }
+
+        /// <summary>
+        /// Lightweight dashboard payload: today's sales total for the given
+        /// day plus the 5 most recent sales. Replaces the dashboard's full
+        /// Sales download. The day is a [from, to) UTC range (the frontend
+        /// passes its local day); with no range the server's current day is used.
+        /// </summary>
+        [PermissionAuthorize(Permissions.Sales.View)]
+        [HttpGet("recent")]
+        public async Task<IActionResult> GetRecentDashboard([FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null)
+        {
+            try
+            {
+                return Ok(await _salesService.GetDashboardSummaryAsync(from, to));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = "Sales Dashboard Error: " + ex.Message });
             }
         }
 

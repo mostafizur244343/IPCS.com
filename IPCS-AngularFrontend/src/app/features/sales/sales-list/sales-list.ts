@@ -3,15 +3,19 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination';
+import { PagedResult } from '../../../core/models/paged-result';
 
 /**
  * SalesListComponent
  * Used to display a list of all sales invoices/transactions.
+ * Server-side paging: only one page is fetched at a time; search is sent
+ * to the server (debounced) instead of filtering a full-table download.
  */
 @Component({
   selector: 'app-sales-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, PaginationComponent],
   templateUrl: './sales-list.html'
 })
 export class SalesListComponent implements OnInit {
@@ -19,6 +23,12 @@ export class SalesListComponent implements OnInit {
   filteredSales: any[] = [];
   searchTerm: string = '';
   isLoading = false;
+
+  // Server-side paging state
+  page = 1;
+  pageSize = 20;
+  totalCount = 0;
+  private searchTimer: any;
 
   // Details state
   selectedSalesForDetails: any = null;
@@ -46,14 +56,23 @@ export class SalesListComponent implements OnInit {
   }
 
   /**
-   * Fetches all sales records from the API
+   * Fetches one page of sales records from the API
    */
   loadSales() {
     this.isLoading = true;
-    this.api.get<any[]>('Sales').subscribe({
-      next: (data) => {
-        this.sales = data;
-        this.filteredSales = data;
+    const search = this.searchTerm.trim();
+    const query = `Sales?page=${this.page}&pageSize=${this.pageSize}` + (search ? `&search=${encodeURIComponent(search)}` : '');
+    this.api.get<PagedResult<any>>(query).subscribe({
+      next: (res) => {
+        this.sales = res.items;
+        this.filteredSales = res.items;
+        this.totalCount = res.totalCount;
+        // If the last item of a page was deleted, step back a page.
+        if (res.items.length === 0 && this.page > 1) {
+          this.page--;
+          this.loadSales();
+          return;
+        }
         this.isLoading = false;
       },
       error: (err) => {
@@ -64,14 +83,25 @@ export class SalesListComponent implements OnInit {
   }
 
   /**
-   * Filters sales by Invoice Number or Customer Name
+   * Server-side search by Invoice Number or Customer Name (debounced).
    */
   onSearch() {
-    const term = this.searchTerm.toLowerCase();
-    this.filteredSales = this.sales.filter(s => 
-      s.invoiceNo?.toLowerCase().includes(term) || 
-      s.customerName?.toLowerCase().includes(term)
-    );
+    clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => {
+      this.page = 1;
+      this.loadSales();
+    }, 400);
+  }
+
+  onPageChange(page: number) {
+    this.page = page;
+    this.loadSales();
+  }
+
+  onPageSizeChange(size: number) {
+    this.pageSize = size;
+    this.page = 1;
+    this.loadSales();
   }
 
   /**

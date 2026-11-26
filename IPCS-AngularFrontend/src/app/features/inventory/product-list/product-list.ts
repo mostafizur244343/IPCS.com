@@ -4,22 +4,32 @@ import { RouterModule } from '@angular/router';
 import { PermissionService } from '../../../core/services/permission';
 import { FormsModule } from '@angular/forms';
 import { BaseFeatureComponent } from '../../../shared/components/base-feature';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination';
+import { PagedResult } from '../../../core/models/paged-result';
 import { environment } from '../../../../environments/environment';
 
 /**
  * ProductListComponent
  * Displays a list of inventory products with RBAC-protected action buttons.
+ * Server-side paging: only one page is fetched at a time; search is sent
+ * to the server (debounced) instead of filtering a full-table download.
  */
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, PaginationComponent],
   templateUrl: './product-list.html'
 })
 export class ProductListComponent extends BaseFeatureComponent implements OnInit {
   products: any[] = [];
   filteredProducts: any[] = [];
   searchTerm: string = '';
+
+  // Server-side paging state
+  page = 1;
+  pageSize = 20;
+  totalCount = 0;
+  private searchTimer: any;
   
   public permService = inject(PermissionService);
 
@@ -27,13 +37,7 @@ export class ProductListComponent extends BaseFeatureComponent implements OnInit
   selectedProductForDetails: any = null;
 
   override ngOnInit() {
-    this.api.get<any[]>('Product').subscribe({
-      next: (data) => {
-        this.products = data;
-        this.filteredProducts = data;
-      },
-      error: (err) => this.handleError(err)
-    });
+    this.loadProducts();
   }
 
   showDetails(product: any) {
@@ -56,10 +60,19 @@ export class ProductListComponent extends BaseFeatureComponent implements OnInit
 
   loadProducts() {
     this.isLoading = true;
-    this.api.get<any[]>('Product').subscribe({
-      next: (data) => {
-        this.products = data;
-        this.filteredProducts = data;
+    const search = this.searchTerm.trim();
+    const query = `Product?page=${this.page}&pageSize=${this.pageSize}` + (search ? `&search=${encodeURIComponent(search)}` : '');
+    this.api.get<PagedResult<any>>(query).subscribe({
+      next: (res) => {
+        this.products = res.items;
+        this.filteredProducts = res.items;
+        this.totalCount = res.totalCount;
+        // If the last item of a page was deleted, step back a page.
+        if (res.items.length === 0 && this.page > 1) {
+          this.page--;
+          this.loadProducts();
+          return;
+        }
         this.isLoading = false;
       },
       error: (err) => this.handleError(err)
@@ -67,11 +80,23 @@ export class ProductListComponent extends BaseFeatureComponent implements OnInit
   }
 
   onSearch() {
-    const term = this.searchTerm.toLowerCase();
-    this.filteredProducts = this.products.filter(p => 
-      p.productName.toLowerCase().includes(term) || 
-      (p.sku && p.sku.toLowerCase().includes(term))
-    );
+    // Debounced server-side search: reload page 1 from the server.
+    clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => {
+      this.page = 1;
+      this.loadProducts();
+    }, 400);
+  }
+
+  onPageChange(page: number) {
+    this.page = page;
+    this.loadProducts();
+  }
+
+  onPageSizeChange(size: number) {
+    this.pageSize = size;
+    this.page = 1;
+    this.loadProducts();
   }
 
   async deleteProduct(id: number) {

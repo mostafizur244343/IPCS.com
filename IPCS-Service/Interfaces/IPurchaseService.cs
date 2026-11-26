@@ -7,7 +7,8 @@ namespace IPCS_Service.Interfaces
 {
     public interface IPurchaseService
     {
-        Task<IEnumerable<PurchaseMaster>> GetAllActiveAsync();
+        Task<IEnumerable<PurchaseMaster>> GetAllActiveAsync(string? search = null);
+        Task<PagedResult<PurchaseMaster>> GetPagedAsync(int page, int pageSize, string? search = null);
         Task<IEnumerable<PurchaseMaster>> GetDeletedListAsync();
         Task<PurchaseMaster?> GetByIdAsync(int id);
         Task<bool> CreatePurchaseAsync(PurchaseMaster purchaseMaster);

@@ -19,8 +19,14 @@ public class StockLedgerController : ControllerBase
 
     [PermissionAuthorize(Permissions.Stock.ViewLedger)]
     [HttpGet("branch/{branchId}")]
-    public async Task<IActionResult> GetByBranch(int branchId)
+    public async Task<IActionResult> GetByBranch(int branchId, [FromQuery] int? page = null, [FromQuery] int? pageSize = null, [FromQuery] string? search = null)
     {
+        // Paged shape (?page=) returns { items, totalCount, page, pageSize, totalPages }.
+        // Without paging params the old full-list array is returned unchanged.
+        if (page.HasValue)
+        {
+            return Ok(await _ledgerService.GetPagedByBranchAsync(branchId, PagingDefaults.NormalizePage(page), PagingDefaults.NormalizePageSize(pageSize), search));
+        }
         return Ok(await _ledgerService.GetAllByBranchAsync(branchId));
     }
 

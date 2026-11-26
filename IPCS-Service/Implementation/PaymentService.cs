@@ -42,7 +42,11 @@ namespace IPCS_Service.Implementation
                     Amount = dto.Amount,
                     PaymentDate = dto.PaymentDate,
                     TransactionNo = dto.TransactionNo,
-                    Remarks = dto.Remarks
+                    Remarks = dto.Remarks,
+                    // A split payment is a later settlement of an invoice's
+                    // due — never an inline payment. The flag lets a sale
+                    // delete/restore tell the two apart (see SalesService).
+                    IsSplitSettlement = true
                 };
 
                 await _context.InvoicePayments.AddAsync(payment);
@@ -51,53 +55,68 @@ namespace IPCS_Service.Implementation
                 // (Previously the payment row was inserted but the invoice was
                 // never updated, so Paid/Due/Status and the party due stayed stale.)
                 int? branchId = null;
+                bool invoiceFound = false;
                 if ((dto.TransactionType == "Purchase" || dto.TransactionType == "SupplierPayment") && dto.PurchaseId.HasValue)
                 {
                     var purchase = await _context.PurchaseMasters.FindAsync(dto.PurchaseId.Value);
-                    if (purchase != null)
-                    {
-                        branchId = purchase.BranchId;
-                        purchase.PaidAmount += dto.Amount;
-                        purchase.DueAmount -= dto.Amount;
-                        purchase.PaymentStatus = purchase.DueAmount <= 0 ? "Paid" : "Partial";
-                        _context.PurchaseMasters.Update(purchase);
+                    // Guard (new 2026-11-26): a split that names an invoice
+                    // must resolve to a live invoice. Previously the payment
+                    // row was inserted even for a deleted/missing invoice
+                    // and its bucket effect landed on today's first summary
+                    // row of any branch (branchId null) — an orphan payment
+                    // no later delete/restore could unwind, which also
+                    // changed the live-payment set between an invoice's
+                    // delete and restore. A split with no invoice id at
+                    // all is unchanged (bucket-only movement; see
+                    // GUARD_RELAX.md — it is NOT an opening-balance
+                    // settlement path).
+                    if (purchase == null)
+                        throw new Exception($"Cannot record payment: the purchase #{dto.PurchaseId.Value} is deleted or does not exist. Restore the purchase first, then record the payment.");
+                    invoiceFound = true;
+                    branchId = purchase.BranchId;
+                    purchase.PaidAmount += dto.Amount;
+                    purchase.DueAmount -= dto.Amount;
+                    purchase.PaymentStatus = purchase.DueAmount <= 0 ? "Paid" : "Partial";
+                    _context.PurchaseMasters.Update(purchase);
 
-                        var supplier = await _context.Suppliers.FindAsync(purchase.SupplierId);
-                        if (supplier != null)
-                        {
-                            supplier.CurrentDue -= dto.Amount;
-                            _context.Suppliers.Update(supplier);
-                        }
+                    var supplier = await _context.Suppliers.FindAsync(purchase.SupplierId);
+                    if (supplier != null)
+                    {
+                        supplier.CurrentDue -= dto.Amount;
+                        _context.Suppliers.Update(supplier);
                     }
                 }
                 else if ((dto.TransactionType == "Sale" || dto.TransactionType == "CustomerReceive") && dto.SaleId.HasValue)
                 {
                     var sale = await _context.SalesMasters.FindAsync(dto.SaleId.Value);
-                    if (sale != null)
-                    {
-                        branchId = sale.BranchId;
-                        sale.PaidAmount += dto.Amount;
-                        sale.DueAmount -= dto.Amount;
-                        sale.PaymentStatus = sale.DueAmount <= 0 ? "Paid" : "Partial";
-                        _context.SalesMasters.Update(sale);
+                    // Guard (new 2026-11-26): same as the purchase branch
+                    // above — no orphan split payments against a deleted
+                    // or missing sale.
+                    if (sale == null)
+                        throw new Exception($"Cannot record payment: the sale #{dto.SaleId.Value} is deleted or does not exist. Restore the sale first, then record the payment.");
+                    invoiceFound = true;
+                    branchId = sale.BranchId;
+                    sale.PaidAmount += dto.Amount;
+                    sale.DueAmount -= dto.Amount;
+                    sale.PaymentStatus = sale.DueAmount <= 0 ? "Paid" : "Partial";
+                    _context.SalesMasters.Update(sale);
 
-                        var customer = await _context.Customers.FindAsync(sale.CustomerId);
-                        if (customer != null)
-                        {
-                            customer.CurrentDue -= dto.Amount;
-                            _context.Customers.Update(customer);
-                        }
+                    var customer = await _context.Customers.FindAsync(sale.CustomerId);
+                    if (customer != null)
+                    {
+                        customer.CurrentDue -= dto.Amount;
+                        _context.Customers.Update(customer);
                     }
                 }
 
                 // Update Daily Transaction Summary based on Method
-                await UpdateDailySummaryAsync(dto.PaymentMethodId, dto.Amount, dto.TransactionType, branchId);
+                await UpdateDailySummaryAsync(dto.PaymentMethodId, dto.Amount, dto.TransactionType, branchId, invoiceFound);
             }
 
             return await _context.SaveChangesAsync() > 0;
         }
 
-        private async Task UpdateDailySummaryAsync(int methodId, decimal amount, string type, int? branchId = null)
+        private async Task UpdateDailySummaryAsync(int methodId, decimal amount, string type, int? branchId = null, bool settleDue = false)
         {
             var today = DateTime.Now.Date;
             var summary = branchId.HasValue
@@ -114,6 +133,23 @@ namespace IPCS_Service.Implementation
             if (type == "Sale" || type == "CustomerReceive")
             {
                 summary.TotalCollection += amount;
+                // A split settlement pays off a due that was recorded in
+                // TotalDueSales at sale creation, so it reduces
+                // TotalDueSales by the settled amount. (Previously this
+                // never happened: a due sale settled via process-split
+                // and then deleted left TotalDueSales stranded, because
+                // the delete reverses only the *current* DueAmount — 0
+                // after settlement.) Only when the payment actually
+                // settled a live invoice (settleDue): an invoice-less
+                // CustomerReceive has no sale due to reduce. The sign of
+                // amount handles the reversals — delete/restore of a
+                // split payment pass -amount/+amount, so the due comes
+                // back / goes away again exactly.
+                if (settleDue)
+                {
+                    summary.TotalDueSales -= amount;
+                    if (summary.TotalDueSales < 0) summary.TotalDueSales = 0;
+                }
                 await AddToMethodBucketAsync(summary, methodId, amount);
             }
             else if (type == "Purchase" || type == "SupplierPayment")
@@ -121,6 +157,9 @@ namespace IPCS_Service.Implementation
                 // Cash outflow: reduce the payment-method bucket. (Previously
                 // this branch did nothing, so split supplier payments never
                 // showed up in any cash/bKash/Nagad/Card bucket.)
+                // No TotalDueSales-style field exists for purchases
+                // (TotalPurchase is the gross amount, not a due), so there
+                // is no symmetric leak on the purchase side.
                 await AddToMethodBucketAsync(summary, methodId, -amount);
             }
         }
@@ -190,9 +229,13 @@ namespace IPCS_Service.Implementation
 
             // Reverse the DailySummary buckets, but only when the payment had
             // a live invoice (its bucket effect was actually recorded).
+            // settleDue = this payment is a split settlement: only split
+            // settlements ever reduced TotalDueSales / raised
+            // TotalCollection, so only they may move them back. An inline
+            // payment never touched either field.
             if (invoiceFound)
             {
-                await UpdateDailySummaryAsync(payment.PaymentMethodId, -payment.Amount, payment.TransactionType, branchId);
+                await UpdateDailySummaryAsync(payment.PaymentMethodId, -payment.Amount, payment.TransactionType, branchId, payment.IsSplitSettlement);
             }
 
             // Soft delete: the row stays as a record (visible in trash and
@@ -276,9 +319,12 @@ namespace IPCS_Service.Implementation
             // Refund / audit payments (PurchaseReturnRefund, Refund) have no
             // invoice settlement to re-apply; only the row itself is restored.
 
+            // settleDue = this payment is a split settlement: only split
+            // settlements ever reduced TotalDueSales / raised
+            // TotalCollection, so only they may move them again.
             if (invoiceFound)
             {
-                await UpdateDailySummaryAsync(payment.PaymentMethodId, payment.Amount, payment.TransactionType, branchId);
+                await UpdateDailySummaryAsync(payment.PaymentMethodId, payment.Amount, payment.TransactionType, branchId, payment.IsSplitSettlement);
             }
 
             payment.IsDeleted = false;

@@ -286,6 +286,14 @@
           </tr>
         </tbody>
       </table>
+      <app-pagination
+        *ngIf="!isLoading"
+        [page]="page"
+        [pageSize]="pageSize"
+        [totalCount]="totalCount"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)">
+      </app-pagination>
     </div>
   </div>
 

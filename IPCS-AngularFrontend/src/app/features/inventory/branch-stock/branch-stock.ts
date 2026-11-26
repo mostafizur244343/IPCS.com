@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api';
 import { PermissionService } from '../../../core/services/permission';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination';
+import { PagedResult } from '../../../core/models/paged-result';
 
 @Component({
   selector: 'app-branch-stock',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   template: `
     <div class="container animate-fade-in">
       <!-- Page Header -->
@@ -84,6 +86,14 @@ import { PermissionService } from '../../../core/services/permission';
             </tr>
           </tbody>
         </table>
+        <app-pagination
+          *ngIf="!isLoading"
+          [page]="page"
+          [pageSize]="pageSize"
+          [totalCount]="totalCount"
+          (pageChange)="onPageChange($event)"
+          (pageSizeChange)="onPageSizeChange($event)">
+        </app-pagination>
       </div>
     </div>
 
@@ -176,6 +186,12 @@ export class BranchStockComponent implements OnInit {
   searchTerm = '';
   isLoading = false;
 
+  // Server-side paging state
+  page = 1;
+  pageSize = 20;
+  totalCount = 0;
+  private searchTimer: any;
+
   constructor(private api: ApiService, public permService: PermissionService) {}
 
   ngOnInit() {
@@ -184,10 +200,13 @@ export class BranchStockComponent implements OnInit {
 
   loadStocks() {
     this.isLoading = true;
-    this.api.get<any[]>('BranchLotStock/all').subscribe({
-      next: (data) => {
-        this.stocks = data;
-        this.filteredStocks = data;
+    const search = this.searchTerm.trim();
+    const query = `BranchLotStock/all?page=${this.page}&pageSize=${this.pageSize}` + (search ? `&search=${encodeURIComponent(search)}` : '');
+    this.api.get<PagedResult<any>>(query).subscribe({
+      next: (res) => {
+        this.stocks = res.items;
+        this.filteredStocks = res.items;
+        this.totalCount = res.totalCount;
         this.isLoading = false;
       },
       error: (err) => {
@@ -198,15 +217,22 @@ export class BranchStockComponent implements OnInit {
   }
 
   onSearch() {
-    if (!this.searchTerm.trim()) {
-      this.filteredStocks = this.stocks;
-      return;
-    }
-    const term = this.searchTerm.toLowerCase().trim();
-    this.filteredStocks = this.stocks.filter(s => 
-      (s.branchName && s.branchName.toLowerCase().includes(term)) ||
-      (s.productName && s.productName.toLowerCase().includes(term)) ||
-      (s.lotNumber && s.lotNumber.toLowerCase().includes(term))
-    );
+    // Debounced server-side search: reload page 1 from the server.
+    clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => {
+      this.page = 1;
+      this.loadStocks();
+    }, 400);
+  }
+
+  onPageChange(page: number) {
+    this.page = page;
+    this.loadStocks();
+  }
+
+  onPageSizeChange(size: number) {
+    this.pageSize = size;
+    this.page = 1;
+    this.loadStocks();
   }
 }

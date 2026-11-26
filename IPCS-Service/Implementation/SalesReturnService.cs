@@ -26,13 +26,47 @@ namespace IPCS_Service.Implementation
             return $"SRET-{nextId:D5}";
         }
 
-        public async Task<IEnumerable<SalesReturnMaster>> GetAllActiveAsync()
+        public async Task<IEnumerable<SalesReturnMaster>> GetAllActiveAsync(string? search = null)
         {
-            return await _context.SalesReturnMasters
+            var query = _context.SalesReturnMasters.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.ToLower().Trim();
+                query = query.Where(r => r.ReturnNo.ToLower().Contains(term)
+                    || (r.Customer != null && r.Customer.CustomerName.ToLower().Contains(term)));
+            }
+
+            return await query
                 .Include(r => r.Customer)
                 .Include(r => r.Branch)
                 .AsNoTracking()
                 .ToListAsync();
+        }
+
+        /// <summary>
+        /// Server-side paging for the sales-return list. Same shape and
+        /// filter as GetAllActiveAsync, but only one page of rows is loaded.
+        /// </summary>
+        public async Task<PagedResult<SalesReturnMaster>> GetPagedAsync(int page, int pageSize, string? search = null)
+        {
+            var query = _context.SalesReturnMasters.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.ToLower().Trim();
+                query = query.Where(r => r.ReturnNo.ToLower().Contains(term)
+                    || (r.Customer != null && r.Customer.CustomerName.ToLower().Contains(term)));
+            }
+
+            query = query
+                .Include(r => r.Customer)
+                .Include(r => r.Branch)
+                .OrderByDescending(r => r.ReturnDate)
+                .ThenByDescending(r => r.ReturnId)
+                .AsNoTracking();
+
+            return await query.ToPagedResultAsync(page, pageSize);
         }
 
         public async Task<SalesReturnMaster?> GetByIdAsync(int id)
@@ -51,6 +85,25 @@ namespace IPCS_Service.Implementation
             try
             {
                 returnMaster.ReturnNo = await GenerateReturnNoAsync();
+
+                // Guard (new 2026-11-26): a return cannot be created against
+                // a deleted sale. The return would create a new REF- audit
+                // payment while the sale is deleted, changing the
+                // live-payment set between the sale's delete and restore
+                // and breaking the delete/restore reconciliation. Restore
+                // the sale first. (A return with no linked sale has no
+                // invoice to order against.)
+                if (returnMaster.SalesId.HasValue)
+                {
+                    var sale = await _context.SalesMasters
+                        .IgnoreQueryFilters()
+                        .FirstOrDefaultAsync(x => x.SalesId == returnMaster.SalesId.Value);
+                    if (sale == null)
+                        throw new Exception($"Cannot create a sales return: the sale #{returnMaster.SalesId.Value} does not exist.");
+                    if (sale.IsDeleted)
+                        throw new Exception($"Cannot create sales return {returnMaster.ReturnNo}: the sale {sale.InvoiceNo} is deleted. Restore the sale first, then create the return.");
+                }
+
                 decimal totalCostSaved = 0;
 
                 foreach (var detail in returnMaster.ReturnDetails)

@@ -4,15 +4,19 @@ import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ImageUploadComponent } from '../../../shared/image-upload/image-upload';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination';
+import { PagedResult } from '../../../core/models/paged-result';
 
 /**
  * CustomerListComponent
  * Manages pharmacy customers and their credit profiles.
+ * Server-side paging: only one page is fetched at a time; search is sent
+ * to the server (debounced) instead of filtering a full-table download.
  */
 @Component({
   selector: 'app-customer-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ImageUploadComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ImageUploadComponent, PaginationComponent],
   templateUrl: './customer-list.html'
 })
 export class CustomerListComponent implements OnInit {
@@ -34,6 +38,12 @@ export class CustomerListComponent implements OnInit {
   isEditing = false;
   showForm = false;
   searchTerm = '';
+
+  // Server-side paging state
+  page = 1;
+  pageSize = 20;
+  totalCount = 0;
+  private searchTimer: any;
 
   // Details state
   selectedCustomerForDetails: any = null;
@@ -60,19 +70,40 @@ export class CustomerListComponent implements OnInit {
   }
 
   onSearch() {
-    const term = this.searchTerm.toLowerCase();
-    this.filteredCustomers = this.customers.filter(c => 
-      (c.customerName && c.customerName.toLowerCase().includes(term)) ||
-      (c.mobile && c.mobile.toLowerCase().includes(term))
-    );
+    // Debounced server-side search: reload page 1 from the server.
+    clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => {
+      this.page = 1;
+      this.loadCustomers();
+    }, 400);
+  }
+
+  onPageChange(page: number) {
+    this.page = page;
+    this.loadCustomers();
+  }
+
+  onPageSizeChange(size: number) {
+    this.pageSize = size;
+    this.page = 1;
+    this.loadCustomers();
   }
 
   loadCustomers() {
     this.isLoading = true;
-    this.api.get<any[]>('Customer/active').subscribe({
-      next: (data) => {
-        this.customers = data;
-        this.filteredCustomers = data;
+    const search = this.searchTerm.trim();
+    const query = `Customer/active?page=${this.page}&pageSize=${this.pageSize}` + (search ? `&search=${encodeURIComponent(search)}` : '');
+    this.api.get<PagedResult<any>>(query).subscribe({
+      next: (res) => {
+        this.customers = res.items;
+        this.filteredCustomers = res.items;
+        this.totalCount = res.totalCount;
+        // If the last item of a page was deleted, step back a page.
+        if (res.items.length === 0 && this.page > 1) {
+          this.page--;
+          this.loadCustomers();
+          return;
+        }
         this.isLoading = false;
       },
       error: () => this.isLoading = false

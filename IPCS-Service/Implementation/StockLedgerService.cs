@@ -27,6 +27,33 @@ namespace IPCS_Service.Implementation
                 .ToListAsync();
         }
 
+        /// <summary>
+        /// Server-side paging for the stock ledger of one branch. Same shape
+        /// and ordering as GetAllByBranchAsync, but only one page of rows is
+        /// loaded (the ledger is the fastest-growing table in the system).
+        /// </summary>
+        public async Task<PagedResult<StockLedger>> GetPagedByBranchAsync(int branchId, int page, int pageSize, string? search = null)
+        {
+            var query = _context.StockLedgers.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.ToLower().Trim();
+                query = query.Where(l => (l.Product != null && l.Product.ProductName.ToLower().Contains(term))
+                    || (l.Lot != null && l.Lot.LotNumber.ToLower().Contains(term))
+                    || (l.TransactionType != null && l.TransactionType.ToLower().Contains(term))
+                    || (l.ReferenceNo != null && l.ReferenceNo.ToLower().Contains(term)));
+            }
+
+            query = query
+                .Include(l => l.Product)
+                .Include(l => l.Lot)
+                .Where(l => l.BranchId == branchId)
+                .OrderByDescending(l => l.LedgerId);
+
+            return await query.ToPagedResultAsync(page, pageSize);
+        }
+
         // Main Transection Method: Stock and ledger update together
         public async Task<bool> AddLedgerEntryAsync(StockLedgerDTO dto)
         {

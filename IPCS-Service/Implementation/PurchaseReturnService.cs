@@ -26,13 +26,47 @@ namespace IPCS_Service.Implementation
             return $"RET-{nextId:D5}";
         }
 
-        public async Task<IEnumerable<PurchaseReturnMaster>> GetAllActiveAsync()
+        public async Task<IEnumerable<PurchaseReturnMaster>> GetAllActiveAsync(string? search = null)
         {
-            return await _context.PurchaseReturnMasters
+            var query = _context.PurchaseReturnMasters.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.ToLower().Trim();
+                query = query.Where(r => r.ReturnNo.ToLower().Contains(term)
+                    || (r.Supplier != null && r.Supplier.SupplierName.ToLower().Contains(term)));
+            }
+
+            return await query
                 .Include(r => r.Supplier)
                 .Include(r => r.Branch)
                 .AsNoTracking()
                 .ToListAsync();
+        }
+
+        /// <summary>
+        /// Server-side paging for the purchase-return list. Same shape and
+        /// filter as GetAllActiveAsync, but only one page of rows is loaded.
+        /// </summary>
+        public async Task<PagedResult<PurchaseReturnMaster>> GetPagedAsync(int page, int pageSize, string? search = null)
+        {
+            var query = _context.PurchaseReturnMasters.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.ToLower().Trim();
+                query = query.Where(r => r.ReturnNo.ToLower().Contains(term)
+                    || (r.Supplier != null && r.Supplier.SupplierName.ToLower().Contains(term)));
+            }
+
+            query = query
+                .Include(r => r.Supplier)
+                .Include(r => r.Branch)
+                .OrderByDescending(r => r.ReturnDate)
+                .ThenByDescending(r => r.ReturnId)
+                .AsNoTracking();
+
+            return await query.ToPagedResultAsync(page, pageSize);
         }
 
         public async Task<PurchaseReturnMaster?> GetByIdAsync(int id)
@@ -51,6 +85,24 @@ namespace IPCS_Service.Implementation
             try
             {
                 returnMaster.ReturnNo = await GenerateReturnNoAsync();
+
+                // Guard (new 2026-11-26): a return cannot be created against
+                // a deleted purchase. The return would create a new PREF-
+                // audit payment while the purchase is deleted, changing the
+                // live-payment set between the purchase's delete and
+                // restore and breaking the delete/restore reconciliation.
+                // Restore the purchase first. (A return with no linked
+                // purchase has no invoice to order against.)
+                if (returnMaster.PurchaseId.HasValue)
+                {
+                    var purchase = await _context.PurchaseMasters
+                        .IgnoreQueryFilters()
+                        .FirstOrDefaultAsync(x => x.PurchaseId == returnMaster.PurchaseId.Value);
+                    if (purchase == null)
+                        throw new Exception($"Cannot create a purchase return: the purchase #{returnMaster.PurchaseId.Value} does not exist.");
+                    if (purchase.IsDeleted)
+                        throw new Exception($"Cannot create purchase return {returnMaster.ReturnNo}: the purchase {purchase.PurchaseCode} is deleted. Restore the purchase first, then create the return.");
+                }
 
                 foreach (var detail in returnMaster.ReturnDetails)
                 {

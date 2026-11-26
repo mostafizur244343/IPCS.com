@@ -17,11 +17,27 @@ public class CustomerController : ControllerBase
 
     [PermissionAuthorize(Permissions.Customer.View)]
     [HttpGet]
-    public async Task<IActionResult> GetAll() => Ok(await _custService.GetAllActiveAsync());
+    public async Task<IActionResult> GetAll([FromQuery] int? page = null, [FromQuery] int? pageSize = null, [FromQuery] string? search = null)
+    {
+        // Paged shape (?page=) returns { items, totalCount, page, pageSize, totalPages }.
+        // Without paging params the old full-list array is returned unchanged.
+        if (page.HasValue)
+        {
+            return Ok(await _custService.GetPagedAsync(PagingDefaults.NormalizePage(page), PagingDefaults.NormalizePageSize(pageSize), search));
+        }
+        return Ok(await _custService.GetAllActiveAsync());
+    }
 
     [PermissionAuthorize(Permissions.Customer.View)]
     [HttpGet("active")]
-    public async Task<IActionResult> GetActive() => Ok(await _custService.GetAllActiveAsync());
+    public async Task<IActionResult> GetActive([FromQuery] int? page = null, [FromQuery] int? pageSize = null, [FromQuery] string? search = null)
+    {
+        if (page.HasValue)
+        {
+            return Ok(await _custService.GetPagedAsync(PagingDefaults.NormalizePage(page), PagingDefaults.NormalizePageSize(pageSize), search));
+        }
+        return Ok(await _custService.GetAllActiveAsync());
+    }
 
     [HttpGet("trash")] // Deleted Customer LIst For Dashboard
     public async Task<IActionResult> GetDeleted() => Ok(await _custService.GetDeletedListAsync());

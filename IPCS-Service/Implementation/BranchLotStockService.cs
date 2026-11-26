@@ -53,6 +53,102 @@ namespace IPCS_Service.Implementation
             return result;
         }
 
+        /// <summary>
+        /// Server-side paging for branch stock. Same shape as GetAllAsync,
+        /// but only one page of rows is loaded — and the unit conversion that
+        /// GetAllAsync runs once per row (one ProductUnitConversions query
+        /// per stock row, the N+1) is done here with ONE batched query for
+        /// all distinct products on the page.
+        /// </summary>
+        public async Task<PagedResult<BranchLotStockListItem>> GetPagedAsync(int page, int pageSize, string? search = null)
+        {
+            var query = _context.BranchLotStocks.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.ToLower().Trim();
+                query = query.Where(s => (s.Product != null && s.Product.ProductName.ToLower().Contains(term))
+                    || (s.Product != null && (s.Product.SKU ?? string.Empty).ToLower().Contains(term))
+                    || (s.Product != null && (s.Product.ProductCode ?? string.Empty).ToLower().Contains(term))
+                    || (s.Lot != null && s.Lot.LotNumber.ToLower().Contains(term))
+                    || (s.Branch != null && s.Branch.BranchName.ToLower().Contains(term)));
+            }
+
+            var total = await query.CountAsync();
+
+            var pageStocks = await query
+                .Include(s => s.Product)
+                .Include(s => s.Product!.UOM)
+                .Include(s => s.Branch)
+                .Include(s => s.Lot)
+                .OrderByDescending(s => s.StockId)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // One batched conversion lookup for the whole page (see
+            // ProductService.ConvertFromBaseUnit for the per-row original).
+            var productIds = pageStocks.Select(s => s.ProductId).Distinct().ToList();
+            var conversionsByProduct = (await _context.ProductUnitConversions
+                    .AsNoTracking()
+                    .Where(c => productIds.Contains(c.ProductId))
+                    .OrderByDescending(c => c.Level)
+                    .ToListAsync())
+                .GroupBy(c => c.ProductId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var items = pageStocks.Select(s => new BranchLotStockListItem
+            {
+                BranchId = s.BranchId,
+                BranchName = s.Branch?.BranchName,
+                ProductId = s.ProductId,
+                ProductName = s.Product?.ProductName,
+                SKU = s.Product != null ? (s.Product.SKU ?? s.Product.ProductCode) : null,
+                UomId = s.Product?.UOMId ?? 0,
+                UomName = s.Product?.UOM?.UOMName,
+                LotId = s.LotId,
+                LotNumber = s.Lot?.LotNumber,
+                CurrentStock = ConvertFromBaseUnitInMemory(s.Product, s.Product?.UOMId ?? 0, s.CurrentStock, conversionsByProduct),
+                CurrentStockInPcs = s.CurrentStock,
+                DamagedStock = s.DamagedStock,
+                PicturePath = s.Product?.PicturePath,
+                LastUpdated = s.LastUpdated,
+                PurchasePrice = s.Lot?.PurchasePrice ?? 0
+            }).ToList();
+
+            return new PagedResult<BranchLotStockListItem>
+            {
+                Items = items,
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
+        /// <summary>
+        /// In-memory copy of ProductService.ConvertFromBaseUnit, operating on
+        /// the pre-fetched conversion lists so no per-row query is needed.
+        /// </summary>
+        private static decimal ConvertFromBaseUnitInMemory(Product? product, int targetUnitId, decimal quantity,
+            Dictionary<int, List<ProductUnitConversion>> conversionsByProduct)
+        {
+            if (product == null) return quantity;
+            if (product.BaseUOMId == targetUnitId) return quantity;
+            if (!conversionsByProduct.TryGetValue(product.ProductId, out var conversions)) return quantity;
+
+            decimal finalQty = quantity;
+            bool foundTarget = false;
+            foreach (var conv in conversions)
+            {
+                if (conv.ToUnitId == targetUnitId || foundTarget)
+                {
+                    finalQty /= conv.Factor;
+                    foundTarget = true;
+                }
+            }
+            return finalQty;
+        }
+
         //Low Stock Alert Logic (Where CurrentStock < Product.ReorderLevel)
         public async Task<IEnumerable<object>> GetLowStockAlertAsync(int branchId)
         {

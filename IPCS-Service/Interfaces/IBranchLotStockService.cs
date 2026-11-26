@@ -6,6 +6,7 @@ namespace IPCS_Service.Interfaces
     public interface IBranchLotStockService
     {
         Task<IEnumerable<object>> GetAllAsync(); // Using AsNoTracking 
+        Task<PagedResult<BranchLotStockListItem>> GetPagedAsync(int page, int pageSize, string? search = null);
         Task<object?> GetStockDetailAsync(int branchId, int productId);
         Task<IEnumerable<object>> GetLowStockAlertAsync(int branchId);
         Task<bool> AdjustStockAsync(BranchLotStockDTO model); // Stock Adjustment

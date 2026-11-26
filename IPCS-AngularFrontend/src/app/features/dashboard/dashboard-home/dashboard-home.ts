@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { ApiService } from '../../../core/services/api';
 
 /**
@@ -53,24 +54,31 @@ export class DashboardHomeComponent implements OnInit {
 
   loadStats() {
     this.isLoading = true;
-    // Load Inventory Stats
-    this.api.get<any>('DailySummary/inventory-stats').subscribe({
-      next: (data) => {
-        this.stats[1].value = data.totalItems.toString();
-        this.stats[2].value = data.lowStock.toString();
-        this.stats[3].value = data.outOfStock.toString();
-      }
-    });
 
-    // Load Sales for Today and Recent Transactions
-    this.api.get<any[]>('Sales').subscribe({
-      next: (sales) => {
-        const todayStr = new Date().toDateString();
-        const todaySales = sales.filter(s => new Date(s.salesDate).toDateString() === todayStr);
-        const total = todaySales.reduce((acc, curr) => acc + curr.netAmount, 0);
-        this.stats[0].value = `৳${total.toFixed(2)}`;
-        
-        this.recentTransactions = sales.slice(0, 5).map(s => ({
+    // The day, as a [from, to) UTC range for the browser's local day, so
+    // "today's sales" matches what the old client-side filter computed.
+    const now = new Date();
+    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayEnd.getDate() + 1);
+    const from = encodeURIComponent(dayStart.toISOString());
+    const to = encodeURIComponent(dayEnd.toISOString());
+
+    // Both calls fire in parallel; the sales call is the lightweight
+    // Sales/recent endpoint (today's total + 5 recent sales) instead of
+    // downloading the entire Sales table.
+    forkJoin({
+      stats: this.api.get<any>('DailySummary/inventory-stats'),
+      sales: this.api.get<any>(`Sales/recent?from=${from}&to=${to}`)
+    }).subscribe({
+      next: ({ stats, sales }) => {
+        this.stats[1].value = stats.totalItems.toString();
+        this.stats[2].value = stats.lowStock.toString();
+        this.stats[3].value = stats.outOfStock.toString();
+
+        this.stats[0].value = `৳${Number(sales.todaySalesTotal || 0).toFixed(2)}`;
+
+        this.recentTransactions = (sales.recentSales || []).map((s: any) => ({
           id: s.invoiceNo,
           customer: s.customerName || 'Walk-in',
           date: new Date(s.salesDate).toLocaleDateString(),

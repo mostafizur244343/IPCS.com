@@ -90,6 +90,14 @@
         </tr>
       </tbody>
     </table>
+    <app-pagination
+      *ngIf="!isLoading"
+      [page]="page"
+      [pageSize]="pageSize"
+      [totalCount]="totalCount"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)">
+    </app-pagination>
 
     <!-- Displayed when no data matches search criteria -->
     <div *ngIf="!isLoading && filteredSales.length === 0" class="empty-state">

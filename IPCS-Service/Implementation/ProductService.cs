@@ -1,3 +1,4 @@
+using IPCS_Model.DTOs;
 using IPCS_Model.Entities;
 using IPCS_Service.Interfaces;
 using IPCS_Repo.Data;
@@ -99,6 +100,15 @@ namespace IPCS_Service.Implementation
         public async Task<bool> CreateAsync(Product product, decimal openingQty, decimal openingCost, int selectedUnitId, string? newGenericName = null, string? newCategoryName = null, string? newBrandName = null, string? newLocationName = null, string? newUomName = null, string? userName = null)
         {
             if (product == null) throw new Exception("Product data is missing.");
+
+            // A product needs a unit of measure: either an existing UOM
+            // (UOMId) or a new unit name to create one. Without it the
+            // insert fails with a bare EF error (UOMId 0 → FK violation).
+            // Validate up front so the caller gets a clear message.
+            if (product.UOMId <= 0 && string.IsNullOrWhiteSpace(newUomName))
+                throw new Exception("UOM is required to create a product. Please select a unit of measure.");
+            if (product.UOMId > 0 && !await _context.UOMs.AnyAsync(u => u.UOMId == product.UOMId))
+                throw new Exception($"UOM with ID {product.UOMId} does not exist. Please select a valid unit of measure.");
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -248,21 +258,7 @@ namespace IPCS_Service.Implementation
         {
             try
             {
-                var query = _context.Products.AsNoTracking();
-
-                if (!string.IsNullOrWhiteSpace(search))
-                {
-                    search = search.ToLower().Trim();
-                    query = query.Where(p => p.ProductName.ToLower().Contains(search) || (p.SKU != null && p.SKU.ToLower().Contains(search)));
-                }
-
-                if (branchId.HasValue)
-                {
-                    // Only show products that have at least one stock entry in this branch, or are Services
-                    query = query.Where(p => _context.BranchLotStocks.Any(s => s.BranchId == branchId.Value && s.ProductId == p.ProductId && s.CurrentStock > 0) || p.IsService);
-                }
-
-                var products = await query
+                var products = await BuildActiveQuery(search, branchId)
                     .Include(p => p.Category)
                     .Include(p => p.Brand)
                     .Include(p => p.UOM)
@@ -273,12 +269,7 @@ namespace IPCS_Service.Implementation
                 // If branchId is provided, override CurrentStock with branch-specific stock from BranchLotStocks
                 if (branchId.HasValue)
                 {
-                    foreach (var product in products)
-                    {
-                        product.CurrentStock = await _context.BranchLotStocks
-                            .Where(s => s.BranchId == branchId.Value && s.ProductId == product.ProductId)
-                            .SumAsync(s => (decimal?)s.CurrentStock) ?? 0;
-                    }
+                    await ApplyBranchStockAsync(products, branchId.Value);
                 }
 
                 return products;
@@ -286,6 +277,80 @@ namespace IPCS_Service.Implementation
             catch (Exception ex)
             {
                 throw new Exception("Error loading products: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Server-side paging for the product list. Same filter as
+        /// GetAllActiveAsync, but only one page of rows (with their lookups)
+        /// is loaded. Branch stock is resolved with ONE grouped query for the
+        /// page instead of one SumAsync per product (the old N+1).
+        /// </summary>
+        public async Task<PagedResult<Product>> GetPagedAsync(string? search, int? branchId, int page, int pageSize)
+        {
+            try
+            {
+                var query = BuildActiveQuery(search, branchId)
+                    .Include(p => p.Category)
+                    .Include(p => p.Brand)
+                    .Include(p => p.UOM)
+                    .Include(p => p.BaseUOM)
+                    .Include(p => p.Generic)
+                    .OrderByDescending(p => p.ProductId);
+
+                var result = await query.ToPagedResultAsync(page, pageSize);
+
+                if (branchId.HasValue)
+                {
+                    await ApplyBranchStockAsync(result.Items, branchId.Value);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error loading products: " + ex.Message);
+            }
+        }
+
+        private IQueryable<Product> BuildActiveQuery(string? search, int? branchId)
+        {
+            var query = _context.Products.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                search = search.ToLower().Trim();
+                query = query.Where(p => p.ProductName.ToLower().Contains(search) || (p.SKU != null && p.SKU.ToLower().Contains(search)));
+            }
+
+            if (branchId.HasValue)
+            {
+                // Only show products that have at least one stock entry in this branch, or are Services
+                query = query.Where(p => _context.BranchLotStocks.Any(s => s.BranchId == branchId.Value && s.ProductId == p.ProductId && s.CurrentStock > 0) || p.IsService);
+            }
+
+            return query;
+        }
+
+        /// <summary>
+        /// Overrides CurrentStock with the branch-specific total for each
+        /// product in the given (already materialized) set, using a single
+        /// grouped query instead of one SumAsync per product.
+        /// </summary>
+        private async Task ApplyBranchStockAsync(IEnumerable<Product> products, int branchId)
+        {
+            var ids = products.Select(p => p.ProductId).Distinct().ToList();
+            if (ids.Count == 0) return;
+
+            var sums = await _context.BranchLotStocks
+                .Where(s => s.BranchId == branchId && ids.Contains(s.ProductId))
+                .GroupBy(s => s.ProductId)
+                .Select(g => new { ProductId = g.Key, Total = g.Sum(s => (decimal?)s.CurrentStock) ?? 0 })
+                .ToDictionaryAsync(x => x.ProductId, x => x.Total);
+
+            foreach (var product in products)
+            {
+                product.CurrentStock = sums.TryGetValue(product.ProductId, out var total) ? total : 0;
             }
         }
 

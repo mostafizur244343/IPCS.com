@@ -1,10 +1,12 @@
-﻿using IPCS_Model.Entities;
+﻿using IPCS_Model.DTOs;
+using IPCS_Model.Entities;
 
 namespace IPCS_Service.Interfaces
 {
     public interface ISupplierService
     {
         Task<IEnumerable<Supplier>> GetAllActiveAsync(); // IsDeleted = false
+        Task<PagedResult<Supplier>> GetPagedAsync(int page, int pageSize, string? search = null);
         Task<IEnumerable<Supplier>> GetDeletedListAsync(); // Deleted List For Dashboard
         Task<Supplier?> GetByIdAsync(int id);
         Task<bool> CreateAsync(Supplier supplier);

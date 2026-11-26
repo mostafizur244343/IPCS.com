@@ -23,8 +23,21 @@ namespace IPCS_API.Controllers
 
         [PermissionAuthorize(Permissions.Supplier.View)]
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] int? page = null, [FromQuery] int? pageSize = null, [FromQuery] string? search = null)
         {
+            // Paged shape (?page=) returns { items, totalCount, page, pageSize, totalPages }.
+            // Without paging params the old full-list array is returned unchanged.
+            if (page.HasValue)
+            {
+                var paged = await _supService.GetPagedAsync(PagingDefaults.NormalizePage(page), PagingDefaults.NormalizePageSize(pageSize), search);
+                return Ok(new PagedResult<SupplierResponseDTO>
+                {
+                    Items = paged.Items.Select(MapToDTO),
+                    TotalCount = paged.TotalCount,
+                    Page = paged.Page,
+                    PageSize = paged.PageSize
+                });
+            }
             var suppliers = await _supService.GetAllActiveAsync();
             var dtos = suppliers.Select(MapToDTO);
             return Ok(dtos);
@@ -32,8 +45,19 @@ namespace IPCS_API.Controllers
 
         [PermissionAuthorize(Permissions.Supplier.View)]
         [HttpGet("active")]
-        public async Task<IActionResult> GetActive()
+        public async Task<IActionResult> GetActive([FromQuery] int? page = null, [FromQuery] int? pageSize = null, [FromQuery] string? search = null)
         {
+            if (page.HasValue)
+            {
+                var paged = await _supService.GetPagedAsync(PagingDefaults.NormalizePage(page), PagingDefaults.NormalizePageSize(pageSize), search);
+                return Ok(new PagedResult<SupplierResponseDTO>
+                {
+                    Items = paged.Items.Select(MapToDTO),
+                    TotalCount = paged.TotalCount,
+                    Page = paged.Page,
+                    PageSize = paged.PageSize
+                });
+            }
             var suppliers = await _supService.GetAllActiveAsync();
             var dtos = suppliers.Select(MapToDTO);
             return Ok(dtos);

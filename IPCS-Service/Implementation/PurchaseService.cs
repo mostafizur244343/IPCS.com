@@ -30,9 +30,19 @@ namespace IPCS_Service.Implementation
             return $"PUR-{nextId:D5}";
         }
 
-        public async Task<IEnumerable<PurchaseMaster>> GetAllActiveAsync()
+        public async Task<IEnumerable<PurchaseMaster>> GetAllActiveAsync(string? search = null)
         {
-            return await _context.Set<PurchaseMaster>()
+            var query = _context.Set<PurchaseMaster>().AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.ToLower().Trim();
+                query = query.Where(p => (p.PurchaseCode != null && p.PurchaseCode.ToLower().Contains(term))
+                    || p.SupplierInvoiceNo.ToLower().Contains(term)
+                    || (p.Supplier != null && p.Supplier.SupplierName.ToLower().Contains(term)));
+            }
+
+            return await query
                 .Include(p => p.Supplier)
                 .Include(p => p.Branch)
                 .Include(p => p.PaymentMethod)
@@ -40,6 +50,35 @@ namespace IPCS_Service.Implementation
                 .OrderByDescending(p => p.PurchaseDate)
                 .AsNoTracking()
                 .ToListAsync();
+        }
+
+        /// <summary>
+        /// Server-side paging for the purchase list. Same shape (entity with
+        /// Supplier/Branch/PaymentMethod) and filter as GetAllActiveAsync,
+        /// but only one page of rows is loaded.
+        /// </summary>
+        public async Task<PagedResult<PurchaseMaster>> GetPagedAsync(int page, int pageSize, string? search = null)
+        {
+            var query = _context.Set<PurchaseMaster>().AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.ToLower().Trim();
+                query = query.Where(p => (p.PurchaseCode != null && p.PurchaseCode.ToLower().Contains(term))
+                    || p.SupplierInvoiceNo.ToLower().Contains(term)
+                    || (p.Supplier != null && p.Supplier.SupplierName.ToLower().Contains(term)));
+            }
+
+            query = query
+                .Include(p => p.Supplier)
+                .Include(p => p.Branch)
+                .Include(p => p.PaymentMethod)
+                .Where(p => !p.IsDeleted)
+                .OrderByDescending(p => p.PurchaseDate)
+                .ThenByDescending(p => p.PurchaseId)
+                .AsNoTracking();
+
+            return await query.ToPagedResultAsync(page, pageSize);
         }
 
         public async Task<IEnumerable<PurchaseMaster>> GetDeletedListAsync()
@@ -60,6 +99,8 @@ namespace IPCS_Service.Implementation
                 .Include(p => p.Branch)
                 .Include(p => p.PurchaseDetails)
                     .ThenInclude(d => d.Product)
+                .Include(p => p.PurchaseDetails)
+                    .ThenInclude(d => d.UOM)
                 .Include(p => p.Payments) // Include Split Payments
                     .ThenInclude(pay => pay.PaymentMethod)
                 .AsNoTracking()
@@ -275,19 +316,16 @@ namespace IPCS_Service.Implementation
                     .FirstOrDefaultAsync(x => x.PurchaseId == id);
                 if (p == null) return false;
 
-                // Ordering guard (R4): a purchase with a deleted return
-                // cannot be deleted — restore the return(s) first, so the
-                // return's refund audit payment (PREF-) is visible again
-                // when the purchase is restored later. Otherwise the
-                // restore would miss the refund and the daily totals
-                // would end up off by the refund amount.
-                var deletedReturns = await _context.PurchaseReturnMasters
-                    .IgnoreQueryFilters()
-                    .Where(x => x.PurchaseId == id && x.IsDeleted)
-                    .Select(x => x.ReturnNo)
-                    .ToListAsync();
-                if (deletedReturns.Count > 0)
-                    throw new Exception(DeletedReturnsMessage("delete", p.PurchaseCode, deletedReturns));
+                // (Ordering guard R4 was removed 2026-11-26: a purchase
+                // whose return is already deleted CAN be deleted. The
+                // return's refund audit payment (PREF-) was already
+                // hard-removed by the return's own delete, so the delete
+                // and restore bucket loops both consistently never see
+                // it. R1 (a return cannot be deleted while its purchase
+                // is deleted) guarantees no return can change state
+                // between this purchase's delete and restore, so the
+                // payment set is identical at both ends and the books
+                // reconcile exactly. See GUARD_RELAX.md.)
 
                 // 1. Reverse stock (only if the goods were received into inventory).
                 if (!p.IsShipment || p.ShipmentStatus == "Received")
@@ -425,19 +463,12 @@ namespace IPCS_Service.Implementation
                 if (p == null) return false;
                 if (!p.IsDeleted) return false;
 
-                // Ordering guard (R2): a purchase with a deleted return
-                // cannot be restored — restore the return(s) first, so
-                // the return's refund audit payment (PREF-) is visible
-                // again and the restore re-applies the same payment set
-                // the delete unwound. Otherwise the daily totals would
-                // end up off by the refund amount.
-                var deletedReturns = await _context.PurchaseReturnMasters
-                    .IgnoreQueryFilters()
-                    .Where(x => x.PurchaseId == id && x.IsDeleted)
-                    .Select(x => x.ReturnNo)
-                    .ToListAsync();
-                if (deletedReturns.Count > 0)
-                    throw new Exception(DeletedReturnsMessage("restore", p.PurchaseCode, deletedReturns));
+                // (Ordering guard R2 was removed 2026-11-26, for the same
+                // reason as R4 above: a return deleted before this
+                // purchase's delete is already gone — its PREF- payment
+                // with it — so restore re-applies exactly the payment
+                // set delete unwound. R1 + R3 freeze every return's
+                // state while the purchase is deleted. See GUARD_RELAX.md.)
 
                 // 1. Re-apply stock (only if the goods were received into inventory).
                 if (!p.IsShipment || p.ShipmentStatus == "Received")
@@ -564,13 +595,5 @@ namespace IPCS_Service.Implementation
             }
         }
 
-        // Shared wording for the R2/R4 ordering guards: a purchase cannot
-        // be deleted or restored while one of its returns is deleted.
-        private static string DeletedReturnsMessage(string action, string? purchaseCode, List<string> returnNos)
-        {
-            if (returnNos.Count == 1)
-                return $"Cannot {action} purchase {purchaseCode}: purchase return {returnNos[0]} is deleted. Restore the return first, then {action} the purchase.";
-            return $"Cannot {action} purchase {purchaseCode}: purchase returns {string.Join(", ", returnNos)} are deleted. Restore the returns first, then {action} the purchase.";
-        }
     }
 }

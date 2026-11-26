@@ -1,7 +1,9 @@
+using IPCS_Model.DTOs;
 using IPCS_Model.Entities;
 using IPCS_Service.Interfaces;
 using IPCS_Repo.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace IPCS_Service.Implementation
 {
@@ -20,6 +22,25 @@ namespace IPCS_Service.Implementation
 
         public async Task<IEnumerable<Customer>> GetAllActiveAsync() =>
             await _context.Customers.AsNoTracking().ToListAsync();
+
+        /// <summary>
+        /// Server-side paging for the customer list. Same shape and ordering
+        /// as GetAllActiveAsync, but only one page of rows is loaded.
+        /// </summary>
+        public async Task<PagedResult<Customer>> GetPagedAsync(int page, int pageSize, string? search = null)
+        {
+            var query = _context.Customers.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.ToLower().Trim();
+                query = query.Where(c => c.CustomerName.ToLower().Contains(term)
+                    || (c.Mobile != null && c.Mobile.ToLower().Contains(term))
+                    || (c.CustomerCode != null && c.CustomerCode.ToLower().Contains(term)));
+            }
+
+            return await query.OrderBy(c => c.CustomerId).ToPagedResultAsync(page, pageSize);
+        }
 
         public async Task<IEnumerable<Customer>> GetDeletedListAsync() =>
             await _context.Customers.IgnoreQueryFilters().Where(c => c.IsDeleted).AsNoTracking().ToListAsync();

@@ -23,8 +23,21 @@ namespace IPCS_API.Controllers
 
         [PermissionAuthorize(Permissions.Product.View)]
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] string? search = null, [FromQuery] int? branchId = null)
+        public async Task<IActionResult> GetAll([FromQuery] string? search = null, [FromQuery] int? branchId = null, [FromQuery] int? page = null, [FromQuery] int? pageSize = null)
         {
+            // Paged shape (?page=) returns { items, totalCount, page, pageSize, totalPages }.
+            // Without paging params the old full-list array is returned unchanged.
+            if (page.HasValue)
+            {
+                var paged = await _productService.GetPagedAsync(search, branchId, PagingDefaults.NormalizePage(page), PagingDefaults.NormalizePageSize(pageSize));
+                return Ok(new PagedResult<ProductDTO>
+                {
+                    Items = paged.Items.Select(MapToDTO),
+                    TotalCount = paged.TotalCount,
+                    Page = paged.Page,
+                    PageSize = paged.PageSize
+                });
+            }
             var products = await _productService.GetAllActiveAsync(search, branchId);
             var dtos = products.Select(MapToDTO);
             return Ok(dtos);

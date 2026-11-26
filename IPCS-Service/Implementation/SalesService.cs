@@ -26,14 +26,105 @@ namespace IPCS_Service.Implementation
             return $"INV-{nextId:D6}";
         }
 
-        public async Task<IEnumerable<SalesMaster>> GetAllActiveAsync()
+        public async Task<IEnumerable<SalesMaster>> GetAllActiveAsync(string? search = null)
         {
-            return await _context.SalesMasters
-                .AsNoTracking()
+            var query = _context.SalesMasters.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.ToLower().Trim();
+                query = query.Where(s => s.InvoiceNo.ToLower().Contains(term)
+                    || (s.Customer != null && s.Customer.CustomerName.ToLower().Contains(term)));
+            }
+
+            return await query
                 .Include(s => s.Customer)
                 .Include(s => s.Branch)
                 .OrderByDescending(s => s.SalesDate)
                 .ToListAsync();
+        }
+
+        /// <summary>
+        /// Server-side paging for the sales list. Projects to SalesListDTO in
+        /// the database (no full entities, no Includes) and pages there, so a
+        /// page costs one small query instead of the whole Sales table.
+        /// </summary>
+        public async Task<PagedResult<SalesListDTO>> GetPagedListAsync(int page, int pageSize, string? search = null)
+        {
+            var query = _context.SalesMasters.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.ToLower().Trim();
+                query = query.Where(s => s.InvoiceNo.ToLower().Contains(term)
+                    || (s.Customer != null && s.Customer.CustomerName.ToLower().Contains(term)));
+            }
+
+            var projected = query
+                .OrderByDescending(s => s.SalesDate)
+                .ThenByDescending(s => s.SalesId)
+                .Select(s => new SalesListDTO
+                {
+                    SalesId = s.SalesId,
+                    InvoiceNo = s.InvoiceNo,
+                    SalesDate = s.SalesDate,
+                    CustomerName = s.Customer != null ? s.Customer.CustomerName : "Walk-in Customer",
+                    CustomerId = s.CustomerId,
+                    TotalAmount = s.TotalAmount,
+                    NetAmount = s.NetAmount,
+                    PaidAmount = s.PaidAmount,
+                    DueAmount = s.DueAmount,
+                    PaymentStatus = s.PaymentStatus
+                });
+
+            return await projected.ToPagedResultAsync(page, pageSize);
+        }
+
+        /// <summary>
+        /// Lightweight dashboard payload: today's sales total for the given
+        /// day plus the 5 most recent sales. The day is passed as a [from, to)
+        /// UTC range by the frontend (its local day), which reproduces exactly
+        /// the old client-side "sales of today" filter without downloading the
+        /// whole Sales table. With no range, the server's current day is used.
+        /// </summary>
+        public async Task<SalesDashboardSummaryDTO> GetDashboardSummaryAsync(DateTime? from, DateTime? to)
+        {
+            var start = from ?? DateTime.Today;
+            var end = to ?? DateTime.Today.AddDays(1);
+
+            var todayQuery = _context.SalesMasters
+                .AsNoTracking()
+                .Where(s => s.SalesDate >= start && s.SalesDate < end);
+
+            var total = await todayQuery.SumAsync(s => (decimal?)s.NetAmount) ?? 0;
+            var count = await todayQuery.CountAsync();
+
+            var recent = await _context.SalesMasters
+                .AsNoTracking()
+                .OrderByDescending(s => s.SalesDate)
+                .ThenByDescending(s => s.SalesId)
+                .Take(5)
+                .Select(s => new SalesListDTO
+                {
+                    SalesId = s.SalesId,
+                    InvoiceNo = s.InvoiceNo,
+                    SalesDate = s.SalesDate,
+                    CustomerName = s.Customer != null ? s.Customer.CustomerName : "Walk-in Customer",
+                    CustomerId = s.CustomerId,
+                    TotalAmount = s.TotalAmount,
+                    NetAmount = s.NetAmount,
+                    PaidAmount = s.PaidAmount,
+                    DueAmount = s.DueAmount,
+                    PaymentStatus = s.PaymentStatus
+                })
+                .ToListAsync();
+
+            return new SalesDashboardSummaryDTO
+            {
+                TodaySalesTotal = total,
+                TodaySalesCount = count,
+                RecentSales = recent
+            };
         }
 
         public async Task<IEnumerable<SalesMaster>> GetDeletedListAsync()
@@ -251,19 +342,16 @@ namespace IPCS_Service.Implementation
                     .FirstOrDefaultAsync(s => s.SalesId == id);
                 if (sale == null) return false;
 
-                // Ordering guard (R4): a sale with a deleted return cannot
-                // be deleted — restore the return(s) first, so the
-                // return's refund audit payment (REF-) is visible again
-                // when the sale is restored later. Otherwise the restore
-                // would miss the refund and the daily totals would end up
-                // off by the refund amount.
-                var deletedReturns = await _context.SalesReturnMasters
-                    .IgnoreQueryFilters()
-                    .Where(x => x.SalesId == id && x.IsDeleted)
-                    .Select(x => x.ReturnNo)
-                    .ToListAsync();
-                if (deletedReturns.Count > 0)
-                    throw new Exception(DeletedReturnsMessage("delete", sale.InvoiceNo, deletedReturns));
+                // (Ordering guard R4 was removed 2026-11-26: a sale whose
+                // return is already deleted CAN be deleted. The return's
+                // refund audit payment (REF-) was already hard-removed
+                // by the return's own delete, so the delete and restore
+                // bucket loops both consistently never see it. R1 (a
+                // return cannot be deleted while its sale is deleted)
+                // guarantees no return can change state between this
+                // sale's delete and restore, so the payment set is
+                // identical at both ends and the books reconcile
+                // exactly. See GUARD_RELAX.md.)
 
                 // 1. Reverse stock: add the sold quantities back to their lots.
                 // Guard: the lot/branch-stock row must still exist, and a
@@ -329,9 +417,26 @@ namespace IPCS_Service.Implementation
                     .FirstOrDefaultAsync(d => d.TransactionDate == sale.SalesDate.Date && d.BranchId == sale.BranchId);
                 if (summary != null)
                 {
-                    summary.TotalCashSales -= sale.PaidAmount;
+                    // Split settlements never went into TotalCashSales at
+                    // creation — they went to TotalCollection — so the
+                    // delete reverses TotalCashSales by PaidAmount minus
+                    // the live split settlements, and TotalCollection by
+                    // the live split settlements. (Previously it subtracted
+                    // the full current PaidAmount, which overstated the
+                    // reversal by the split amount and, through the < 0
+                    // clamp, could wipe out other sales' contributions;
+                    // and TotalCollection was never reversed at all, so a
+                    // settled due sale left it stranded after delete.)
+                    decimal liveSplitTotal = (sale.Payments ?? Enumerable.Empty<InvoicePayment>())
+                        .Where(p => p.IsSplitSettlement)
+                        .Sum(p => p.Amount);
+
+                    summary.TotalCashSales -= (sale.PaidAmount - liveSplitTotal);
                     if (sale.ChangeAmount > 0 && sale.IsChangeTakenAsIncome) summary.TotalCashSales -= sale.ChangeAmount;
                     if (summary.TotalCashSales < 0) summary.TotalCashSales = 0;
+
+                    summary.TotalCollection -= liveSplitTotal;
+                    if (summary.TotalCollection < 0) summary.TotalCollection = 0;
 
                     summary.TotalDueSales -= sale.DueAmount;
                     if (summary.TotalDueSales < 0) summary.TotalDueSales = 0;
@@ -403,19 +508,12 @@ namespace IPCS_Service.Implementation
                 if (sale == null) return false;
                 if (!sale.IsDeleted) return false;
 
-                // Ordering guard (R2): a sale with a deleted return cannot
-                // be restored — restore the return(s) first, so the
-                // return's refund audit payment (REF-) is visible again
-                // and the restore re-applies the same payment set the
-                // delete unwound. Otherwise the daily totals would end up
-                // off by the refund amount.
-                var deletedReturns = await _context.SalesReturnMasters
-                    .IgnoreQueryFilters()
-                    .Where(x => x.SalesId == id && x.IsDeleted)
-                    .Select(x => x.ReturnNo)
-                    .ToListAsync();
-                if (deletedReturns.Count > 0)
-                    throw new Exception(DeletedReturnsMessage("restore", sale.InvoiceNo, deletedReturns));
+                // (Ordering guard R2 was removed 2026-11-26, for the same
+                // reason as R4 above: a return deleted before this
+                // sale's delete is already gone — its REF- payment with
+                // it — so restore re-applies exactly the payment set
+                // delete unwound. R1 + R3 freeze every return's state
+                // while the sale is deleted. See GUARD_RELAX.md.)
 
                 // 1. Re-apply stock: remove the sold quantities again.
                 var reversals = new List<(SalesDetails Detail, BranchLotStock Stock, Product Product)>();
@@ -485,18 +583,29 @@ namespace IPCS_Service.Implementation
                     await _context.DailyTransactionSummaries.AddAsync(summary);
                 }
 
-                summary.TotalCashSales += sale.PaidAmount;
+                // The sale's live payments. Only the split settlements went
+                // to TotalCollection at settlement time, so restore
+                // re-applies TotalCashSales by PaidAmount minus the live
+                // splits, and TotalCollection by the live splits — the
+                // exact mirror of SoftDeleteAsync. (Previously restore
+                // added the full current PaidAmount to TotalCashSales,
+                // overstating it by the split amount, and never touched
+                // TotalCollection.)
+                var payments = await _context.InvoicePayments
+                    .Where(p => p.SaleId == id)
+                    .ToListAsync();
+                decimal liveSplitTotal = payments.Where(p => p.IsSplitSettlement).Sum(p => p.Amount);
+
+                summary.TotalCashSales += (sale.PaidAmount - liveSplitTotal);
                 if (sale.ChangeAmount > 0 && sale.IsChangeTakenAsIncome) summary.TotalCashSales += sale.ChangeAmount;
                 summary.TotalDueSales += sale.DueAmount;
+                summary.TotalCollection += liveSplitTotal;
 
                 // Recompute the profit this sale adds, exactly as creation did.
                 decimal totalProfit = sale.SalesDetails.Sum(d => d.LineTotal - (d.CostPriceAtSale * d.Quantity));
                 if (sale.ChangeAmount > 0 && sale.IsChangeTakenAsIncome) totalProfit += sale.ChangeAmount;
                 summary.NetProfit += totalProfit;
 
-                var payments = await _context.InvoicePayments
-                    .Where(p => p.SaleId == id)
-                    .ToListAsync();
                 foreach (var payment in payments)
                 {
                     var method = await _context.PaymentMethods.AsNoTracking().FirstOrDefaultAsync(m => m.MethodId == payment.PaymentMethodId);
@@ -523,13 +632,5 @@ namespace IPCS_Service.Implementation
             }
         }
 
-        // Shared wording for the R2/R4 ordering guards: a sale cannot be
-        // deleted or restored while one of its returns is deleted.
-        private static string DeletedReturnsMessage(string action, string invoiceNo, List<string> returnNos)
-        {
-            if (returnNos.Count == 1)
-                return $"Cannot {action} sale {invoiceNo}: sales return {returnNos[0]} is deleted. Restore the return first, then {action} the sale.";
-            return $"Cannot {action} sale {invoiceNo}: sales returns {string.Join(", ", returnNos)} are deleted. Restore the returns first, then {action} the sale.";
-        }
     }
 }

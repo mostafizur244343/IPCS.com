@@ -48,6 +48,14 @@
         </tr>
       </tbody>
     </table>
+    <app-pagination
+      *ngIf="!isLoading"
+      [page]="page"
+      [pageSize]="pageSize"
+      [totalCount]="totalCount"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)">
+    </app-pagination>
 
     <div *ngIf="!isLoading && filteredEntries.length === 0" class="empty-state">
       <p>No transaction history found.</p>

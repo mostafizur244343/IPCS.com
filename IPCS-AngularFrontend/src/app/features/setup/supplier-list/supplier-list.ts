@@ -4,15 +4,19 @@ import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ImageUploadComponent } from '../../../shared/image-upload/image-upload';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination';
+import { PagedResult } from '../../../core/models/paged-result';
 
 /**
  * SupplierListComponent
  * Manages pharmaceutical distributors and supply chain partners.
+ * Server-side paging: only one page is fetched at a time; search is sent
+ * to the server (debounced) instead of filtering a full-table download.
  */
 @Component({
   selector: 'app-supplier-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ImageUploadComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ImageUploadComponent, PaginationComponent],
   templateUrl: './supplier-list.html'
 })
 export class SupplierListComponent implements OnInit {
@@ -23,6 +27,12 @@ export class SupplierListComponent implements OnInit {
   isUploading = false;
   showForm = false;
   searchTerm = '';
+
+  // Server-side paging state
+  page = 1;
+  pageSize = 20;
+  totalCount = 0;
+  private searchTimer: any;
 
   // Editing state
   editingSupplierId: number | null = null;
@@ -50,20 +60,40 @@ export class SupplierListComponent implements OnInit {
   }
 
   onSearch() {
-    const term = this.searchTerm.toLowerCase();
-    this.filteredSuppliers = this.suppliers.filter(s => 
-      (s.supplierName && s.supplierName.toLowerCase().includes(term)) ||
-      (s.mobile && s.mobile.toLowerCase().includes(term)) ||
-      (s.supplierCode && s.supplierCode.toLowerCase().includes(term))
-    );
+    // Debounced server-side search: reload page 1 from the server.
+    clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => {
+      this.page = 1;
+      this.loadSuppliers();
+    }, 400);
+  }
+
+  onPageChange(page: number) {
+    this.page = page;
+    this.loadSuppliers();
+  }
+
+  onPageSizeChange(size: number) {
+    this.pageSize = size;
+    this.page = 1;
+    this.loadSuppliers();
   }
 
   loadSuppliers() {
     this.isLoading = true;
-    this.api.get<any[]>('Supplier/active').subscribe({
-      next: (data) => {
-        this.suppliers = data;
-        this.filteredSuppliers = data;
+    const search = this.searchTerm.trim();
+    const query = `Supplier/active?page=${this.page}&pageSize=${this.pageSize}` + (search ? `&search=${encodeURIComponent(search)}` : '');
+    this.api.get<PagedResult<any>>(query).subscribe({
+      next: (res) => {
+        this.suppliers = res.items;
+        this.filteredSuppliers = res.items;
+        this.totalCount = res.totalCount;
+        // If the last item of a page was deleted, step back a page.
+        if (res.items.length === 0 && this.page > 1) {
+          this.page--;
+          this.loadSuppliers();
+          return;
+        }
         this.isLoading = false;
       },
       error: () => this.isLoading = false

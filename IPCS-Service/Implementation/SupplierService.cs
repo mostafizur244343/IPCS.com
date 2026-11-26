@@ -1,3 +1,4 @@
+using IPCS_Model.DTOs;
 using IPCS_Model.Entities;
 using IPCS_Service.Interfaces;
 using IPCS_Repo.Data;
@@ -33,6 +34,32 @@ namespace IPCS_Service.Implementation
             try
             {
                 return await _context.Suppliers.AsNoTracking().ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error loading active suppliers: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Server-side paging for the supplier list. Same shape and ordering
+        /// as GetAllActiveAsync, but only one page of rows is loaded.
+        /// </summary>
+        public async Task<PagedResult<Supplier>> GetPagedAsync(int page, int pageSize, string? search = null)
+        {
+            try
+            {
+                var query = _context.Suppliers.AsNoTracking();
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var term = search.ToLower().Trim();
+                    query = query.Where(s => s.SupplierName.ToLower().Contains(term)
+                        || (s.Mobile != null && s.Mobile.ToLower().Contains(term))
+                        || (s.SupplierCode != null && s.SupplierCode.ToLower().Contains(term)));
+                }
+
+                return await query.OrderBy(s => s.SupplierId).ToPagedResultAsync(page, pageSize);
             }
             catch (Exception ex)
             {

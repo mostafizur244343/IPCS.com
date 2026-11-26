@@ -38,6 +38,18 @@ namespace IPCS_Model.Entities
 
         public string? Remarks { get; set; }
         public string? CreatedBy { get; set; }
+
+        // True when this payment was recorded through POST /api/Payment/
+        // process-split (a later settlement of an invoice's due). Inline
+        // payments created together with a sale/purchase, and the REF- /
+        // PREF- audit payments created by returns, are false. The flag is
+        // the only reliable way to tell a split settlement apart from an
+        // inline payment: it decides which payments a sale delete/restore
+        // counts towards TotalCollection and TotalCashSales (a split
+        // settlement went to TotalCollection, an inline payment went to
+        // TotalCashSales). See GUARD_RELAX.md.
+        public bool IsSplitSettlement { get; set; } = false;
+
         public bool IsDeleted { get; set; } = false;
     }
 }

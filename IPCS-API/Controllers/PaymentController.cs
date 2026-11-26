@@ -33,9 +33,18 @@ namespace IPCS_API.Controllers
         [HttpPost("process-split")]
         public async Task<IActionResult> ProcessSplit([FromBody] List<InvoicePaymentDTO> payments)
         {
-            var result = await _paymentService.ProcessSplitPaymentAsync(payments);
-            if (result) return Ok(new { Message = "Payments Processed Successfully" });
-            return BadRequest("Error Processing Payments");
+            try
+            {
+                var result = await _paymentService.ProcessSplitPaymentAsync(payments);
+                if (result) return Ok(new { Message = "Payments Processed Successfully" });
+                return BadRequest("Error Processing Payments");
+            }
+            catch (Exception ex)
+            {
+                // Guard rejections (e.g. a split against a deleted invoice)
+                // surface as a clear 400, not a 500.
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [PermissionAuthorize(Permissions.Payment.Create)]

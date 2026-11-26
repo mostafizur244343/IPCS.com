@@ -7,7 +7,9 @@ namespace IPCS_Service.Interfaces
 {
     public interface ISalesService
     {
-        Task<IEnumerable<SalesMaster>> GetAllActiveAsync();
+        Task<IEnumerable<SalesMaster>> GetAllActiveAsync(string? search = null);
+        Task<PagedResult<SalesListDTO>> GetPagedListAsync(int page, int pageSize, string? search = null);
+        Task<SalesDashboardSummaryDTO> GetDashboardSummaryAsync(DateTime? from, DateTime? to);
         Task<IEnumerable<SalesMaster>> GetDeletedListAsync();
         Task<SalesMaster?> GetByIdAsync(int id);
         Task<bool> CreateSalesAsync(SalesMaster salesMaster);

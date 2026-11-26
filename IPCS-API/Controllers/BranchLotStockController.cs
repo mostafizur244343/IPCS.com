@@ -19,7 +19,16 @@ public class BranchLotStockController : ControllerBase
 
     [PermissionAuthorize(Permissions.Stock.ViewBranchStock)]
     [HttpGet("all")]
-    public async Task<IActionResult> GetAll() => Ok(await _stockService.GetAllAsync());
+    public async Task<IActionResult> GetAll([FromQuery] int? page = null, [FromQuery] int? pageSize = null, [FromQuery] string? search = null)
+    {
+        // Paged shape (?page=) returns { items, totalCount, page, pageSize, totalPages }.
+        // Without paging params the old full-list array is returned unchanged.
+        if (page.HasValue)
+        {
+            return Ok(await _stockService.GetPagedAsync(PagingDefaults.NormalizePage(page), PagingDefaults.NormalizePageSize(pageSize), search));
+        }
+        return Ok(await _stockService.GetAllAsync());
+    }
 
     [HttpGet("low-stock/{branchId}")]
     public async Task<IActionResult> GetLowStock(int branchId) => Ok(await _stockService.GetLowStockAlertAsync(branchId));

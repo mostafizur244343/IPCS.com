@@ -7,7 +7,8 @@ namespace IPCS_Service.Interfaces
 {
     public interface ISalesReturnService
     {
-        Task<IEnumerable<SalesReturnMaster>> GetAllActiveAsync();
+        Task<IEnumerable<SalesReturnMaster>> GetAllActiveAsync(string? search = null);
+        Task<PagedResult<SalesReturnMaster>> GetPagedAsync(int page, int pageSize, string? search = null);
         Task<SalesReturnMaster?> GetByIdAsync(int id);
         Task<bool> CreateReturnAsync(SalesReturnMaster returnMaster);
         Task<bool> SoftDeleteAsync(int id);

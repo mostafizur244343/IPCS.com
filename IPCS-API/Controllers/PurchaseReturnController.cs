@@ -26,7 +26,16 @@ namespace IPCS_API.Controllers
 
         [PermissionAuthorize(Permissions.PurchaseReturn.View)]
         [HttpGet]
-        public async Task<IActionResult> GetAll() => Ok(await _returnService.GetAllActiveAsync());
+        public async Task<IActionResult> GetAll([FromQuery] int? page = null, [FromQuery] int? pageSize = null, [FromQuery] string? search = null)
+        {
+            // Paged shape (?page=) returns { items, totalCount, page, pageSize, totalPages }.
+            // Without paging params the old full-list array is returned unchanged.
+            if (page.HasValue)
+            {
+                return Ok(await _returnService.GetPagedAsync(PagingDefaults.NormalizePage(page), PagingDefaults.NormalizePageSize(pageSize), search));
+            }
+            return Ok(await _returnService.GetAllActiveAsync(search));
+        }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
