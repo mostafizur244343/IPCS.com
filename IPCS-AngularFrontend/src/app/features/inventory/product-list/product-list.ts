@@ -7,6 +7,7 @@ import { BaseFeatureComponent } from '../../../shared/components/base-feature';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import { PagedResult } from '../../../core/models/paged-result';
 import { environment } from '../../../../environments/environment';
+import { TranslatePipe } from '@ngx-translate/core';
 
 /**
  * ProductListComponent
@@ -17,7 +18,7 @@ import { environment } from '../../../../environments/environment';
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, PaginationComponent],
+  imports: [CommonModule, RouterModule, FormsModule, PaginationComponent, TranslatePipe],
   templateUrl: './product-list.html'
 })
 export class ProductListComponent extends BaseFeatureComponent implements OnInit {
@@ -100,12 +101,12 @@ export class ProductListComponent extends BaseFeatureComponent implements OnInit
   }
 
   async deleteProduct(id: number) {
-    const confirmed = await this.confirmDelete('Delete Product?', 'This product will be permanently removed.');
+    const confirmed = await this.confirmDelete(this.translate.instant('inventory.products.deleteConfirmTitle'), this.translate.instant('inventory.products.deleteConfirmText'));
     if (confirmed) {
       this.isLoading = true;
       this.api.delete(`Product/${id}`).subscribe({
         next: () => {
-          this.notification.success('Product deleted successfully.');
+          this.notification.success(this.translate.instant('inventory.products.deleted'));
           this.loadProducts();
         },
         error: (err) => this.handleError(err)

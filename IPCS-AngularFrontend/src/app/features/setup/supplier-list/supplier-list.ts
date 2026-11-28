@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ImageUploadComponent } from '../../../shared/image-upload/image-upload';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import { PagedResult } from '../../../core/models/paged-result';
@@ -16,7 +17,7 @@ import { PagedResult } from '../../../core/models/paged-result';
 @Component({
   selector: 'app-supplier-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ImageUploadComponent, PaginationComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ImageUploadComponent, PaginationComponent, TranslatePipe],
   templateUrl: './supplier-list.html'
 })
 export class SupplierListComponent implements OnInit {
@@ -41,7 +42,7 @@ export class SupplierListComponent implements OnInit {
   // Details state
   selectedSupplierForDetails: any = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private translate: TranslateService) {}
 
   ngOnInit() {
     this.loadSuppliers();
@@ -114,12 +115,12 @@ export class SupplierListComponent implements OnInit {
           this.editSupplier.picturePath = filePath;
         }
         this.isUploading = false;
-        alert('Image uploaded successfully!');
+        alert(this.translate.instant('setup.imageUploaded'));
       },
       error: (err) => {
         console.error('Upload failed full error:', err);
         const errorMsg = err.error?.error || err.error?.message || err.message || 'Unknown error';
-        alert('Image upload failed: ' + errorMsg);
+        alert(this.translate.instant('setup.imageUploadFailed') + ': ' + errorMsg);
         this.isUploading = false;
       }
     });
@@ -155,7 +156,7 @@ export class SupplierListComponent implements OnInit {
       },
       error: (err) => {
         console.error('Supplier Create Error:', err);
-        const errorMsg = err.error?.Error || err.error?.Msg || 'সাপ্লায়ার তৈরি করা সম্ভব হয়নি।';
+        const errorMsg = err.error?.Error || err.error?.Msg || this.translate.instant('setup.suppliers.createFailed');
         alert(errorMsg);
         this.isLoading = false;
       }
@@ -197,7 +198,7 @@ export class SupplierListComponent implements OnInit {
   }
 
   deleteSupplier(id: number) {
-    if (confirm('Delete this supplier?')) {
+    if (confirm(this.translate.instant('setup.suppliers.deleteConfirm'))) {
       this.api.delete(`Supplier/${id}`).subscribe(() => this.loadSuppliers());
     }
   }

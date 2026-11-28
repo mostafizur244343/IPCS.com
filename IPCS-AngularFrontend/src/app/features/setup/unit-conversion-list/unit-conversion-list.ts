@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 /**
  * UnitConversionListComponent
@@ -12,7 +13,7 @@ import { RouterModule } from '@angular/router';
 @Component({
   selector: 'app-unit-conversion-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   templateUrl: './unit-conversion-list.html'
 })
 export class UnitConversionListComponent implements OnInit {
@@ -35,7 +36,7 @@ export class UnitConversionListComponent implements OnInit {
   // Details state
   selectedConversionForDetails: any = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private translate: TranslateService) {}
 
   showDetails(conversion: any) {
     this.selectedConversionForDetails = conversion;
@@ -82,7 +83,7 @@ export class UnitConversionListComponent implements OnInit {
 
   addConversion() {
     if (!this.newConversion.productId || !this.newConversion.fromUnitId || !this.newConversion.toUnitId) {
-      alert('Please fill all required fields');
+      alert(this.translate.instant('validation.fillRequired'));
       return;
     }
 
@@ -98,7 +99,7 @@ export class UnitConversionListComponent implements OnInit {
   }
 
   deleteConversion(id: number) {
-    if (confirm('Delete this conversion factor?')) {
+    if (confirm(this.translate.instant('setup.unitConversions.deleteConfirm'))) {
       this.api.delete(`ProductUnitConversion/${id}`).subscribe(() => this.loadConversions());
     }
   }

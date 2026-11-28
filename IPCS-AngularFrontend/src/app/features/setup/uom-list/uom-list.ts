@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 /**
  * UomListComponent
@@ -12,7 +13,7 @@ import { RouterModule } from '@angular/router';
 @Component({
   selector: 'app-uom-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   templateUrl: './uom-list.html',
 })
 export class UomListComponent implements OnInit {
@@ -30,7 +31,7 @@ export class UomListComponent implements OnInit {
   // Details state
   selectedUomForDetails: any = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private translate: TranslateService) {}
 
   ngOnInit() {
     this.loadUoms();
@@ -122,7 +123,7 @@ export class UomListComponent implements OnInit {
    * Deletes a UOM entry
    */
   deleteUom(id: number) {
-    if (confirm('Delete this unit of measurement?')) {
+    if (confirm(this.translate.instant('setup.uom.deleteConfirm'))) {
       this.api.delete(`UOM/${id}`).subscribe(() => this.loadUoms());
     }
   }

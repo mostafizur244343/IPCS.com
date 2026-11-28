@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 /**
  * ExpiryTrackerComponent
@@ -12,7 +13,7 @@ import { RouterModule } from '@angular/router';
 @Component({
   selector: 'app-expiry-tracker',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   templateUrl: './expiry-tracker.html'
 })
 export class ExpiryTrackerComponent implements OnInit {

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ImageUploadComponent } from '../../../shared/image-upload/image-upload';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import { PagedResult } from '../../../core/models/paged-result';
@@ -16,7 +17,7 @@ import { PagedResult } from '../../../core/models/paged-result';
 @Component({
   selector: 'app-customer-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ImageUploadComponent, PaginationComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ImageUploadComponent, PaginationComponent, TranslatePipe],
   templateUrl: './customer-list.html'
 })
 export class CustomerListComponent implements OnInit {
@@ -48,7 +49,7 @@ export class CustomerListComponent implements OnInit {
   // Details state
   selectedCustomerForDetails: any = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private translate: TranslateService) {}
 
   showDetails(customer: any) {
     this.selectedCustomerForDetails = customer;
@@ -121,13 +122,13 @@ export class CustomerListComponent implements OnInit {
         },
         error: (err) => {
           console.error('Upload failed:', err);
-          alert('Image upload failed: ' + (err.error?.Message || err.message));
+          alert(this.translate.instant('setup.imageUploadFailed') + ': ' + (err.error?.Message || err.message));
           this.isUploading = false;
         }
       });
     } catch (err) {
       console.error('Upload error:', err);
-      alert('Image upload failed');
+      alert(this.translate.instant('setup.imageUploadFailed'));
       this.isUploading = false;
     }
   }
@@ -217,7 +218,7 @@ export class CustomerListComponent implements OnInit {
   }
 
   deleteCustomer(id: number) {
-    if (confirm('Delete this customer?')) {
+    if (confirm(this.translate.instant('setup.customers.deleteConfirm'))) {
       this.api.delete(`Customer/${id}`).subscribe(() => this.loadCustomers());
     }
   }

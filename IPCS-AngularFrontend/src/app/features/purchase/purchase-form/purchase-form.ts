@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -12,7 +13,7 @@ import { ApiService } from '../../../core/services/api';
 @Component({
   selector: 'app-purchase-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   templateUrl: './purchase-form.html'
 })
 export class PurchaseFormComponent implements OnInit {
@@ -60,7 +61,7 @@ export class PurchaseFormComponent implements OnInit {
   showNewUOMInput = false;
   showNewLocationInput = false;
 
-  constructor(private api: ApiService, private router: Router) {}
+  constructor(private api: ApiService, private router: Router, private translate: TranslateService) {}
 
   ngOnInit() {
     this.loadLookups();
@@ -191,7 +192,7 @@ export class PurchaseFormComponent implements OnInit {
 
   saveQuickProduct() {
       if (!this.quickProduct.productName) {
-          alert('Product name is required');
+          alert(this.translate.instant('purchase.messages.productNameRequired'));
           return;
       }
       
@@ -207,7 +208,7 @@ export class PurchaseFormComponent implements OnInit {
 
       this.api.post('Product', this.quickProduct).subscribe({
           next: (res: any) => {
-              alert(res.message || 'Product created successfully');
+              alert(res.message || this.translate.instant('purchase.messages.productCreated'));
               this.showQuickProductModal = false;
               this.isSavingQuickProduct = false;
               
@@ -222,7 +223,7 @@ export class PurchaseFormComponent implements OnInit {
               });
           },
           error: (err) => {
-              alert(err.error?.message || 'Failed to create product');
+              alert(err.error?.message || this.translate.instant('purchase.messages.productCreateFailed'));
               this.isSavingQuickProduct = false;
           }
       });
@@ -233,7 +234,7 @@ export class PurchaseFormComponent implements OnInit {
    */
   onSubmit() {
     if (this.purchase.purchaseDetails.length === 0) {
-      alert('Please add at least one product');
+      alert(this.translate.instant('purchase.messages.addAtLeastOneProduct'));
       return;
     }
 
@@ -252,7 +253,7 @@ export class PurchaseFormComponent implements OnInit {
         this.router.navigate(['/dashboard/purchase']);
       },
       error: (err) => {
-        alert(err.error?.message || 'Purchase failed');
+        alert(err.error?.message || this.translate.instant('purchase.messages.purchaseFailed'));
         this.isLoading = false;
       }
     });

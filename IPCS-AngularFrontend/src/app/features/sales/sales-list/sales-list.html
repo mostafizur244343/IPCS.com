@@ -2,16 +2,16 @@
   <!-- Page header with title and New Sale button -->
   <div class="page-header">
     <div class="title-section">
-      <h1>Sales Transactions</h1>
-      <p>Track and manage all customer sales and invoices.</p>
+      <h1>{{ 'sales.list.title' | translate }}</h1>
+      <p>{{ 'sales.list.subtitle' | translate }}</p>
     </div>
     <div class="action-section">
       <button class="btn btn-secondary" routerLink="/dashboard/sales/trash">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-right: 4px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-        Trash
+        {{ 'sales.list.trash' | translate }}
       </button>
       <button class="btn btn-primary" routerLink="/dashboard/sales/new">
-        <span class="icon">+</span> New POS Sale
+        <span class="icon">+</span> {{ 'sales.form.title' | translate }}
       </button>
     </div>
   </div>
@@ -22,7 +22,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
       <input 
         type="text" 
-        placeholder="Search by invoice or customer..." 
+        [placeholder]="'sales.list.searchPlaceholder' | translate" 
         [(ngModel)]="searchTerm"
         (input)="onSearch()"
       >
@@ -30,10 +30,10 @@
     <div class="filters">
        <!-- Dropdownbox for filtering by payment status -->
        <select class="filter-select">
-         <option value="">All Status</option>
-         <option value="Paid">Paid</option>
-         <option value="Partial">Partial</option>
-         <option value="Due">Due</option>
+         <option value="">{{ 'sales.list.allStatus' | translate }}</option>
+         <option value="Paid">{{ 'sales.status.paid' | translate }}</option>
+         <option value="Partial">{{ 'sales.status.partial' | translate }}</option>
+         <option value="Due">{{ 'sales.status.due' | translate }}</option>
        </select>
     </div>
   </div>
@@ -42,20 +42,20 @@
   <div class="card table-card">
     <div *ngIf="isLoading" class="loading-state">
       <div class="spinner-blue"></div>
-      <p>Loading Sales Data...</p>
+      <p>{{ 'sales.list.loading' | translate }}</p>
     </div>
 
     <table *ngIf="!isLoading" class="data-table">
       <thead>
         <tr>
-          <th>Invoice No</th>
-          <th>Date</th>
-          <th>Customer</th>
-          <th>Total Amount</th>
-          <th>Paid</th>
-          <th>Due</th>
-          <th>Status</th>
-          <th class="text-right">Actions</th>
+          <th>{{ 'sales.list.invoiceNo' | translate }}</th>
+          <th>{{ 'common.date' | translate }}</th>
+          <th>{{ 'sales.list.customer' | translate }}</th>
+          <th>{{ 'sales.list.totalAmount' | translate }}</th>
+          <th>{{ 'common.paid' | translate }}</th>
+          <th>{{ 'common.due' | translate }}</th>
+          <th>{{ 'common.status' | translate }}</th>
+          <th class="text-right">{{ 'common.actions' | translate }}</th>
         </tr>
       </thead>
       <tbody>
@@ -74,15 +74,15 @@
           <td class="text-right">
             <div class="action-buttons">
               <!-- View Invoice Detail Button -->
-              <button class="icon-btn info" (click)="showDetails(sale)" title="View Details">
+              <button class="icon-btn info" (click)="showDetails(sale)" [title]="'common.viewDetails' | translate">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
               </button>
               <!-- Print Invoice Button -->
-              <button class="icon-btn" title="Print Invoice">
+              <button class="icon-btn" [title]="'sales.list.printInvoice' | translate">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
               </button>
               <!-- Delete/Cancel Sale Button -->
-              <button class="icon-btn delete" (click)="deleteSale(sale.salesId)" title="Delete/Cancel">
+              <button class="icon-btn delete" (click)="deleteSale(sale.salesId)" [title]="'sales.list.deleteCancel' | translate">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
               </button>
             </div>
@@ -101,7 +101,7 @@
 
     <!-- Displayed when no data matches search criteria -->
     <div *ngIf="!isLoading && filteredSales.length === 0" class="empty-state">
-      <p>No sales records found.</p>
+      <p>{{ 'sales.list.noRecords' | translate }}</p>
     </div>
   </div>
 
@@ -109,62 +109,62 @@
   <div class="modal-backdrop" *ngIf="selectedSalesForDetails" (click)="closeDetails()">
     <div class="modal-content" style="max-width: 700px;" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>Sales Details</h2>
+        <h2>{{ 'sales.details.title' | translate }}</h2>
         <button class="modal-close-btn" (click)="closeDetails()">×</button>
       </div>
       <div class="modal-body">
         <div class="detail-grid">
-          <div class="detail-label">Sales ID</div>
+          <div class="detail-label">{{ 'sales.details.salesId' | translate }}</div>
           <div class="detail-value">#{{ selectedSalesForDetails.salesId }}</div>
 
-          <div class="detail-label">Invoice Number</div>
+          <div class="detail-label">{{ 'sales.details.invoiceNumber' | translate }}</div>
           <div class="detail-value"><strong>{{ selectedSalesForDetails.invoiceNo }}</strong></div>
 
-          <div class="detail-label">Sales Date</div>
+          <div class="detail-label">{{ 'sales.details.salesDate' | translate }}</div>
           <div class="detail-value">{{ selectedSalesForDetails.salesDate | date:'mediumDate' }}</div>
 
-          <div class="detail-label">Customer</div>
+          <div class="detail-label">{{ 'sales.list.customer' | translate }}</div>
           <div class="detail-value">{{ selectedSalesForDetails.customerName }}</div>
 
-          <div class="detail-label">Total Amount</div>
+          <div class="detail-label">{{ 'sales.list.totalAmount' | translate }}</div>
           <div class="detail-value">৳{{ selectedSalesForDetails.totalAmount | number:'1.2-2' }}</div>
 
-          <div class="detail-label">VAT/Tax</div>
+          <div class="detail-label">{{ 'sales.details.vatTax' | translate }}</div>
           <div class="detail-value">৳{{ selectedSalesForDetails.vatAmount | number:'1.2-2' }}</div>
 
-          <div class="detail-label">Discount</div>
+          <div class="detail-label">{{ 'common.discount' | translate }}</div>
           <div class="detail-value">৳{{ selectedSalesForDetails.discount | number:'1.2-2' }}</div>
 
-          <div class="detail-label">Net Amount</div>
+          <div class="detail-label">{{ 'sales.details.netAmount' | translate }}</div>
           <div class="detail-value"><strong>৳{{ selectedSalesForDetails.netAmount | number:'1.2-2' }}</strong></div>
 
-          <div class="detail-label">Paid Amount</div>
+          <div class="detail-label">{{ 'sales.form.paidAmount' | translate }}</div>
           <div class="detail-value">৳{{ selectedSalesForDetails.paidAmount | number:'1.2-2' }}</div>
 
-          <div class="detail-label">Due Amount</div>
+          <div class="detail-label">{{ 'sales.details.dueAmount' | translate }}</div>
           <div class="detail-value">৳{{ selectedSalesForDetails.dueAmount | number:'1.2-2' }}</div>
 
-          <div class="detail-label">Payment Status</div>
+          <div class="detail-label">{{ 'sales.details.paymentStatus' | translate }}</div>
           <div class="detail-value">
             <span class="status-badge" [ngClass]="selectedSalesForDetails.paymentStatus.toLowerCase()">
               {{ selectedSalesForDetails.paymentStatus }}
             </span>
           </div>
 
-          <div class="detail-label">Payment Method</div>
+          <div class="detail-label">{{ 'sales.form.paymentMethod' | translate }}</div>
           <div class="detail-value">{{ selectedSalesForDetails.paymentMethodName || '-' }}</div>
         </div>
 
-        <h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Sold Items</h3>
+        <h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">{{ 'sales.details.soldItems' | translate }}</h3>
         <div style="overflow-x: auto;">
           <table class="data-table" style="font-size: 13px; min-width: 100%;">
             <thead>
               <tr>
-                <th>Product</th>
-                <th>Qty</th>
-                <th>UOM</th>
-                <th>Sales Price</th>
-                <th class="text-right">Total</th>
+                <th>{{ 'sales.form.product' | translate }}</th>
+                <th>{{ 'sales.form.qty' | translate }}</th>
+                <th>{{ 'sales.details.uom' | translate }}</th>
+                <th>{{ 'sales.details.salesPrice' | translate }}</th>
+                <th class="text-right">{{ 'common.total' | translate }}</th>
               </tr>
             </thead>
             <tbody>

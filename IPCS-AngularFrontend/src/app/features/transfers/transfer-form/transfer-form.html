@@ -5,7 +5,7 @@
       <button class="back-btn" routerLink="/dashboard/transfers">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
       </button>
-      <h1>Initiate Stock Transfer</h1>
+      <h1>{{ 'transfers.form.title' | translate }}</h1>
     </div>
   </div>
 
@@ -13,23 +13,23 @@
     <form (ngSubmit)="onSubmit()" #transferForm="ngForm">
       <!-- Branch Selection Section -->
       <div class="form-section">
-        <h3>Transfer Route</h3>
+        <h3>{{ 'transfers.form.route' | translate }}</h3>
         <div class="form-grid">
           <div class="input-group">
-            <label>From Branch (Source) *</label>
+            <label>{{ 'transfers.form.fromBranch' | translate }} *</label>
             <select [(ngModel)]="transfer.fromBranchId" name="fromBranch" (change)="onFromBranchChange()" required>
               <option *ngFor="let b of branches" [value]="b.branchId">{{ b.branchName }}</option>
             </select>
           </div>
           <div class="input-group">
-            <label>To Branch (Destination) *</label>
+            <label>{{ 'transfers.form.toBranch' | translate }} *</label>
             <select [(ngModel)]="transfer.toBranchId" name="toBranch" required>
-              <option [ngValue]="null">Select Destination</option>
+              <option [ngValue]="null">{{ 'transfers.form.selectDestination' | translate }}</option>
               <option *ngFor="let b of branches" [value]="b.branchId">{{ b.branchName }}</option>
             </select>
           </div>
           <div class="input-group">
-            <label>Transfer Date *</label>
+            <label>{{ 'transfers.form.transferDate' | translate }} *</label>
             <input type="date" [(ngModel)]="transfer.transferDate" name="date" required>
           </div>
         </div>
@@ -37,11 +37,11 @@
 
       <!-- Item Selection Section -->
       <div class="form-section">
-        <h3>Items to Transfer</h3>
+        <h3>{{ 'transfers.form.itemsToTransfer' | translate }}</h3>
         <div class="search-wrapper">
           <input 
             type="text" 
-            placeholder="Search products in source branch..." 
+            [placeholder]="'transfers.form.searchPlaceholder' | translate" 
             [(ngModel)]="searchTerm"
             (input)="searchProduct()"
             (focus)="searchProduct()"
@@ -67,12 +67,12 @@
                 <div class="search-item-details">
                   <div class="search-item-name-row">
                     <span class="prod-name">{{ s.productName }}</span>
-                    <span class="stock-badge-sm">Stock: <strong>{{ s.currentStock }}</strong></span>
+                    <span class="stock-badge-sm">{{ 'transfers.form.stock' | translate }}: <strong>{{ s.currentStock }}</strong></span>
                   </div>
                   <div class="search-item-meta">
                     <span class="meta-label">{{ s.sku }}</span>
                     <span class="meta-divider">•</span>
-                    <span class="meta-label">Batch: <strong>{{ s.lotNumber }}</strong></span>
+                    <span class="meta-label">{{ 'transfers.form.batch' | translate }}: <strong>{{ s.lotNumber }}</strong></span>
                     <span class="meta-divider">•</span>
                     <span class="meta-label branch-label">{{ s.branchName }}</span>
                   </div>
@@ -81,17 +81,17 @@
             </div>
           </div>
           <div class="search-dropdown empty" *ngIf="isDropdownOpen && searchResults.length === 0">
-            <div class="item empty-state">No matching products found in the selected source branch.</div>
+            <div class="item empty-state">{{ 'transfers.form.noMatchingProducts' | translate }}</div>
           </div>
         </div>
 
         <table class="items-table">
           <thead>
             <tr>
-              <th>Product</th>
-              <th width="120">SKU</th>
-              <th width="180">Transfer Qty</th>
-              <th width="100">Unit</th>
+              <th>{{ 'transfers.form.product' | translate }}</th>
+              <th width="120">{{ 'transfers.form.sku' | translate }}</th>
+              <th width="180">{{ 'transfers.form.transferQty' | translate }}</th>
+              <th width="100">{{ 'common.unit' | translate }}</th>
               <th width="50"></th>
             </tr>
           </thead>
@@ -99,13 +99,13 @@
             <tr *ngFor="let item of transfer.details; let i = index">
               <td>
                 <div class="item-product-name" style="font-weight: 600; color: #1e293b;">{{ item.productName }}</div>
-                <small class="item-batch-info" style="color: #64748b;">Batch: <span class="batch-no-badge" style="background: #fef9c3; color: #854d0e; padding: 2px 6px; border-radius: 4px; border: 1px solid #fef08a; font-weight: 600; font-size: 11px;">{{ item.lotNumber }}</span></small>
+                <small class="item-batch-info" style="color: #64748b;">{{ 'transfers.form.batch' | translate }}: <span class="batch-no-badge" style="background: #fef9c3; color: #854d0e; padding: 2px 6px; border-radius: 4px; border: 1px solid #fef08a; font-weight: 600; font-size: 11px;">{{ item.lotNumber }}</span></small>
               </td>
               <td>{{ item.sku }}</td>
               <td>
                 <div class="qty-input-container" style="display: flex; flex-direction: column; gap: 4px;">
                   <input type="number" [(ngModel)]="item.transferQty" [name]="'qty'+i" class="table-input" min="1" [max]="item.maxQty">
-                  <span class="max-qty-label" style="font-size: 11px; color: #64748b;">Max available: <strong>{{ item.maxQty }}</strong></span>
+                  <span class="max-qty-label" style="font-size: 11px; color: #64748b;">{{ 'transfers.form.maxAvailable' | translate }}: <strong>{{ item.maxQty }}</strong></span>
                 </div>
               </td>
               <td>{{ item.uomName }}</td>
@@ -114,7 +114,7 @@
               </td>
             </tr>
             <tr *ngIf="transfer.details.length === 0">
-              <td colspan="5" class="empty-msg">Select products to include in the transfer.</td>
+              <td colspan="5" class="empty-msg">{{ 'transfers.form.selectProducts' | translate }}</td>
             </tr>
           </tbody>
         </table>
@@ -124,17 +124,17 @@
       <div class="form-section">
         <div class="form-grid">
            <div class="input-group full-width">
-             <label>Remarks</label>
-             <textarea [(ngModel)]="transfer.remarks" name="remarks" placeholder="Any specific notes for the destination branch..."></textarea>
+             <label>{{ 'transfers.form.remarks' | translate }}</label>
+             <textarea [(ngModel)]="transfer.remarks" name="remarks" [placeholder]="'transfers.form.remarksPlaceholder' | translate"></textarea>
            </div>
         </div>
       </div>
 
       <!-- Action Buttons -->
       <div class="form-actions">
-        <button type="button" class="btn btn-secondary" routerLink="/dashboard/transfers">Cancel</button>
+        <button type="button" class="btn btn-secondary" routerLink="/dashboard/transfers">{{ 'common.cancel' | translate }}</button>
         <button type="submit" class="btn btn-primary" [disabled]="!transferForm.valid || isLoading">
-          <span *ngIf="!isLoading">Initiate Transfer</span>
+          <span *ngIf="!isLoading">{{ 'transfers.form.initiateTransfer' | translate }}</span>
           <span *ngIf="isLoading" class="spinner"></span>
         </button>
       </div>

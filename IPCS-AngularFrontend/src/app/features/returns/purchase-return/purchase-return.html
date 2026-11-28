@@ -5,12 +5,12 @@
       <button class="back-btn" routerLink="/dashboard/purchase">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
       </button>
-      <h1>Purchase Return (Debit Note)</h1>
+      <h1>{{ 'returns.purchase.title' | translate }}</h1>
     </div>
     <div class="action-section">
       <button class="btn btn-secondary" routerLink="/dashboard/returns/purchase/trash">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-right: 4px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-        Trash
+        {{ 'returns.purchase.trash' | translate }}
       </button>
     </div>
   </div>
@@ -19,11 +19,11 @@
   <div class="card search-card" *ngIf="!originalPurchase">
     <div class="search-form">
       <div class="input-group">
-        <label>Enter Supplier Invoice Number *</label>
+        <label>{{ 'returns.purchase.enterInvoice' | translate }} *</label>
         <div class="search-bar">
           <input type="text" [(ngModel)]="purchaseSearch" placeholder="e.g. SUP-INV-101">
           <button class="btn btn-primary" (click)="findPurchase()" [disabled]="isLoading">
-            <span *ngIf="!isLoading">Find Purchase</span>
+            <span *ngIf="!isLoading">{{ 'returns.purchase.findPurchase' | translate }}</span>
             <span *ngIf="isLoading" class="spinner"></span>
           </button>
         </div>
@@ -36,9 +36,9 @@
     <div class="items-column">
       <div class="card info-card">
         <div class="info-grid">
-           <div><span class="label">Supplier:</span> <strong>{{ originalPurchase.supplierName }}</strong></div>
-           <div><span class="label">Our Invoice:</span> <strong>{{ originalPurchase.supplierInvoiceNo }}</strong></div>
-           <div><span class="label">Date:</span> {{ originalPurchase.purchaseDate | date }}</div>
+           <div><span class="label">{{ 'returns.purchase.supplier' | translate }}:</span> <strong>{{ originalPurchase.supplierName }}</strong></div>
+           <div><span class="label">{{ 'returns.purchase.ourInvoice' | translate }}:</span> <strong>{{ originalPurchase.supplierInvoiceNo }}</strong></div>
+           <div><span class="label">{{ 'returns.purchase.date' | translate }}:</span> {{ originalPurchase.purchaseDate | date }}</div>
         </div>
       </div>
 
@@ -46,18 +46,18 @@
         <table class="return-table">
           <thead>
             <tr>
-              <th>Product</th>
-              <th width="100">Stock Qty</th>
-              <th width="120">Return Qty</th>
-              <th width="120">P.Price</th>
-              <th width="120">Total</th>
+              <th>{{ 'returns.purchase.product' | translate }}</th>
+              <th width="100">{{ 'returns.purchase.stockQty' | translate }}</th>
+              <th width="120">{{ 'returns.purchase.returnQty' | translate }}</th>
+              <th width="120">{{ 'returns.purchase.purchasePriceShort' | translate }}</th>
+              <th width="120">{{ 'common.total' | translate }}</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let item of returnMaster.returnDetails">
               <td>
                 <div class="name">{{ item.productName }}</div>
-                <small>Lot: {{ item.lotId }}</small>
+                <small>{{ 'returns.purchase.lot' | translate }}: {{ item.lotId }}</small>
               </td>
               <td>{{ item.originalQty }}</td>
               <td>
@@ -74,32 +74,32 @@
     <!-- Step 3: Refund Summary and Confirmation -->
     <div class="sidebar-column">
       <div class="card summary-card">
-        <h3>Return Summary</h3>
-        <div class="line"><span>Total Return</span> <span>৳{{ returnMaster.totalAmount | number:'1.2-2' }}</span></div>
+        <h3>{{ 'returns.purchase.returnSummary' | translate }}</h3>
+        <div class="line"><span>{{ 'returns.purchase.totalReturn' | translate }}</span> <span>৳{{ returnMaster.totalAmount | number:'1.2-2' }}</span></div>
         <hr>
         
         <div class="input-group">
-          <label>Refund Adjustment</label>
+          <label>{{ 'returns.purchase.refundAdjustment' | translate }}</label>
           <select [(ngModel)]="returnMaster.refundType">
-            <option value="Cash">Cash Received</option>
-            <option value="Adjustment">Supplier Credit</option>
+            <option value="Cash">{{ 'returns.purchase.cashReceived' | translate }}</option>
+            <option value="Adjustment">{{ 'returns.purchase.supplierCredit' | translate }}</option>
           </select>
         </div>
 
         <div class="input-group" *ngIf="returnMaster.refundType === 'Cash'">
-          <label>Refund Method</label>
+          <label>{{ 'returns.purchase.refundMethod' | translate }}</label>
           <select [(ngModel)]="returnMaster.paymentMethodId">
             <option *ngFor="let m of paymentMethods" [value]="m.paymentMethodId">{{ m.paymentMethodName }}</option>
           </select>
         </div>
 
         <div class="input-group">
-          <label>Reason for Return *</label>
-          <textarea [(ngModel)]="returnMaster.reason" placeholder="e.g. Near expiry, Damage upon arrival"></textarea>
+          <label>{{ 'returns.purchase.reason' | translate }} *</label>
+          <textarea [(ngModel)]="returnMaster.reason" [placeholder]="'returns.purchase.reasonPlaceholder' | translate"></textarea>
         </div>
 
         <button class="btn btn-primary submit-btn" (click)="onSubmit()" [disabled]="isLoading">
-           <span *ngIf="!isLoading">Save Return</span>
+           <span *ngIf="!isLoading">{{ 'returns.purchase.saveReturn' | translate }}</span>
            <span *ngIf="isLoading" class="spinner"></span>
         </button>
       </div>

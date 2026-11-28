@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 /**
  * PaymentMethodListComponent
@@ -11,7 +12,7 @@ import { RouterModule } from '@angular/router';
 @Component({
   selector: 'app-payment-method-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   templateUrl: './payment-method-list.html'
 })
 export class PaymentMethodListComponent implements OnInit {
@@ -37,7 +38,7 @@ export class PaymentMethodListComponent implements OnInit {
   // Details state
   selectedMethodForDetails: any = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private translate: TranslateService) {}
 
   showDetails(method: any) {
     this.selectedMethodForDetails = method;
@@ -139,7 +140,7 @@ export class PaymentMethodListComponent implements OnInit {
   }
 
   deleteMethod(id: number) {
-    if (confirm('Delete this payment method?')) {
+    if (confirm(this.translate.instant('setup.paymentMethods.deleteConfirm'))) {
       this.api.delete(`PaymentMethod/${id}`).subscribe(() => this.loadMethods());
     }
   }

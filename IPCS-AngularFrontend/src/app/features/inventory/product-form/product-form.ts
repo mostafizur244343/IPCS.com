@@ -6,6 +6,7 @@ import { ApiService } from '../../../core/services/api';
 import { NotificationService } from '../../../core/services/notification';
 import { ImageUploadComponent } from '../../../shared/image-upload/image-upload';
 import { lastValueFrom } from 'rxjs';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 /**
  * ProductFormComponent
@@ -14,7 +15,7 @@ import { lastValueFrom } from 'rxjs';
 @Component({
   selector: 'app-product-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ImageUploadComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ImageUploadComponent, TranslatePipe],
   templateUrl: './product-form.html'
 })
 export class ProductFormComponent implements OnInit {
@@ -101,7 +102,8 @@ export class ProductFormComponent implements OnInit {
     private api: ApiService,
     private route: ActivatedRoute,
     private router: Router,
-    private notification: NotificationService
+    private notification: NotificationService,
+    private translate: TranslateService
   ) {}
 
   ngOnInit() {
@@ -123,17 +125,17 @@ export class ProductFormComponent implements OnInit {
           const filePath = response.filePath || response.FilePath;
           this.product.picturePath = filePath;
           this.isUploading = false;
-          this.notification.success('Image uploaded successfully');
+          this.notification.success(this.translate.instant('inventory.productForm.imageUploaded'));
         },
         error: (err) => {
           console.error('Upload failed:', err);
-          this.notification.error('Image upload failed: ' + (err.error?.Message || err.message));
+          this.notification.error(this.translate.instant('inventory.productForm.imageUploadFailedWith', { error: err.error?.Message || err.message }));
           this.isUploading = false;
         }
       });
     } catch (err) {
       console.error('Upload error:', err);
-      this.notification.error('Image upload failed');
+      this.notification.error(this.translate.instant('inventory.productForm.imageUploadFailed'));
       this.isUploading = false;
     }
   }
@@ -201,25 +203,25 @@ export class ProductFormComponent implements OnInit {
 
     // 1. Product Name validation
     if (!this.product.productName || !this.product.productName.trim()) {
-      missing.push('Product Name');
+      missing.push(this.translate.instant('inventory.productForm.fieldProductName'));
       if (!firstFocusElement) firstFocusElement = document.querySelector('input[name="productName"]');
     }
     // 2. Generic Name validation
-    checkField(this.product.genericId, this.isNewGeneric, this.newGenericName, 'Generic Name', this.isNewGeneric ? 'input[name="newGenericName"]' : 'select[name="genericId"]');
+    checkField(this.product.genericId, this.isNewGeneric, this.newGenericName, this.translate.instant('inventory.productForm.fieldGenericName'), this.isNewGeneric ? 'input[name="newGenericName"]' : 'select[name="genericId"]');
     // 3. Category validation
-    checkField(this.product.categoryId, this.isNewCategory, this.newCategoryName, 'Category', this.isNewCategory ? 'input[name="newCategoryName"]' : 'select[name="categoryId"]');
+    checkField(this.product.categoryId, this.isNewCategory, this.newCategoryName, this.translate.instant('inventory.productForm.fieldCategory'), this.isNewCategory ? 'input[name="newCategoryName"]' : 'select[name="categoryId"]');
     // 4. Manufacturer/Brand validation
-    checkField(this.product.brandId, this.isNewManufacturer, this.newManufacturerName, 'Manufacturer / Brand', this.isNewManufacturer ? 'input[name="newManufacturerName"]' : 'select[name="brandId"]');
+    checkField(this.product.brandId, this.isNewManufacturer, this.newManufacturerName, this.translate.instant('inventory.productForm.fieldManufacturer'), this.isNewManufacturer ? 'input[name="newManufacturerName"]' : 'select[name="brandId"]');
     // 5. Base Unit validation
-    checkField(this.product.uomId, this.isNewUom, this.newUomName, 'Base Unit (UOM)', this.isNewUom ? 'input[name="newUomName"]' : 'select[name="uomId"]');
+    checkField(this.product.uomId, this.isNewUom, this.newUomName, this.translate.instant('inventory.productForm.fieldBaseUnit'), this.isNewUom ? 'input[name="newUomName"]' : 'select[name="uomId"]');
     // 6. Sales Price validation
     if (this.product.salesPrice === undefined || this.product.salesPrice === null || this.product.salesPrice === '') {
-      missing.push('Sales Price');
+      missing.push(this.translate.instant('inventory.productForm.fieldSalesPrice'));
       if (!firstFocusElement) firstFocusElement = document.querySelector('input[name="salesPrice"]');
     }
 
     if (missing.length > 0) {
-      this.notification.error(`Please fill in the required fields: ${missing.join(', ')}`);
+      this.notification.error(this.translate.instant('inventory.productForm.missingFields', { fields: missing.join(', ') }));
       
       // Highlight invalid inputs dynamically
       const formElement = document.querySelector('form');
@@ -258,11 +260,11 @@ export class ProductFormComponent implements OnInit {
     if (this.isEditMode) {
       this.api.put(`Product/${this.product.productId}`, this.product).subscribe({
         next: () => {
-          this.notification.success('Product updated successfully');
+          this.notification.success(this.translate.instant('inventory.productForm.productUpdated'));
           this.router.navigate(['/dashboard/inventory']);
         },
         error: (err) => { 
-          const msg = err.error?.message || (typeof err.error === 'string' ? err.error : null) || 'Update failed';
+          const msg = err.error?.message || (typeof err.error === 'string' ? err.error : null) || this.translate.instant('inventory.productForm.updateFailed');
           this.notification.error(msg); 
           this.isLoading = false; 
         }
@@ -270,11 +272,11 @@ export class ProductFormComponent implements OnInit {
     } else {
       this.api.post('Product', this.product).subscribe({
         next: () => {
-          this.notification.success('Product created successfully');
+          this.notification.success(this.translate.instant('inventory.productForm.productCreated'));
           this.router.navigate(['/dashboard/inventory']);
         },
         error: (err) => { 
-          const msg = err.error?.message || (typeof err.error === 'string' ? err.error : null) || 'Create failed';
+          const msg = err.error?.message || (typeof err.error === 'string' ? err.error : null) || this.translate.instant('inventory.productForm.createFailed');
           this.notification.error(msg); 
           this.isLoading = false; 
         }

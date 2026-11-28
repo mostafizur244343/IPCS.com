@@ -5,7 +5,7 @@
       <button class="back-btn" routerLink="/dashboard/inventory">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
       </button>
-      <h1>{{ isEditMode ? 'Edit Product' : 'Add New Product' }}</h1>
+      <h1>{{ (isEditMode ? 'inventory.productForm.editTitle' : 'inventory.productForm.addTitle') | translate }}</h1>
     </div>
   </div>
 
@@ -17,22 +17,22 @@
     <form (ngSubmit)="onSubmit()" #productForm="ngForm">
       <!-- General Information Section -->
       <div class="form-section">
-        <h3>General Information</h3>
+        <h3>{{ 'inventory.productForm.generalInfo' | translate }}</h3>
         <div class="form-grid">
           <div class="input-group">
-            <label>Product Name *</label>
-            <input type="text" name="productName" [(ngModel)]="product.productName" required placeholder="e.g. Napa Extend 665mg">
+            <label>{{ 'inventory.productForm.productName' | translate }} *</label>
+            <input type="text" name="productName" [(ngModel)]="product.productName" required [placeholder]="'inventory.productForm.productNamePlaceholder' | translate">
           </div>
           <div class="input-group">
-            <label>SKU / Barcode</label>
-            <input type="text" name="sku" [(ngModel)]="product.sku" placeholder="e.g. PH-00123">
+            <label>{{ 'inventory.productForm.skuBarcode' | translate }}</label>
+            <input type="text" name="sku" [(ngModel)]="product.sku" [placeholder]="'inventory.productForm.skuPlaceholder' | translate">
           </div>
           <div class="input-group">
-            <label>Strength</label>
-            <input type="text" name="strength" [(ngModel)]="product.strength" placeholder="e.g. 500mg / 5ml">
+            <label>{{ 'inventory.productForm.strength' | translate }}</label>
+            <input type="text" name="strength" [(ngModel)]="product.strength" [placeholder]="'inventory.productForm.strengthPlaceholder' | translate">
           </div>
           <div class="input-group">
-            <label>Picture</label>
+            <label>{{ 'inventory.productForm.picture' | translate }}</label>
             <app-image-upload
               [imageUrl]="product.picturePath"
               (imageSelected)="onImageSelected($event)"
@@ -42,109 +42,109 @@
           <!-- Dropdownbox for Generic Name selection -->
           <div class="input-group">
             <div class="label-header">
-              <label>Generic Name *</label>
+              <label>{{ 'inventory.productForm.genericName' | translate }} *</label>
               <button type="button" class="btn-inline-toggle" (click)="toggleNewGeneric()">
-                {{ isNewGeneric ? 'Select Existing' : '+ New' }}
+                {{ (isNewGeneric ? 'inventory.productForm.selectExisting' : 'inventory.productForm.new') | translate }}
               </button>
             </div>
             <select name="genericId" [(ngModel)]="product.genericId" required *ngIf="!isNewGeneric">
-              <option [ngValue]="null">Select Generic</option>
+              <option [ngValue]="null">{{ 'inventory.productForm.selectGeneric' | translate }}</option>
               <option *ngFor="let g of generics" [value]="g.genericId">{{ g.genericName }}</option>
             </select>
-            <input type="text" name="newGenericName" [(ngModel)]="newGenericName" *ngIf="isNewGeneric" placeholder="Enter new generic name..." required>
+            <input type="text" name="newGenericName" [(ngModel)]="newGenericName" *ngIf="isNewGeneric" [placeholder]="'inventory.productForm.newGenericPlaceholder' | translate" required>
           </div>
         </div>
       </div>
 
       <!-- Categorization Section -->
       <div class="form-section">
-        <h3>Categorization</h3>
+        <h3>{{ 'inventory.productForm.categorization' | translate }}</h3>
         <div class="form-grid">
           <div class="input-group">
             <div class="label-header">
-              <label>Category *</label>
+              <label>{{ 'inventory.productForm.category' | translate }} *</label>
               <button type="button" class="btn-inline-toggle" (click)="toggleNewCategory()">
-                {{ isNewCategory ? 'Select Existing' : '+ New' }}
+                {{ (isNewCategory ? 'inventory.productForm.selectExisting' : 'inventory.productForm.new') | translate }}
               </button>
             </div>
             <select name="categoryId" [(ngModel)]="product.categoryId" required *ngIf="!isNewCategory">
-              <option [ngValue]="null">Select Category</option>
+              <option [ngValue]="null">{{ 'inventory.productForm.selectCategory' | translate }}</option>
               <option *ngFor="let c of categories" [value]="c.categoryId">{{ c.categoryName }}</option>
             </select>
-            <input type="text" name="newCategoryName" [(ngModel)]="newCategoryName" *ngIf="isNewCategory" placeholder="Enter new category..." required>
+            <input type="text" name="newCategoryName" [(ngModel)]="newCategoryName" *ngIf="isNewCategory" [placeholder]="'inventory.productForm.newCategoryPlaceholder' | translate" required>
           </div>
 
           <div class="input-group">
             <div class="label-header">
-              <label>Manufacturer / Brand *</label>
+              <label>{{ 'inventory.productForm.manufacturer' | translate }} *</label>
               <button type="button" class="btn-inline-toggle" (click)="toggleNewManufacturer()">
-                {{ isNewManufacturer ? 'Select Existing' : '+ New' }}
+                {{ (isNewManufacturer ? 'inventory.productForm.selectExisting' : 'inventory.productForm.new') | translate }}
               </button>
             </div>
             <select name="brandId" [(ngModel)]="product.brandId" required *ngIf="!isNewManufacturer">
-              <option [ngValue]="null">Select Manufacturer</option>
+              <option [ngValue]="null">{{ 'inventory.productForm.selectManufacturer' | translate }}</option>
               <option *ngFor="let m of manufacturers" [value]="m.brandId">{{ m.brandName }}</option>
             </select>
-            <input type="text" name="newManufacturerName" [(ngModel)]="newManufacturerName" *ngIf="isNewManufacturer" placeholder="Enter new manufacturer..." required>
+            <input type="text" name="newManufacturerName" [(ngModel)]="newManufacturerName" *ngIf="isNewManufacturer" [placeholder]="'inventory.productForm.newManufacturerPlaceholder' | translate" required>
           </div>
 
           <div class="input-group">
             <div class="label-header">
-              <label>Storage Location</label>
+              <label>{{ 'inventory.productForm.storageLocation' | translate }}</label>
               <button type="button" class="btn-inline-toggle" (click)="toggleNewLocation()">
-                {{ isNewLocation ? 'Select Existing' : '+ New' }}
+                {{ (isNewLocation ? 'inventory.productForm.selectExisting' : 'inventory.productForm.new') | translate }}
               </button>
             </div>
             <select name="locationId" [(ngModel)]="product.locationId" *ngIf="!isNewLocation">
-              <option [ngValue]="null">Select Location</option>
+              <option [ngValue]="null">{{ 'inventory.productForm.selectLocation' | translate }}</option>
               <option *ngFor="let l of locations" [value]="l.locationId">{{ l.locationName }}</option>
             </select>
-            <input type="text" name="newLocationName" [(ngModel)]="newLocationName" *ngIf="isNewLocation" placeholder="Enter new shelf/location..." required>
+            <input type="text" name="newLocationName" [(ngModel)]="newLocationName" *ngIf="isNewLocation" [placeholder]="'inventory.productForm.newLocationPlaceholder' | translate" required>
           </div>
         </div>
       </div>
 
       <!-- Pricing and Initial Stock Section -->
       <div class="form-section">
-        <h3>Pricing & Initial Stock</h3>
+        <h3>{{ 'inventory.productForm.pricingStock' | translate }}</h3>
         <div class="form-grid">
           <div class="input-group">
             <div class="label-header">
-              <label>Base Unit (UOM) *</label>
+              <label>{{ 'inventory.productForm.baseUnit' | translate }} *</label>
               <button type="button" class="btn-inline-toggle" (click)="toggleNewUom()">
-                {{ isNewUom ? 'Select Existing' : '+ New' }}
+                {{ (isNewUom ? 'inventory.productForm.selectExisting' : 'inventory.productForm.new') | translate }}
               </button>
             </div>
             <select name="uomId" [(ngModel)]="product.uomId" required *ngIf="!isNewUom">
-              <option [ngValue]="null">Select Unit</option>
+              <option [ngValue]="null">{{ 'inventory.productForm.selectUnit' | translate }}</option>
               <option *ngFor="let u of units" [value]="u.uomId">{{ u.uomName }}</option>
             </select>
-            <input type="text" name="newUomName" [(ngModel)]="newUomName" *ngIf="isNewUom" placeholder="Enter new unit (e.g. Box)..." required>
+            <input type="text" name="newUomName" [(ngModel)]="newUomName" *ngIf="isNewUom" [placeholder]="'inventory.productForm.newUnitPlaceholder' | translate" required>
           </div>
           <div class="input-group">
             <div class="label-header">
-              <label>MRP (Per Unit)</label>
+              <label>{{ 'inventory.productForm.mrp' | translate }}</label>
               <div class="checkbox-inline">
                 <input type="checkbox" id="syncPrice" name="syncPrice" [(ngModel)]="isSalesPriceSameAsMRP" (change)="onPriceSync()">
-                <label for="syncPrice" class="small-label">Same as Sale Price</label>
+                <label for="syncPrice" class="small-label">{{ 'inventory.productForm.sameAsSalePrice' | translate }}</label>
               </div>
             </div>
             <input type="number" name="mrp" [(ngModel)]="product.mrp" (input)="onMRPInput()">
           </div>
           <div class="input-group">
-            <label>Sales Price *</label>
+            <label>{{ 'inventory.productForm.salesPrice' | translate }} *</label>
             <input type="number" name="salesPrice" [(ngModel)]="product.salesPrice" required>
           </div>
           <div class="input-group" *ngIf="!isEditMode">
-            <label>Opening Quantity</label>
+            <label>{{ 'inventory.productForm.openingQuantity' | translate }}</label>
             <input type="number" name="openingQuantity" [(ngModel)]="product.openingQuantity">
           </div>
           <div class="input-group" *ngIf="!isEditMode">
-            <label>Opening Cost Price</label>
+            <label>{{ 'inventory.productForm.openingCostPrice' | translate }}</label>
             <input type="number" name="openingCostPrice" [(ngModel)]="product.openingCostPrice">
           </div>
           <div class="input-group">
-            <label>Reorder Level</label>
+            <label>{{ 'inventory.productForm.reorderLevel' | translate }}</label>
             <input type="number" name="reorderLevel" [(ngModel)]="product.reorderLevel">
           </div>
         </div>
@@ -152,9 +152,9 @@
 
       <!-- Action buttons for Save and Cancel -->
       <div class="form-actions">
-        <button type="button" class="btn btn-secondary" routerLink="/dashboard/inventory">Cancel</button>
+        <button type="button" class="btn btn-secondary" routerLink="/dashboard/inventory">{{ 'common.cancel' | translate }}</button>
         <button type="submit" class="btn btn-primary" [disabled]="isLoading">
-          {{ isEditMode ? 'Update Product' : 'Save Product' }}
+          {{ (isEditMode ? 'inventory.productForm.updateProduct' : 'inventory.productForm.saveProduct') | translate }}
         </button>
       </div>
     </form>

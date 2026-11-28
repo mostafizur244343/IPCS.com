@@ -2,17 +2,17 @@
   <!-- Page Header -->
   <div class="page-header" style="margin-bottom: 32px;">
     <div style="display: flex; align-items: center; gap: 20px;">
-      <button class="icon-btn" routerLink="/dashboard/administration/roles" title="Back to Roles">
+      <button class="icon-btn" routerLink="/dashboard/administration/roles" [attr.title]="'admin.permissions.backToRoles' | translate">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
       </button>
       <div>
-        <h1>Granular Permissions</h1>
-        <p>Define precise access control for this role across all system modules.</p>
+        <h1>{{ 'admin.permissions.title' | translate }}</h1>
+        <p>{{ 'admin.permissions.subtitle' | translate }}</p>
       </div>
     </div>
     <div class="actions">
       <button class="btn btn-primary" (click)="savePermissions()" [disabled]="isLoading">
-        <span *ngIf="!isLoading">Save Configuration</span>
+        <span *ngIf="!isLoading">{{ 'admin.permissions.saveConfiguration' | translate }}</span>
         <span *ngIf="isLoading" class="spinner"></span>
       </button>
     </div>
@@ -38,7 +38,7 @@
           <h3>{{ module.moduleName }}</h3>
         </div>
         <div class="toggle-container">
-          <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">ALL</span>
+          <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">{{ 'common.all' | translate }}</span>
           <label class="switch">
             <input type="checkbox" (change)="toggleModule(module, $any($event.target).checked)">
             <span class="slider round"></span>

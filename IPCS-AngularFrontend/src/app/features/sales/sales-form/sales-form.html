@@ -5,7 +5,7 @@
       <button class="back-btn" routerLink="/dashboard/sales">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
       </button>
-      <h1>New POS Sale</h1>
+      <h1>{{ 'sales.form.title' | translate }}</h1>
       
       <!-- Branch Selection Dropdown -->
       <div class="branch-selector">
@@ -27,7 +27,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           <input 
             type="text" 
-            placeholder="Scan Barcode or Search Product Name..." 
+            [placeholder]="'sales.form.searchPlaceholder' | translate" 
             [(ngModel)]="searchTerm"
             (input)="searchProduct()"
             class="pos-search-input"
@@ -41,7 +41,7 @@
             >
               <div class="info">
                 <span class="name">{{ p.productName }}</span>
-                <span class="meta">{{ p.sku }} | Branch Stock: {{ p.currentStock }}</span>
+                <span class="meta">{{ p.sku }} | {{ 'sales.form.branchStock' | translate }}: {{ p.currentStock }}</span>
               </div>
               <span class="price">৳{{ p.salesPrice }}</span>
             </div>
@@ -54,12 +54,12 @@
         <table class="pos-table">
           <thead>
             <tr>
-              <th>Product</th>
-              <th width="150">Lot / Batch</th>
-              <th width="100">Qty</th>
-              <th width="100">Price</th>
-              <th width="100">Disc/Unit</th>
-              <th width="120">Total</th>
+              <th>{{ 'sales.form.product' | translate }}</th>
+              <th width="150">{{ 'sales.form.lotBatch' | translate }}</th>
+              <th width="100">{{ 'sales.form.qty' | translate }}</th>
+              <th width="100">{{ 'common.price' | translate }}</th>
+              <th width="100">{{ 'sales.form.discountPerUnit' | translate }}</th>
+              <th width="120">{{ 'common.total' | translate }}</th>
               <th width="50"></th>
             </tr>
           </thead>
@@ -72,9 +72,9 @@
               <td>
                 <select [(ngModel)]="item.lotId" class="table-input">
                   <option *ngFor="let lot of item.availableLots" [value]="lot.lotId">
-                    {{ lot.lotNumber }} (Exp: {{ lot.expiryDate | date:'MM/yy' }} | Stock: {{ lot.currentStock }})
+                    {{ lot.lotNumber }} ({{ 'sales.form.exp' | translate }}: {{ lot.expiryDate | date:'MM/yy' }} | {{ 'sales.form.stock' | translate }}: {{ lot.currentStock }})
                   </option>
-                  <option *ngIf="item.availableLots.length === 0" [ngValue]="null">No Lot Available</option>
+                  <option *ngIf="item.availableLots.length === 0" [ngValue]="null">{{ 'sales.form.noLot' | translate }}</option>
                 </select>
               </td>
               <td>
@@ -94,7 +94,7 @@
             <!-- Empty state for the table -->
             <tr *ngIf="sale.salesDetails.length === 0">
               <td colspan="7" class="empty-items-msg">
-                No products added yet. Use the search bar above to add items.
+                {{ 'sales.form.noItems' | translate }}
               </td>
             </tr>
           </tbody>
@@ -106,11 +106,11 @@
     <div class="checkout-column">
       <!-- Customer Selection Card -->
       <div class="card checkout-card">
-        <h3>Customer Details</h3>
+        <h3>{{ 'sales.form.customerDetails' | translate }}</h3>
         <div class="input-group">
-          <label>Select Customer</label>
+          <label>{{ 'sales.form.selectCustomer' | translate }}</label>
             <select class="form-control" [(ngModel)]="sale.customerId" name="customerId">
-              <option [ngValue]="null">--- Select Customer ---</option>
+              <option [ngValue]="null">{{ 'sales.form.selectCustomerPlaceholder' | translate }}</option>
               <option *ngFor="let c of customers" [ngValue]="c.customerId">{{c.customerName}}</option>
             </select>
         </div>
@@ -119,38 +119,38 @@
       <!-- Financial Summary and Payment Card -->
       <div class="card checkout-card summary-card">
         <div class="summary-line">
-          <span>Subtotal</span>
+          <span>{{ 'common.subtotal' | translate }}</span>
           <span>৳{{ sale.totalAmount | number:'1.2-2' }}</span>
         </div>
         <div class="summary-line">
-          <span>Discount</span>
+          <span>{{ 'common.discount' | translate }}</span>
           <input type="number" [(ngModel)]="sale.discountAmount" (change)="calculateTotals()" class="inline-input">
         </div>
         <hr>
         <div class="summary-line grand-total">
-          <span>Net Total</span>
+          <span>{{ 'sales.form.netTotal' | translate }}</span>
           <span>৳{{ sale.netAmount | number:'1.2-2' }}</span>
         </div>
 
         <div class="payment-section">
           <div class="input-group">
-            <label>Payment Method</label>
+            <label>{{ 'sales.form.paymentMethod' | translate }}</label>
             <select [(ngModel)]="sale.selectedPaymentMethodId" (change)="updatePaymentInfo()">
-              <option *ngFor="let m of paymentMethods" [value]="m.paymentMethodId">{{ m.methodName }} {{ m.isDigital ? '(Digital)' : '' }}</option>
+              <option *ngFor="let m of paymentMethods" [value]="m.paymentMethodId">{{ m.methodName }} {{ m.isDigital ? ('common.digitalTag' | translate) : '' }}</option>
             </select>
           </div>
           <div class="input-group">
-            <label>Paid Amount</label>
+            <label>{{ 'sales.form.paidAmount' | translate }}</label>
             <input type="number" [(ngModel)]="sale.paidAmount" (input)="updatePaymentInfo()" class="paid-input">
           </div>
 
           <div class="due-change-row">
             <div class="stat-box" [class.danger]="sale.dueAmount > 0">
-              <span class="label">Due</span>
+              <span class="label">{{ 'common.due' | translate }}</span>
               <span class="val">৳{{ sale.dueAmount | number:'1.2-2' }}</span>
             </div>
             <div class="stat-box success" [class.active]="sale.changeAmount > 0">
-              <span class="label">Change</span>
+              <span class="label">{{ 'sales.form.change' | translate }}</span>
               <span class="val">৳{{ sale.changeAmount | number:'1.2-2' }}</span>
             </div>
           </div>
@@ -158,7 +158,7 @@
           <!-- Extra Charge Display -->
           <div *ngIf="sale.extraChargeAmount > 0" class="extra-charge-box">
             <div class="extra-charge-line">
-              <span>Extra Charge</span>
+              <span>{{ 'sales.form.extraCharge' | translate }}</span>
               <span class="extra-charge-amount">৳{{ sale.extraChargeAmount | number:'1.2-2' }}</span>
             </div>
           </div>
@@ -168,7 +168,7 @@
              <label class="checkbox-container">
                <input type="checkbox" [(ngModel)]="sale.isChangeConvertedToCredit">
                <span class="checkmark"></span>
-               Add Change to Customer Credit
+               {{ 'sales.form.addChangeToCredit' | translate }}
              </label>
           </div>
         </div>
@@ -179,7 +179,7 @@
           (click)="onSubmit()"
           [disabled]="sale.salesDetails.length === 0 || isLoading"
         >
-          <span *ngIf="!isLoading">Complete Sale (F10)</span>
+          <span *ngIf="!isLoading">{{ 'sales.form.completeSale' | translate }}</span>
           <span *ngIf="isLoading" class="spinner"></span>
         </button>
       </div>

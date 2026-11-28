@@ -2,11 +2,11 @@
   <!-- Header -->
   <div class="page-header">
     <div class="title-section">
-      <h1>Stock Ledger</h1>
-      <p>Audit trail of all inventory transactions and stock movements.</p>
+      <h1>{{ 'inventory.stockLedger.title' | translate }}</h1>
+      <p>{{ 'inventory.stockLedger.subtitle' | translate }}</p>
     </div>
     <div class="search-box">
-      <input type="text" [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Filter by product or type...">
+      <input type="text" [(ngModel)]="searchTerm" (input)="onSearch()" [placeholder]="'inventory.stockLedger.searchPlaceholder' | translate">
     </div>
   </div>
 
@@ -19,14 +19,14 @@
     <table *ngIf="!isLoading" class="data-table">
       <thead>
         <tr>
-          <th>Date & Time</th>
-          <th>Medicine</th>
-          <th>Batch/Lot</th>
-          <th>Transaction Type</th>
-          <th class="text-center">Qty In</th>
-          <th class="text-center">Qty Out</th>
-          <th class="text-center">Balance</th>
-          <th>Reference</th>
+          <th>{{ 'inventory.stockLedger.dateTime' | translate }}</th>
+          <th>{{ 'inventory.stockLedger.medicine' | translate }}</th>
+          <th>{{ 'inventory.stockLedger.batchLot' | translate }}</th>
+          <th>{{ 'inventory.stockLedger.transactionType' | translate }}</th>
+          <th class="text-center">{{ 'inventory.stockLedger.qtyIn' | translate }}</th>
+          <th class="text-center">{{ 'inventory.stockLedger.qtyOut' | translate }}</th>
+          <th class="text-center">{{ 'inventory.stockLedger.balance' | translate }}</th>
+          <th>{{ 'inventory.stockLedger.reference' | translate }}</th>
         </tr>
       </thead>
       <tbody>
@@ -58,7 +58,7 @@
     </app-pagination>
 
     <div *ngIf="!isLoading && filteredEntries.length === 0" class="empty-state">
-      <p>No transaction history found.</p>
+      <p>{{ 'inventory.stockLedger.noData' | translate }}</p>
     </div>
   </div>
 </div>

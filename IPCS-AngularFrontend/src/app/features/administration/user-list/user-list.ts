@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 /**
  * UserListComponent
@@ -11,7 +12,7 @@ import { ApiService } from '../../../core/services/api';
 @Component({
   selector: 'app-user-list',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, TranslatePipe],
   templateUrl: './user-list.html'
 })
 export class UserListComponent implements OnInit {
@@ -21,7 +22,7 @@ export class UserListComponent implements OnInit {
   // Details state
   selectedUserForDetails: any = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private translate: TranslateService) {}
 
   showDetails(user: any) {
     this.selectedUserForDetails = user;
@@ -53,7 +54,7 @@ export class UserListComponent implements OnInit {
    * Deletes a user account (soft delete or Identity delete)
    */
   deleteUser(userId: string) {
-    if (confirm('Are you sure you want to delete this user? Access will be revoked immediately.')) {
+    if (confirm(this.translate.instant('admin.users.deleteConfirm'))) {
       this.api.delete(`Account/delete-user/${userId}`).subscribe(() => {
         this.loadUsers();
       });

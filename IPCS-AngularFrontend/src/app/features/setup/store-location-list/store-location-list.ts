@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 /**
  * StoreLocationListComponent
@@ -12,7 +13,7 @@ import { RouterModule } from '@angular/router';
 @Component({
   selector: 'app-store-location-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   templateUrl: './store-location-list.html'
 })
 export class StoreLocationListComponent implements OnInit {
@@ -26,7 +27,7 @@ export class StoreLocationListComponent implements OnInit {
   // Details state
   selectedLocationForDetails: any = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private translate: TranslateService) {}
 
   showDetails(loc: any) {
     this.selectedLocationForDetails = loc;
@@ -87,7 +88,7 @@ export class StoreLocationListComponent implements OnInit {
    * Deletes a storage location
    */
   deleteLocation(id: number) {
-    if (confirm('Delete this location?')) {
+    if (confirm(this.translate.instant('setup.storeLocations.deleteConfirm'))) {
       this.api.delete(`StoreLocation/${id}`).subscribe(() => this.loadLocations());
     }
   }

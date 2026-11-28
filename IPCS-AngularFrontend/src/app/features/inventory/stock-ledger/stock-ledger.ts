@@ -4,6 +4,7 @@ import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import { PagedResult } from '../../../core/models/paged-result';
+import { TranslatePipe } from '@ngx-translate/core';
 
 /**
  * StockLedgerComponent
@@ -15,7 +16,7 @@ import { PagedResult } from '../../../core/models/paged-result';
 @Component({
   selector: 'app-stock-ledger',
   standalone: true,
-  imports: [CommonModule, FormsModule, PaginationComponent],
+  imports: [CommonModule, FormsModule, PaginationComponent, TranslatePipe],
   templateUrl: './stock-ledger.html'
 })
 export class StockLedgerComponent implements OnInit {

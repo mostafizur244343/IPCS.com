@@ -2,15 +2,15 @@
   <!-- Header -->
   <div class="page-header">
     <div class="title-section">
-      <h1>Expiry Management</h1>
-      <p>Monitor medicines near expiration to ensure safety and minimize loss.</p>
+      <h1>{{ 'inventory.expiry.title' | translate }}</h1>
+      <p>{{ 'inventory.expiry.subtitle' | translate }}</p>
     </div>
     <div class="filter-section">
-      <label>Show items expiring within:</label>
+      <label>{{ 'inventory.expiry.showWithin' | translate }}</label>
       <select [(ngModel)]="monthsThreshold" (change)="loadExpiringItems()">
-        <option [value]="3">3 Months</option>
-        <option [value]="6">6 Months</option>
-        <option [value]="12">1 Year</option>
+        <option [value]="3">{{ 'inventory.expiry.months3' | translate }}</option>
+        <option [value]="6">{{ 'inventory.expiry.months6' | translate }}</option>
+        <option [value]="12">{{ 'inventory.expiry.year1' | translate }}</option>
       </select>
     </div>
   </div>
@@ -24,12 +24,12 @@
     <table *ngIf="!isLoading" class="data-table">
       <thead>
         <tr>
-          <th>Medicine Name</th>
-          <th>Lot Number</th>
-          <th>Batch / Lot Date</th>
-          <th>Expiry Date</th>
-          <th>Status</th>
-          <th class="text-right">Action</th>
+          <th>{{ 'inventory.expiry.medicineName' | translate }}</th>
+          <th>{{ 'inventory.expiry.lotNumber' | translate }}</th>
+          <th>{{ 'inventory.expiry.batchLotDate' | translate }}</th>
+          <th>{{ 'inventory.expiry.expiryDate' | translate }}</th>
+          <th>{{ 'common.status' | translate }}</th>
+          <th class="text-right">{{ 'common.action' | translate }}</th>
         </tr>
       </thead>
       <tbody>
@@ -44,12 +44,12 @@
           </td>
           <td>
             <span class="status-pill" [class.danger]="isExpired(item.expiryDate)" [class.warning]="!isExpired(item.expiryDate)">
-              {{ isExpired(item.expiryDate) ? 'EXPIRED' : 'Near Expiry' }}
+              {{ (isExpired(item.expiryDate) ? 'inventory.expiry.expired' : 'inventory.expiry.nearExpiry') | translate }}
             </span>
           </td>
           <td class="text-right">
             <button class="btn btn-secondary btn-sm" [routerLink]="['/dashboard/inventory/edit', item.productId]">
-              View Product
+              {{ 'inventory.expiry.viewProduct' | translate }}
             </button>
           </td>
         </tr>
@@ -58,7 +58,7 @@
 
     <!-- Empty State -->
     <div *ngIf="!isLoading && expiredItems.length === 0" class="empty-state">
-      <p>No medicines found near expiration for the selected period.</p>
+      <p>{{ 'inventory.expiry.noData' | translate }}</p>
     </div>
   </div>
 </div>

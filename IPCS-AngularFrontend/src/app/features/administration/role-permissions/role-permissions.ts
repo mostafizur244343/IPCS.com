@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 /**
  * RolePermissionsComponent
@@ -12,7 +13,7 @@ import { FormsModule } from '@angular/forms';
 @Component({
   selector: 'app-role-permissions',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, TranslatePipe],
   templateUrl: './role-permissions.html'
 })
 export class RolePermissionsComponent implements OnInit {
@@ -25,7 +26,8 @@ export class RolePermissionsComponent implements OnInit {
   constructor(
     private api: ApiService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private translate: TranslateService
   ) {}
 
   ngOnInit() {
@@ -54,7 +56,7 @@ export class RolePermissionsComponent implements OnInit {
         this.isLoading = false;
       },
       error: (err) => {
-        this.errorMessage = 'Failed to load permissions. Please check if you have administrative rights.';
+        this.errorMessage = this.translate.instant('admin.permissions.loadFailed');
         this.isLoading = false;
         console.error('Permission Load Error:', err);
       }
@@ -89,7 +91,7 @@ export class RolePermissionsComponent implements OnInit {
         this.router.navigate(['/dashboard/administration/roles']);
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || 'Update failed. You might not have permission to modify roles.';
+        this.errorMessage = err.error?.message || this.translate.instant('admin.permissions.updateFailed');
         this.isLoading = false;
         console.error('Permission Update Error:', err);
       }

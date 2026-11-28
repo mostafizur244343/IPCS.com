@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 /**
  * StockAdjustmentComponent
@@ -12,7 +13,7 @@ import { Router } from '@angular/router';
 @Component({
   selector: 'app-stock-adjustment',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './stock-adjustment.html'
 })
 export class StockAdjustmentComponent implements OnInit {
@@ -28,7 +29,7 @@ export class StockAdjustmentComponent implements OnInit {
   products: any[] = [];
   isLoading = false;
 
-  constructor(private api: ApiService, private router: Router) {}
+  constructor(private api: ApiService, private router: Router, private translate: TranslateService) {}
 
   ngOnInit() {
     this.loadProducts();
@@ -43,7 +44,7 @@ export class StockAdjustmentComponent implements OnInit {
    */
   onSubmit() {
     if (!this.adjustment.productId || this.adjustment.quantity <= 0) {
-      alert('Please select a product and enter a valid quantity.');
+      alert(this.translate.instant('inventory.stockAdjustment.selectProductValidQty'));
       return;
     }
 
@@ -65,7 +66,7 @@ export class StockAdjustmentComponent implements OnInit {
         this.router.navigate(['/dashboard/inventory/ledger']);
       },
       error: () => {
-        alert('Failed to save adjustment');
+        alert(this.translate.instant('inventory.stockAdjustment.saveFailed'));
         this.isLoading = false;
       }
     });

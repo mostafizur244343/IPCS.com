@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -12,7 +13,7 @@ import { ApiService } from '../../../core/services/api';
 @Component({
   selector: 'app-sales-return',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   templateUrl: './sales-return.html'
 })
 export class SalesReturnComponent implements OnInit {
@@ -36,7 +37,7 @@ export class SalesReturnComponent implements OnInit {
   paymentMethods: any[] = [];
   isLoading = false;
 
-  constructor(private api: ApiService, private router: Router) {}
+  constructor(private api: ApiService, private router: Router, private translate: TranslateService) {}
 
   ngOnInit() {
     this.api.get<any[]>('PaymentMethod').subscribe(data => this.paymentMethods = data);
@@ -54,7 +55,7 @@ export class SalesReturnComponent implements OnInit {
         if (found) {
           this.loadInvoiceDetails(found.salesId);
         } else {
-          alert('Invoice not found');
+          alert(this.translate.instant('returns.messages.invoiceNotFound'));
           this.isLoading = false;
         }
       },
@@ -92,7 +93,7 @@ export class SalesReturnComponent implements OnInit {
    */
   calculateLineTotal(item: any) {
     if (item.quantity > item.originalQty) {
-      alert(`Cannot return more than purchased (${item.originalQty})`);
+      alert(this.translate.instant('returns.messages.returnQtyExceeds', { qty: item.originalQty }));
       item.quantity = item.originalQty;
     }
     item.lineTotal = item.quantity * item.unitPrice;
@@ -113,7 +114,7 @@ export class SalesReturnComponent implements OnInit {
   onSubmit() {
     const itemsToReturn = this.returnMaster.returnDetails.filter((d: any) => d.quantity > 0);
     if (itemsToReturn.length === 0) {
-      alert('Please specify quantity for at least one item to return');
+      alert(this.translate.instant('returns.messages.specifyQty'));
       return;
     }
 
@@ -126,7 +127,7 @@ export class SalesReturnComponent implements OnInit {
         this.router.navigate(['/dashboard/sales']);
       },
       error: (err) => {
-        alert(err.error?.message || 'Return failed');
+        alert(err.error?.message || this.translate.instant('returns.messages.returnFailed'));
         this.isLoading = false;
       }
     });

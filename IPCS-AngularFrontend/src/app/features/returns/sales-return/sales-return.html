@@ -5,12 +5,12 @@
       <button class="back-btn" routerLink="/dashboard/sales">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
       </button>
-      <h1>Sales Return</h1>
+      <h1>{{ 'returns.sales.title' | translate }}</h1>
     </div>
     <div class="action-section">
       <button class="btn btn-secondary" routerLink="/dashboard/returns/sales/trash">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-right: 4px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-        Trash
+        {{ 'returns.sales.trash' | translate }}
       </button>
     </div>
   </div>
@@ -19,11 +19,11 @@
   <div class="card search-card" *ngIf="!originalInvoice">
     <div class="search-form">
       <div class="input-group">
-        <label>Enter Invoice Number to Return *</label>
+        <label>{{ 'returns.sales.enterInvoice' | translate }} *</label>
         <div class="search-bar">
           <input type="text" [(ngModel)]="invoiceSearch" placeholder="e.g. SINV-1001">
           <button class="btn btn-primary" (click)="findInvoice()" [disabled]="isLoading">
-            <span *ngIf="!isLoading">Search Invoice</span>
+            <span *ngIf="!isLoading">{{ 'returns.sales.searchInvoice' | translate }}</span>
             <span *ngIf="isLoading" class="spinner"></span>
           </button>
         </div>
@@ -36,9 +36,9 @@
     <div class="items-column">
       <div class="card info-card">
         <div class="info-grid">
-           <div><span class="label">Invoice:</span> <strong>{{ originalInvoice.invoiceNo }}</strong></div>
-           <div><span class="label">Customer:</span> <strong>{{ originalInvoice.customerName }}</strong></div>
-           <div><span class="label">Sales Date:</span> {{ originalInvoice.salesDate | date }}</div>
+           <div><span class="label">{{ 'returns.sales.invoice' | translate }}:</span> <strong>{{ originalInvoice.invoiceNo }}</strong></div>
+           <div><span class="label">{{ 'returns.sales.customer' | translate }}:</span> <strong>{{ originalInvoice.customerName }}</strong></div>
+           <div><span class="label">{{ 'returns.sales.salesDate' | translate }}:</span> {{ originalInvoice.salesDate | date }}</div>
         </div>
       </div>
 
@@ -46,18 +46,18 @@
         <table class="return-table">
           <thead>
             <tr>
-              <th>Product</th>
-              <th width="100">Sold Qty</th>
-              <th width="120">Return Qty</th>
-              <th width="120">Price</th>
-              <th width="120">Total</th>
+              <th>{{ 'returns.purchase.product' | translate }}</th>
+              <th width="100">{{ 'returns.sales.soldQty' | translate }}</th>
+              <th width="120">{{ 'returns.purchase.returnQty' | translate }}</th>
+              <th width="120">{{ 'common.price' | translate }}</th>
+              <th width="120">{{ 'common.total' | translate }}</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let item of returnMaster.returnDetails">
               <td>
                 <div class="name">{{ item.productName }}</div>
-                <small>Lot: {{ item.lotId }}</small>
+                <small>{{ 'returns.purchase.lot' | translate }}: {{ item.lotId }}</small>
               </td>
               <td>{{ item.originalQty }}</td>
               <td>
@@ -73,32 +73,32 @@
 
     <div class="sidebar-column">
       <div class="card summary-card">
-        <h3>Return Summary</h3>
-        <div class="line"><span>Return Total</span> <span>৳{{ returnMaster.totalAmount | number:'1.2-2' }}</span></div>
+        <h3>{{ 'returns.purchase.returnSummary' | translate }}</h3>
+        <div class="line"><span>{{ 'returns.sales.returnTotal' | translate }}</span> <span>৳{{ returnMaster.totalAmount | number:'1.2-2' }}</span></div>
         <hr>
         
         <div class="input-group">
-          <label>Refund Type</label>
+          <label>{{ 'returns.sales.refundType' | translate }}</label>
           <select [(ngModel)]="returnMaster.refundType">
-            <option value="Cash">Cash Refund</option>
-            <option value="Adjustment">Balance Adjustment</option>
+            <option value="Cash">{{ 'returns.sales.cashRefund' | translate }}</option>
+            <option value="Adjustment">{{ 'returns.sales.balanceAdjustment' | translate }}</option>
           </select>
         </div>
 
         <div class="input-group" *ngIf="returnMaster.refundType === 'Cash'">
-          <label>Refund Via</label>
+          <label>{{ 'returns.sales.refundVia' | translate }}</label>
           <select [(ngModel)]="returnMaster.paymentMethodId">
             <option *ngFor="let m of paymentMethods" [value]="m.paymentMethodId">{{ m.paymentMethodName }}</option>
           </select>
         </div>
 
         <div class="input-group">
-          <label>Return Reason *</label>
-          <textarea [(ngModel)]="returnMaster.reason" placeholder="e.g. Expired, Damaged, Wrong Item"></textarea>
+          <label>{{ 'returns.sales.reason' | translate }} *</label>
+          <textarea [(ngModel)]="returnMaster.reason" [placeholder]="'returns.sales.reasonPlaceholder' | translate"></textarea>
         </div>
 
         <button class="btn btn-primary submit-btn" (click)="onSubmit()" [disabled]="isLoading">
-           <span *ngIf="!isLoading">Process Return</span>
+           <span *ngIf="!isLoading">{{ 'returns.sales.processReturn' | translate }}</span>
            <span *ngIf="isLoading" class="spinner"></span>
         </button>
       </div>

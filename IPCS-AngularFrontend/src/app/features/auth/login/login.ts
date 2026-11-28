@@ -2,8 +2,10 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../../core/services/auth';
 import { LogoComponent } from '../../../shared/components/logo/logo';
+import { LanguageSwitcherComponent } from '../../../shared/components/language-switcher/language-switcher';
 
 /**
  * LoginComponent
@@ -13,7 +15,7 @@ import { LogoComponent } from '../../../shared/components/logo/logo';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, LogoComponent],
+  imports: [CommonModule, FormsModule, LogoComponent, TranslatePipe, LanguageSwitcherComponent],
   templateUrl: './login.html',
 })
 export class LoginComponent {
@@ -25,6 +27,7 @@ export class LoginComponent {
   constructor(
     private auth: AuthService,
     private router: Router,
+    private translate: TranslateService,
   ) {}
 
   /** Show/hide the password (UI-only state). */
@@ -67,7 +70,7 @@ export class LoginComponent {
       error: (err) => {
         this.isLoading = false;
         // Displaying error message from API if available
-        this.errorMsg = err.error?.message || err.error?.Message || 'Invalid Username or Password';
+        this.errorMsg = err.error?.message || err.error?.Message || this.translate.instant('auth.invalidCredentials');
       },
     });
   }

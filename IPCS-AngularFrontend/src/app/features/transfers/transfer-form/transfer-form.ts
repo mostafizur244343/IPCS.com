@@ -1,4 +1,5 @@
 import { Component, ElementRef, HostListener, OnInit } from '@angular/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -13,7 +14,7 @@ import { NotificationService } from '../../../core/services/notification';
 @Component({
   selector: 'app-transfer-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   templateUrl: './transfer-form.html'
 })
 export class TransferFormComponent implements OnInit {
@@ -38,7 +39,8 @@ export class TransferFormComponent implements OnInit {
     private api: ApiService, 
     private router: Router,
     private notifications: NotificationService,
-    private elementRef: ElementRef
+    private elementRef: ElementRef,
+    private translate: TranslateService
   ) {}
 
   ngOnInit() {
@@ -87,7 +89,7 @@ export class TransferFormComponent implements OnInit {
    */
   onFromBranchChange() {
     if (this.transfer.details.length > 0) {
-      this.notifications.warning('Source branch changed. Cleared previously added items to prevent stock conflicts.');
+      this.notifications.warning(this.translate.instant('transfers.messages.sourceBranchChanged'));
       this.transfer.details = [];
     }
     this.searchResults = [];
@@ -185,9 +187,9 @@ export class TransferFormComponent implements OnInit {
     if (existingItem) {
       if (Number(existingItem.transferQty) < Number(existingItem.maxQty)) {
         existingItem.transferQty = Number(existingItem.transferQty) + 1;
-        this.notifications.success(`Batch ${stockItem.lotNumber} quantity increased in the transfer list.`);
+        this.notifications.success(this.translate.instant('transfers.messages.batchQtyIncreased', { batch: stockItem.lotNumber }));
       } else {
-        this.notifications.warning(`Batch ${stockItem.lotNumber} already reached max available stock.`);
+        this.notifications.warning(this.translate.instant('transfers.messages.batchMaxReached', { batch: stockItem.lotNumber }));
       }
       this.searchTerm = '';
       this.searchProduct();
@@ -222,24 +224,22 @@ export class TransferFormComponent implements OnInit {
    */
   onSubmit() {
     if (Number(this.transfer.fromBranchId) === Number(this.transfer.toBranchId)) {
-      this.notifications.error('Source and destination branches cannot be the same.');
+      this.notifications.error(this.translate.instant('transfers.messages.sameBranch'));
       return;
     }
     if (this.transfer.details.length === 0) {
-      this.notifications.error('Please add at least one item to transfer.');
+      this.notifications.error(this.translate.instant('transfers.messages.addAtLeastOne'));
       return;
     }
 
     // Validate quantities against physical available stocks
     for (const item of this.transfer.details) {
       if (item.transferQty <= 0) {
-        this.notifications.error(`Invalid quantity for ${item.productName}. Please enter a positive amount.`);
+        this.notifications.error(this.translate.instant('transfers.messages.invalidQty', { product: item.productName }));
         return;
       }
       if (item.transferQty > item.maxQty) {
-        this.notifications.error(
-          `Insufficient stock for ${item.productName} (Batch: ${item.lotNumber}). Available stock: ${item.maxQty}, Requested: ${item.transferQty}`
-        );
+        this.notifications.error(this.translate.instant('transfers.messages.insufficientStock', { product: item.productName, batch: item.lotNumber, available: item.maxQty, requested: item.transferQty }));
         return;
       }
     }
@@ -247,11 +247,11 @@ export class TransferFormComponent implements OnInit {
     this.isLoading = true;
     this.api.post('Transfer/initiate', this.transfer).subscribe({
       next: (res: any) => {
-        this.notifications.success(res.message || 'Transfer initiated successfully.');
+        this.notifications.success(res.message || this.translate.instant('transfers.messages.initiated'));
         this.router.navigate(['/dashboard/transfers']);
       },
       error: (err) => {
-        this.notifications.error(err.error?.details || err.error?.message || 'Transfer initiation failed.');
+        this.notifications.error(err.error?.details || err.error?.message || this.translate.instant('transfers.messages.initiationFailed'));
         this.isLoading = false;
       }
     });

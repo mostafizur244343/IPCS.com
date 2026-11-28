@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api';
@@ -13,7 +14,7 @@ import { NotificationService } from '../../../core/services/notification';
 @Component({
   selector: 'app-transfer-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, TranslatePipe],
   templateUrl: './transfer-list.html'
 })
 export class TransferListComponent implements OnInit {
@@ -25,7 +26,8 @@ export class TransferListComponent implements OnInit {
 
   constructor(
     private api: ApiService,
-    private notifications: NotificationService
+    private notifications: NotificationService,
+    private translate: TranslateService
   ) {}
 
   showDetails(transfer: any) {
@@ -70,20 +72,20 @@ export class TransferListComponent implements OnInit {
    */
   confirmReceive(transferId: number) {
     this.notifications.confirm(
-      'Are you sure you have received these items? This will update local stock levels.',
-      'Confirm Goods Received',
-      'Yes, Received',
-      'No, Cancel',
+      this.translate.instant('transfers.messages.confirmReceiveText'),
+      this.translate.instant('transfers.list.confirmReceived'),
+      this.translate.instant('transfers.messages.yesReceived'),
+      this.translate.instant('transfers.messages.noCancel'),
       false
     ).then(confirmed => {
       if (confirmed) {
         this.api.post('Transfer/confirm-receive', { transferId }).subscribe({
           next: (res: any) => {
-            this.notifications.success(res.message || 'Goods received confirmed successfully.');
+            this.notifications.success(res.message || this.translate.instant('transfers.messages.goodsReceived'));
             this.loadTransfers();
           },
           error: (err) => {
-            this.notifications.error(err.error?.message || 'Failed to confirm goods receipt.');
+            this.notifications.error(err.error?.message || this.translate.instant('transfers.messages.confirmReceiveFailed'));
           }
         });
       }
@@ -95,20 +97,20 @@ export class TransferListComponent implements OnInit {
    */
   cancelTransfer(id: number) {
     this.notifications.confirm(
-      'Are you sure you want to cancel this transfer?',
-      'Cancel Transfer',
-      'Yes, Cancel',
-      'No, Keep it',
+      this.translate.instant('transfers.messages.cancelConfirmText'),
+      this.translate.instant('transfers.list.cancelTransfer'),
+      this.translate.instant('transfers.messages.yesCancel'),
+      this.translate.instant('transfers.messages.noKeepIt'),
       true
     ).then(confirmed => {
       if (confirmed) {
         this.api.post(`Transfer/cancel/${id}`, {}).subscribe({
           next: (res: any) => {
-            this.notifications.success(res.message || 'Transfer canceled successfully.');
+            this.notifications.success(res.message || this.translate.instant('transfers.messages.canceled'));
             this.loadTransfers();
           },
           error: (err) => {
-            this.notifications.error(err.error?.message || 'Failed to cancel transfer.');
+            this.notifications.error(err.error?.message || this.translate.instant('transfers.messages.cancelFailed'));
           }
         });
       }

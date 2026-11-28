@@ -2,8 +2,8 @@
   <!-- Page Header -->
   <div class="page-header">
     <div class="title-section">
-      <h1>Stock Adjustment</h1>
-      <p>Record stock corrections for damaged, lost, or expired items.</p>
+      <h1>{{ 'inventory.stockAdjustment.title' | translate }}</h1>
+      <p>{{ 'inventory.stockAdjustment.subtitle' | translate }}</p>
     </div>
   </div>
 
@@ -12,41 +12,41 @@
       <div class="form-grid">
         <!-- Product Selection -->
         <div class="input-group full-width">
-          <label>Select Medicine *</label>
+          <label>{{ 'inventory.stockAdjustment.selectMedicine' | translate }} *</label>
           <select [(ngModel)]="adjustment.productId" name="productId" required>
-            <option [value]="null" disabled>-- Select Medicine --</option>
+            <option [value]="null" disabled>{{ 'inventory.stockAdjustment.selectMedicinePlaceholder' | translate }}</option>
             <option *ngFor="let p of products" [value]="p.productId">
-              {{ p.productName }} (SKU: {{ p.sku }}) - Stock: {{ p.currentStock }}
+              {{ p.productName }} (SKU: {{ p.sku }}) - {{ 'inventory.stockAdjustment.stockLabel' | translate }}: {{ p.currentStock }}
             </option>
           </select>
         </div>
 
         <!-- Adjustment Details -->
         <div class="input-group">
-          <label>Adjustment Type *</label>
+          <label>{{ 'inventory.stockAdjustment.adjustmentType' | translate }} *</label>
           <select [(ngModel)]="adjustment.adjustmentType" name="type" required>
-            <option value="Damage">Damage</option>
-            <option value="Loss">Loss</option>
-            <option value="Correction">Manual Correction</option>
-            <option value="Expired">Expired</option>
+            <option value="Damage">{{ 'inventory.stockAdjustment.damage' | translate }}</option>
+            <option value="Loss">{{ 'inventory.stockAdjustment.loss' | translate }}</option>
+            <option value="Correction">{{ 'inventory.stockAdjustment.manualCorrection' | translate }}</option>
+            <option value="Expired">{{ 'inventory.stockAdjustment.expired' | translate }}</option>
           </select>
         </div>
 
         <div class="input-group">
-          <label>Quantity to Deduct *</label>
+          <label>{{ 'inventory.stockAdjustment.quantityToDeduct' | translate }} *</label>
           <input type="number" [(ngModel)]="adjustment.quantity" name="qty" required min="1">
         </div>
 
         <div class="input-group full-width">
-          <label>Remarks / Reason *</label>
-          <textarea [(ngModel)]="adjustment.remarks" name="remarks" required placeholder="Describe why this adjustment is being made..."></textarea>
+          <label>{{ 'inventory.stockAdjustment.remarks' | translate }} *</label>
+          <textarea [(ngModel)]="adjustment.remarks" name="remarks" required [placeholder]="'inventory.stockAdjustment.remarksPlaceholder' | translate"></textarea>
         </div>
       </div>
 
       <div class="form-actions">
-        <button type="button" class="btn btn-secondary" routerLink="/dashboard/inventory/ledger">Cancel</button>
+        <button type="button" class="btn btn-secondary" routerLink="/dashboard/inventory/ledger">{{ 'common.cancel' | translate }}</button>
         <button type="submit" class="btn btn-primary" [disabled]="!adjForm.valid || isLoading">
-          <span *ngIf="!isLoading">Save Adjustment</span>
+          <span *ngIf="!isLoading">{{ 'inventory.stockAdjustment.save' | translate }}</span>
           <span *ngIf="isLoading" class="spinner"></span>
         </button>
       </div>

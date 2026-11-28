@@ -6,8 +6,8 @@
   <!-- Welcome Section -->
   <div class="welcome-header">
     <div class="welcome-text">
-      <h1>Welcome back, {{ userName }}!</h1>
-      <p>Here's a quick overview of your pharmacy's performance today.</p>
+      <h1>{{ 'dashboard.home.welcomeBack' | translate:{name: userName} }}</h1>
+      <p>{{ 'dashboard.home.overview' | translate }}</p>
     </div>
     <div class="current-time card glass">
       <div class="time">{{ currentTime | date:'shortTime' }}</div>
@@ -27,7 +27,7 @@
         </div>
       </div>
       <div class="stat-content">
-        <span class="stat-label">{{ stat.name }}</span>
+        <span class="stat-label">{{ stat.name | translate }}</span>
         <h2 class="stat-value">{{ stat.value }}</h2>
         <div class="stat-delta positive" *ngIf="stat.delta">
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
@@ -42,28 +42,28 @@
     <!-- Recent Sales Table Card -->
     <div class="card card-lift recent-transactions">
       <div class="card-header">
-        <h3>Recent Sales</h3>
-        <button class="btn btn-secondary">View All</button>
+        <h3>{{ 'dashboard.home.recentSales' | translate }}</h3>
+        <button class="btn btn-secondary">{{ 'dashboard.home.viewAll' | translate }}</button>
       </div>
       <!-- Data Table -->
       <table class="data-table">
         <thead>
           <tr>
-            <th>Invoice</th>
-            <th>Customer</th>
-            <th>Date</th>
-            <th>Amount</th>
-            <th>Status</th>
+            <th>{{ 'dashboard.home.invoice' | translate }}</th>
+            <th>{{ 'dashboard.home.customer' | translate }}</th>
+            <th>{{ 'common.date' | translate }}</th>
+            <th>{{ 'common.amount' | translate }}</th>
+            <th>{{ 'common.status' | translate }}</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let tx of recentTransactions">
             <td><strong>{{ tx.id }}</strong></td>
-            <td>{{ tx.customer }}</td>
+            <td>{{ tx.customer || ('dashboard.home.walkIn' | translate) }}</td>
             <td>{{ tx.date }}</td>
             <td>{{ tx.amount }}</td>
             <td>
-              <span class="status-badge" [class.paid]="tx.status === 'Paid'">{{ tx.status }}</span>
+              <span class="status-badge" [class.paid]="tx.status === 'Paid'">{{ (tx.status === 'Paid' ? 'common.paid' : 'common.due') | translate }}</span>
             </td>
           </tr>
         </tbody>
@@ -72,19 +72,19 @@
 
     <!-- Quick Action Button List -->
     <div class="card card-lift quick-actions">
-      <h3>Quick Actions</h3>
+      <h3>{{ 'dashboard.home.quickActions' | translate }}</h3>
       <div class="actions-list">
         <button class="action-btn" routerLink="/dashboard/sales/new">
           <span class="icon">+</span>
-          <span>New Sale</span>
+          <span>{{ 'dashboard.home.newSale' | translate }}</span>
         </button>
         <button class="action-btn" routerLink="/dashboard/purchase/new">
           <span class="icon">+</span>
-          <span>New Purchase</span>
+          <span>{{ 'dashboard.home.newPurchase' | translate }}</span>
         </button>
         <button class="action-btn" routerLink="/dashboard/inventory/add">
           <span class="icon">+</span>
-          <span>Add Product</span>
+          <span>{{ 'dashboard.home.addProduct' | translate }}</span>
         </button>
       </div>
     </div>

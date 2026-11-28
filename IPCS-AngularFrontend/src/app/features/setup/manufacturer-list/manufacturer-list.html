@@ -1,45 +1,45 @@
 <div class="list-container animate-fade-in">
   <div class="page-header">
     <div class="title-section">
-      <h1>Manufacturers</h1>
-      <p>Manage pharmaceutical companies and manufacturing partners.</p>
+      <h1>{{ 'setup.manufacturers.title' | translate }}</h1>
+      <p>{{ 'setup.manufacturers.subtitle' | translate }}</p>
     </div>
     <div class="action-section">
       <button class="btn btn-secondary" routerLink="/dashboard/setup/manufacturers/trash">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-right: 4px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-        Trash
+        {{ 'setup.trash' | translate }}
       </button>
       <button class="btn btn-primary" (click)="toggleForm()">
         <span class="icon" *ngIf="!showForm">+</span>
         <span class="icon" *ngIf="showForm">×</span> 
-        {{ showForm ? 'Cancel' : 'Create New Manufacturer' }}
+        {{ (showForm ? 'common.cancel' : 'setup.manufacturers.createNew') | translate }}
       </button>
     </div>
   </div>
 
   <div class="card form-card" *ngIf="showForm" style="margin-bottom: 24px;">
-    <h3>Add Manufacturer</h3>
+    <h3>{{ 'setup.manufacturers.addTitle' | translate }}</h3>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
       <div class="input-group">
-        <label>Brand Name *</label>
-        <input type="text" [(ngModel)]="newManufacturer.brandName" placeholder="e.g. Square Pharma" />
+        <label>{{ 'setup.manufacturers.brandName' | translate }} *</label>
+        <input type="text" [(ngModel)]="newManufacturer.brandName" [placeholder]="'setup.manufacturers.brandPlaceholder' | translate" />
       </div>
       <div class="input-group">
-        <label>Origin</label>
-        <input type="text" [(ngModel)]="newManufacturer.origin" placeholder="Local/Imported" />
+        <label>{{ 'setup.manufacturers.origin' | translate }}</label>
+        <input type="text" [(ngModel)]="newManufacturer.origin" [placeholder]="'setup.manufacturers.originPlaceholder' | translate" />
       </div>
       <div class="input-group">
-        <label>Contact Person</label>
-        <input type="text" [(ngModel)]="newManufacturer.contactPerson" placeholder="Name" />
+        <label>{{ 'setup.manufacturers.contactPerson' | translate }}</label>
+        <input type="text" [(ngModel)]="newManufacturer.contactPerson" [placeholder]="'setup.manufacturers.contactPlaceholder' | translate" />
       </div>
       <div class="input-group">
-        <label>Phone</label>
-        <input type="text" [(ngModel)]="newManufacturer.phoneNumber" placeholder="Phone number" />
+        <label>{{ 'common.phone' | translate }}</label>
+        <input type="text" [(ngModel)]="newManufacturer.phoneNumber" [placeholder]="'setup.manufacturers.phonePlaceholder' | translate" />
       </div>
     </div>
     <div style="margin-top: 16px; text-align: right;">
       <button class="btn btn-primary" (click)="addManufacturer()" [disabled]="isLoading">
-        <span *ngIf="!isLoading">Save Manufacturer</span>
+        <span *ngIf="!isLoading">{{ 'setup.manufacturers.saveManufacturer' | translate }}</span>
         <span *ngIf="isLoading" class="spinner"></span>
       </button>
     </div>
@@ -50,7 +50,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
       <input 
         type="text" 
-        placeholder="Search by manufacturer name..." 
+        [placeholder]="'setup.manufacturers.searchPlaceholder' | translate" 
         [(ngModel)]="searchTerm"
         (input)="onSearch()"
       >
@@ -60,16 +60,16 @@
   <div class="card table-card" style="padding: 0; overflow: hidden">
     <div *ngIf="isLoading" style="padding: 40px; text-align: center">
       <div class="spinner-blue" style="border-top-color: var(--primary); border-width: 4px; width: 40px; height: 40px; margin: 0 auto"></div>
-      <p style="color: var(--text-muted); margin-top: 12px;">Loading...</p>
+      <p style="color: var(--text-muted); margin-top: 12px;">{{ 'common.loading' | translate }}</p>
     </div>
     <table *ngIf="!isLoading" class="data-table">
       <thead>
         <tr>
-          <th>Brand Name</th>
-          <th>Origin</th>
-          <th>Contact Person</th>
-          <th>Phone</th>
-          <th class="text-right">Actions</th>
+          <th>{{ 'setup.manufacturers.brandName' | translate }}</th>
+          <th>{{ 'setup.manufacturers.origin' | translate }}</th>
+          <th>{{ 'setup.manufacturers.contactPerson' | translate }}</th>
+          <th>{{ 'common.phone' | translate }}</th>
+          <th class="text-right">{{ 'common.actions' | translate }}</th>
         </tr>
       </thead>
       <tbody>
@@ -80,13 +80,13 @@
             <td>{{ m.contactPerson || '-' }}</td>
             <td>{{ m.phoneNumber || '-' }}</td>
             <td class="text-right actions-cell">
-              <button class="icon-btn edit" (click)="startEdit(m)" title="Edit">
+              <button class="icon-btn edit" (click)="startEdit(m)" [attr.title]="'common.edit' | translate">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
               </button>
-              <button class="icon-btn info" (click)="showDetails(m)" title="Details" style="margin-left: 4px; margin-right: 4px;">
+              <button class="icon-btn info" (click)="showDetails(m)" [attr.title]="'common.details' | translate" style="margin-left: 4px; margin-right: 4px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
               </button>
-              <button class="icon-btn delete" (click)="deleteManufacturer(m.brandId)" title="Delete">
+              <button class="icon-btn delete" (click)="deleteManufacturer(m.brandId)" [attr.title]="'common.delete' | translate">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
               </button>
             </td>
@@ -98,10 +98,10 @@
             <td><input type="text" [(ngModel)]="editManufacturer.contactPerson" class="edit-input" /></td>
             <td><input type="text" [(ngModel)]="editManufacturer.phoneNumber" class="edit-input" /></td>
             <td class="text-right actions-cell">
-              <button class="icon-btn save" (click)="updateManufacturer()" title="Save">
+              <button class="icon-btn save" (click)="updateManufacturer()" [attr.title]="'common.save' | translate">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </button>
-              <button class="icon-btn cancel" (click)="cancelEdit()" title="Cancel">
+              <button class="icon-btn cancel" (click)="cancelEdit()" [attr.title]="'common.cancel' | translate">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </td>
@@ -115,30 +115,30 @@
   <div class="modal-backdrop" *ngIf="selectedManufacturerForDetails" (click)="closeDetails()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>Manufacturer Details</h2>
+        <h2>{{ 'setup.manufacturers.detailsTitle' | translate }}</h2>
         <button class="modal-close-btn" (click)="closeDetails()">×</button>
       </div>
       <div class="modal-body">
         <div class="detail-grid">
-          <div class="detail-label">Manufacturer ID</div>
+          <div class="detail-label">{{ 'setup.manufacturers.manufacturerId' | translate }}</div>
           <div class="detail-value">#{{ selectedManufacturerForDetails.brandId }}</div>
 
-          <div class="detail-label">Brand Name</div>
+          <div class="detail-label">{{ 'setup.manufacturers.brandName' | translate }}</div>
           <div class="detail-value"><strong>{{ selectedManufacturerForDetails.brandName }}</strong></div>
 
-          <div class="detail-label">Origin</div>
+          <div class="detail-label">{{ 'setup.manufacturers.origin' | translate }}</div>
           <div class="detail-value">{{ selectedManufacturerForDetails.origin || '-' }}</div>
 
-          <div class="detail-label">Contact Person</div>
+          <div class="detail-label">{{ 'setup.manufacturers.contactPerson' | translate }}</div>
           <div class="detail-value">{{ selectedManufacturerForDetails.contactPerson || '-' }}</div>
 
-          <div class="detail-label">Phone Number</div>
+          <div class="detail-label">{{ 'setup.manufacturers.phoneNumber' | translate }}</div>
           <div class="detail-value">{{ selectedManufacturerForDetails.phoneNumber || '-' }}</div>
 
-          <div class="detail-label">Status</div>
+          <div class="detail-label">{{ 'common.status' | translate }}</div>
           <div class="detail-value">
             <span class="badge" [ngClass]="selectedManufacturerForDetails.isActive ? 'badge-success' : 'badge-error'">
-              {{ selectedManufacturerForDetails.isActive ? 'Active' : 'Inactive' }}
+              {{ (selectedManufacturerForDetails.isActive ? 'common.active' : 'common.inactive') | translate }}
             </span>
           </div>
         </div>

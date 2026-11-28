@@ -5,18 +5,19 @@ import { ApiService } from '../../../core/services/api';
 import { PermissionService } from '../../../core/services/permission';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import { PagedResult } from '../../../core/models/paged-result';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-branch-stock',
   standalone: true,
-  imports: [CommonModule, FormsModule, PaginationComponent],
+  imports: [CommonModule, FormsModule, PaginationComponent, TranslatePipe],
   template: `
     <div class="container animate-fade-in">
       <!-- Page Header -->
       <div class="page-header">
         <div>
-          <h1>Branch Stock Inventory</h1>
-          <p>Real-time physical stock levels across all pharmacy branches.</p>
+          <h1>{{ 'inventory.branchStock.title' | translate }}</h1>
+          <p>{{ 'inventory.branchStock.subtitle' | translate }}</p>
         </div>
       </div>
 
@@ -29,7 +30,7 @@ import { PagedResult } from '../../../core/models/paged-result';
           </svg>
           <input 
             type="text" 
-            placeholder="Search by branch, product or batch..." 
+            [placeholder]="'inventory.branchStock.searchPlaceholder' | translate" 
             [(ngModel)]="searchTerm"
             (input)="onSearch()"
           >
@@ -40,19 +41,19 @@ import { PagedResult } from '../../../core/models/paged-result';
       <div class="card table-card">
         <div *ngIf="isLoading" class="loading-state">
           <div class="spinner-blue"></div>
-          <p>Loading Branch Stock...</p>
+          <p>{{ 'inventory.branchStock.loading' | translate }}</p>
         </div>
 
         <table *ngIf="!isLoading" class="data-table">
           <thead>
             <tr>
-              <th>Branch</th>
-              <th>Product Name</th>
-              <th>Batch / Lot No</th>
-              <th>Current Stock</th>
-              <th>Damaged Stock</th>
-              <th>Last Updated</th>
-              <th>Status</th>
+              <th>{{ 'inventory.branchStock.branch' | translate }}</th>
+              <th>{{ 'inventory.branchStock.productName' | translate }}</th>
+              <th>{{ 'inventory.branchStock.batchLotNo' | translate }}</th>
+              <th>{{ 'inventory.branchStock.currentStock' | translate }}</th>
+              <th>{{ 'inventory.branchStock.damagedStock' | translate }}</th>
+              <th>{{ 'inventory.branchStock.lastUpdated' | translate }}</th>
+              <th>{{ 'common.status' | translate }}</th>
             </tr>
           </thead>
           <tbody>
@@ -77,12 +78,12 @@ import { PagedResult } from '../../../core/models/paged-result';
               <td>{{ stock.lastUpdated | date:'medium' }}</td>
               <td>
                 <span class="status-indicator" [class.active]="stock.currentStock > 0">
-                  {{ stock.currentStock > 0 ? 'In Stock' : 'Out of Stock' }}
+                  {{ (stock.currentStock > 0 ? 'inventory.branchStock.inStock' : 'inventory.branchStock.outOfStock') | translate }}
                 </span>
               </td>
             </tr>
             <tr *ngIf="filteredStocks.length === 0">
-              <td colspan="7" class="no-data">No branch stock records found.</td>
+              <td colspan="7" class="no-data">{{ 'inventory.branchStock.noData' | translate }}</td>
             </tr>
           </tbody>
         </table>

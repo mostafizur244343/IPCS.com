@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { BaseFeatureComponent } from '../../../shared/components/base-feature';
 
 /**
@@ -12,7 +13,7 @@ import { BaseFeatureComponent } from '../../../shared/components/base-feature';
 @Component({
   selector: 'app-category-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   templateUrl: './category-list.html',
 })
 export class CategoryListComponent extends BaseFeatureComponent implements OnInit {
@@ -76,7 +77,7 @@ export class CategoryListComponent extends BaseFeatureComponent implements OnIni
     this.isLoading = true;
     this.api.post('Category', this.newCategory).subscribe({
       next: () => {
-        this.notification.success('Category added successfully!');
+        this.notification.success(this.translate.instant('setup.categories.added'));
         this.newCategory = { categoryName: '', description: '' };
         this.showForm = false;
         this.loadCategories();
@@ -109,7 +110,7 @@ export class CategoryListComponent extends BaseFeatureComponent implements OnIni
     this.isLoading = true;
     this.api.put(`Category/${this.editingCategoryId}`, this.editCategory).subscribe({
       next: () => {
-        this.notification.success('Category updated successfully!');
+        this.notification.success(this.translate.instant('setup.categories.updated'));
         this.cancelEdit();
         this.loadCategories();
       },
@@ -121,12 +122,12 @@ export class CategoryListComponent extends BaseFeatureComponent implements OnIni
    * Removes a category from the system (soft delete)
    */
   async deleteCategory(id: number) {
-    const confirmed = await this.confirmDelete('Delete Category?', 'This category will be removed.');
+    const confirmed = await this.confirmDelete(this.translate.instant('setup.categories.deleteTitle'), this.translate.instant('setup.categories.deleteText'));
     if (confirmed) {
       this.isLoading = true;
       this.api.delete(`Category/${id}`).subscribe({
         next: () => {
-          this.notification.success('Category deleted successfully!');
+          this.notification.success(this.translate.instant('setup.categories.deleted'));
           this.loadCategories();
         },
         error: (err) => this.handleError(err)

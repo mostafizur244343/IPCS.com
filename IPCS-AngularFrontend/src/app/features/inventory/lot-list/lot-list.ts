@@ -2,37 +2,38 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../core/services/api';
 import { PermissionService } from '../../../core/services/permission';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-lot-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   template: `
     <div class="container animate-fade-in">
       <div class="page-header">
         <div>
-          <h1>Batch / Lot Information</h1>
-          <p>View and manage product batches, manufacturing dates, and expiry tracking.</p>
+          <h1>{{ 'inventory.lots.title' | translate }}</h1>
+          <p>{{ 'inventory.lots.subtitle' | translate }}</p>
         </div>
       </div>
 
       <div class="card table-card">
         <div *ngIf="isLoading" class="loading-state">
           <div class="spinner-blue"></div>
-          <p>Loading Batches/Lots...</p>
+          <p>{{ 'inventory.lots.loading' | translate }}</p>
         </div>
         
         <table *ngIf="!isLoading" class="data-table">
           <thead>
             <tr>
-              <th>Batch No</th>
-              <th>Product</th>
-              <th>Mfg Date</th>
-              <th>Expiry Date</th>
-              <th>Purchase Price</th>
-              <th>Sales Price</th>
-              <th>Status</th>
-              <th class="text-right">Actions</th>
+              <th>{{ 'inventory.lots.batchNo' | translate }}</th>
+              <th>{{ 'inventory.lots.product' | translate }}</th>
+              <th>{{ 'inventory.lots.mfgDate' | translate }}</th>
+              <th>{{ 'inventory.lots.expiryDate' | translate }}</th>
+              <th>{{ 'inventory.lots.purchasePrice' | translate }}</th>
+              <th>{{ 'inventory.lots.salesPrice' | translate }}</th>
+              <th>{{ 'common.status' | translate }}</th>
+              <th class="text-right">{{ 'common.actions' | translate }}</th>
             </tr>
           </thead>
           <tbody>
@@ -45,17 +46,17 @@ import { PermissionService } from '../../../core/services/permission';
               <td>৳{{ lot.product?.salesPrice | number:'1.2-2' }}</td>
               <td>
                 <span class="status-badge" [class.expired]="isExpired(lot.expiryDate)">
-                  {{ isExpired(lot.expiryDate) ? 'Expired' : 'Active' }}
+                  {{ (isExpired(lot.expiryDate) ? 'inventory.lots.expired' : 'common.active') | translate }}
                 </span>
               </td>
               <td class="text-right">
-                <button class="icon-btn info" (click)="showDetails(lot)" title="Details">
+                <button class="icon-btn info" (click)="showDetails(lot)" [attr.title]="'common.viewDetails' | translate">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                 </button>
               </td>
             </tr>
             <tr *ngIf="lots.length === 0">
-              <td colspan="8" class="no-data">No batch/lot records found.</td>
+              <td colspan="8" class="no-data">{{ 'inventory.lots.noData' | translate }}</td>
             </tr>
           </tbody>
         </table>
@@ -66,39 +67,39 @@ import { PermissionService } from '../../../core/services/permission';
     <div class="modal-backdrop" *ngIf="selectedLotForDetails" (click)="closeDetails()">
       <div class="modal-content" (click)="$event.stopPropagation()">
         <div class="modal-header">
-          <h2>Batch / Lot Details</h2>
+          <h2>{{ 'inventory.lots.detailsTitle' | translate }}</h2>
           <button class="modal-close-btn" (click)="closeDetails()">×</button>
         </div>
         <div class="modal-body">
           <div class="detail-grid">
-            <div class="detail-label">Lot ID</div>
+            <div class="detail-label">{{ 'inventory.lots.lotId' | translate }}</div>
             <div class="detail-value">#{{ selectedLotForDetails.lotId }}</div>
 
-            <div class="detail-label">Batch / Lot No</div>
+            <div class="detail-label">{{ 'inventory.lots.batchLotNo' | translate }}</div>
             <div class="detail-value"><span class="batch-no-badge">{{ selectedLotForDetails.lotNumber }}</span></div>
 
-            <div class="detail-label">Product Name</div>
+            <div class="detail-label">{{ 'inventory.lots.productName' | translate }}</div>
             <div class="detail-value"><strong>{{ selectedLotForDetails.product?.productName || 'N/A' }}</strong></div>
 
-            <div class="detail-label">SKU</div>
+            <div class="detail-label">{{ 'inventory.lots.sku' | translate }}</div>
             <div class="detail-value">{{ selectedLotForDetails.product?.sku || selectedLotForDetails.product?.sKU || 'N/A' }}</div>
 
-            <div class="detail-label">Manufacturing Date</div>
+            <div class="detail-label">{{ 'inventory.lots.manufacturingDate' | translate }}</div>
             <div class="detail-value">{{ (selectedLotForDetails.manufacturingDate | date:'longDate') || 'N/A' }}</div>
 
-            <div class="detail-label">Expiry Date</div>
+            <div class="detail-label">{{ 'inventory.lots.expiryDate' | translate }}</div>
             <div class="detail-value">{{ selectedLotForDetails.expiryDate | date:'longDate' }}</div>
 
-            <div class="detail-label">Original Price</div>
+            <div class="detail-label">{{ 'inventory.lots.originalPrice' | translate }}</div>
             <div class="detail-value">৳{{ selectedLotForDetails.purchasePrice | number:'1.2-2' }}</div>
 
-            <div class="detail-label">Sales Price</div>
+            <div class="detail-label">{{ 'inventory.lots.salesPrice' | translate }}</div>
             <div class="detail-value">৳{{ (selectedLotForDetails.product?.salesPrice | number:'1.2-2') || '0.00' }}</div>
 
-            <div class="detail-label">Status</div>
+            <div class="detail-label">{{ 'common.status' | translate }}</div>
             <div class="detail-value">
               <span class="status-badge" [class.expired]="isExpired(selectedLotForDetails.expiryDate)">
-                {{ isExpired(selectedLotForDetails.expiryDate) ? 'Expired' : 'Active' }}
+                {{ (isExpired(selectedLotForDetails.expiryDate) ? 'inventory.lots.expired' : 'common.active') | translate }}
               </span>
             </div>
           </div>

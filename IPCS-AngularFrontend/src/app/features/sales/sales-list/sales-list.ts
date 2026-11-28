@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api';
@@ -15,7 +16,7 @@ import { PagedResult } from '../../../core/models/paged-result';
 @Component({
   selector: 'app-sales-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, PaginationComponent],
+  imports: [CommonModule, RouterModule, FormsModule, PaginationComponent, TranslatePipe],
   templateUrl: './sales-list.html'
 })
 export class SalesListComponent implements OnInit {
@@ -33,7 +34,7 @@ export class SalesListComponent implements OnInit {
   // Details state
   selectedSalesForDetails: any = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private translate: TranslateService) {}
 
   showDetails(sale: any) {
     this.api.get<any>(`Sales/${sale.salesId}`).subscribe({
@@ -108,7 +109,7 @@ export class SalesListComponent implements OnInit {
    * Deletes a sale (Soft Delete)
    */
   deleteSale(id: number) {
-    if (confirm('Are you sure you want to delete this sale? This will revert stock levels.')) {
+    if (confirm(this.translate.instant('sales.messages.deleteConfirmText'))) {
       this.api.delete(`Sales/${id}`).subscribe(() => {
         this.loadSales();
       });

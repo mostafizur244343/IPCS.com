@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 /**
  * ManufacturerListComponent
@@ -12,7 +13,7 @@ import { RouterModule } from '@angular/router';
 @Component({
   selector: 'app-manufacturer-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   templateUrl: './manufacturer-list.html'
 })
 export class ManufacturerListComponent implements OnInit {
@@ -30,7 +31,7 @@ export class ManufacturerListComponent implements OnInit {
   // Details state
   selectedManufacturerForDetails: any = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private translate: TranslateService) {}
 
   ngOnInit() {
     this.loadManufacturers();
@@ -123,7 +124,7 @@ export class ManufacturerListComponent implements OnInit {
    * Removes a manufacturer from the system
    */
   deleteManufacturer(id: number) {
-    if (confirm('Delete this manufacturer?')) {
+    if (confirm(this.translate.instant('setup.manufacturers.deleteConfirm'))) {
       this.api.delete(`Manufacturer/${id}`).subscribe(() => this.loadManufacturers());
     }
   }

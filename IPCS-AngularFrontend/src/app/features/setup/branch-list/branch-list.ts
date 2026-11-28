@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ImageUploadComponent } from '../../../shared/image-upload/image-upload';
 
 /**
@@ -13,7 +14,7 @@ import { ImageUploadComponent } from '../../../shared/image-upload/image-upload'
 @Component({
   selector: 'app-branch-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ImageUploadComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ImageUploadComponent, TranslatePipe],
   templateUrl: './branch-list.html'
 })
 export class BranchListComponent implements OnInit {
@@ -32,7 +33,7 @@ export class BranchListComponent implements OnInit {
   // Details state
   selectedBranchForDetails: any = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private translate: TranslateService) {}
 
   ngOnInit() {
     this.loadBranches();
@@ -88,13 +89,13 @@ export class BranchListComponent implements OnInit {
         },
         error: (err) => {
           console.error('Upload failed:', err);
-          alert('Image upload failed: ' + (err.error?.Message || err.message));
+          alert(this.translate.instant('setup.imageUploadFailed') + ': ' + (err.error?.Message || err.message));
           this.isUploading = false;
         }
       });
     } catch (err) {
       console.error('Upload error:', err);
-      alert('Image upload failed');
+      alert(this.translate.instant('setup.imageUploadFailed'));
       this.isUploading = false;
     }
   }
@@ -158,7 +159,7 @@ export class BranchListComponent implements OnInit {
    * Deletes a branch (soft delete)
    */
   deleteBranch(id: number) {
-    if (confirm('Delete this branch?')) {
+    if (confirm(this.translate.instant('setup.branches.deleteConfirm'))) {
       this.api.delete(`Branch/${id}`).subscribe(() => this.loadBranches());
     }
   }

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api';
@@ -15,7 +16,7 @@ import { PagedResult } from '../../../core/models/paged-result';
 @Component({
   selector: 'app-purchase-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, PaginationComponent],
+  imports: [CommonModule, RouterModule, FormsModule, PaginationComponent, TranslatePipe],
   templateUrl: './purchase-list.html'
 })
 export class PurchaseListComponent implements OnInit {
@@ -33,7 +34,7 @@ export class PurchaseListComponent implements OnInit {
   // Details state
   selectedPurchaseForDetails: any = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private translate: TranslateService) {}
 
   showDetails(purchase: any) {
     this.api.get<any>(`Purchase/${purchase.purchaseId}`).subscribe({
@@ -127,7 +128,7 @@ export class PurchaseListComponent implements OnInit {
    * Deletes a purchase (Soft Delete)
    */
   deletePurchase(id: number) {
-    if (confirm('Are you sure you want to delete this purchase? This will reduce stock levels.')) {
+    if (confirm(this.translate.instant('purchase.messages.deleteConfirmText'))) {
       this.api.delete(`Purchase/${id}`).subscribe(() => {
         this.loadPurchases();
       });
@@ -138,7 +139,7 @@ export class PurchaseListComponent implements OnInit {
    * Receives a shipment for a pending purchase
    */
   receiveShipment(id: number) {
-    if (confirm('Mark this shipment as received? This will update the inventory.')) {
+    if (confirm(this.translate.instant('purchase.messages.receiveConfirmText'))) {
       this.api.post(`Purchase/receive-shipment/${id}`, {}).subscribe(() => {
         this.loadPurchases();
       });

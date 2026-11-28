@@ -1,62 +1,62 @@
 <div class="list-container animate-fade-in">
   <div class="page-header">
     <div class="title-section">
-      <h1>Payment Methods</h1>
-      <p>Configure Cash, Card, and Mobile Banking options.</p>
+      <h1>{{ 'setup.paymentMethods.title' | translate }}</h1>
+      <p>{{ 'setup.paymentMethods.subtitle' | translate }}</p>
     </div>
     <div class="action-section">
       <button class="btn btn-secondary" routerLink="/dashboard/setup/payment-methods/trash">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-right: 4px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-        Trash
+        {{ 'setup.trash' | translate }}
       </button>
       <button class="btn btn-primary" (click)="toggleForm()">
         <span class="icon" *ngIf="!showForm">+</span>
         <span class="icon" *ngIf="showForm">×</span> 
-        {{ showForm ? 'Cancel' : 'Add Method' }}
+        {{ (showForm ? 'common.cancel' : 'setup.paymentMethods.addMethod') | translate }}
       </button>
     </div>
   </div>
 
   <div class="card form-card" *ngIf="showForm" style="margin-bottom: 24px;">
-    <h3>{{ isEditing ? 'Edit Method' : 'Add Method' }}</h3>
+    <h3>{{ (isEditing ? 'setup.paymentMethods.editMethod' : 'setup.paymentMethods.addMethod') | translate }}</h3>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
       <div class="input-group">
-        <label>Method Name *</label>
-        <input type="text" [(ngModel)]="newMethod.MethodName" placeholder="e.g. Bkash" />
+        <label>{{ 'setup.paymentMethods.methodName' | translate }} *</label>
+        <input type="text" [(ngModel)]="newMethod.MethodName" [placeholder]="'setup.paymentMethods.namePlaceholder' | translate" />
       </div>
       <div class="input-group">
-        <label>Description</label>
-        <input type="text" [(ngModel)]="newMethod.Description" placeholder="Optional notes" />
+        <label>{{ 'common.description' | translate }}</label>
+        <input type="text" [(ngModel)]="newMethod.Description" [placeholder]="'setup.paymentMethods.descriptionPlaceholder' | translate" />
       </div>
       <div class="input-group">
-        <label>Account Number</label>
-        <input type="text" [(ngModel)]="newMethod.AccountNumber" placeholder="Account / Card Number" />
+        <label>{{ 'setup.paymentMethods.accountNumber' | translate }}</label>
+        <input type="text" [(ngModel)]="newMethod.AccountNumber" [placeholder]="'setup.paymentMethods.accountPlaceholder' | translate" />
       </div>
       <div class="input-group">
-        <label>Extra Charge (%)</label>
+        <label>{{ 'setup.paymentMethods.extraChargePercent' | translate }}</label>
         <input type="number" [(ngModel)]="newMethod.ExtraChargePercentage" placeholder="0" />
       </div>
       <div class="input-group">
-        <label>Minimum Amount</label>
+        <label>{{ 'setup.paymentMethods.minimumAmount' | translate }}</label>
         <input type="number" [(ngModel)]="newMethod.MinimumAmount" placeholder="0" />
       </div>
       <div class="input-group" style="display: flex; gap: 24px; align-items: center; margin-top: 28px;">
         <label class="flex items-center gap-2" style="margin-bottom: 0;">
           <input type="checkbox" [(ngModel)]="newMethod.IsDigital">
-          Is Digital Payment?
+          {{ 'setup.paymentMethods.isDigital' | translate }}
         </label>
         <label class="flex items-center gap-2" style="margin-bottom: 0;">
           <input type="checkbox" [(ngModel)]="newMethod.IsActive">
-          Active
+          {{ 'common.active' | translate }}
         </label>
       </div>
     </div>
     <div class="flex gap-2" style="margin-top: 16px; justify-content: flex-end;">
       <button *ngIf="isEditing" class="btn btn-secondary" (click)="resetForm()">
-        Cancel
+        {{ 'common.cancel' | translate }}
       </button>
       <button class="btn btn-primary" (click)="addMethod()" [disabled]="isLoading">
-        <span *ngIf="!isLoading">{{ isEditing ? 'Update Method' : 'Save Method' }}</span>
+        <span *ngIf="!isLoading">{{ (isEditing ? 'setup.paymentMethods.updateMethod' : 'setup.paymentMethods.saveMethod') | translate }}</span>
         <span *ngIf="isLoading" class="spinner"></span>
       </button>
     </div>
@@ -67,7 +67,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
       <input 
         type="text" 
-        placeholder="Search by name, description or account..." 
+        [placeholder]="'setup.paymentMethods.searchPlaceholder' | translate" 
         [(ngModel)]="searchTerm"
         (input)="onSearch()"
       >
@@ -77,18 +77,18 @@
   <div class="card table-card" style="padding: 0; overflow: hidden">
     <div *ngIf="isLoading" style="padding: 40px; text-align: center">
       <div class="spinner-blue" style="border-top-color: var(--primary); border-width: 4px; width: 40px; height: 40px; margin: 0 auto"></div>
-      <p style="color: var(--text-muted); margin-top: 12px;">Loading...</p>
+      <p style="color: var(--text-muted); margin-top: 12px;">{{ 'common.loading' | translate }}</p>
     </div>
     <table *ngIf="!isLoading" class="data-table">
       <thead>
         <tr>
-          <th>Method Name</th>
-          <th>Description</th>
-          <th>Type</th>
-          <th>Extra Charge</th>
-          <th>Minimum Amount</th>
-          <th>Status</th>
-          <th class="text-right">Actions</th>
+          <th>{{ 'setup.paymentMethods.methodName' | translate }}</th>
+          <th>{{ 'common.description' | translate }}</th>
+          <th>{{ 'setup.paymentMethods.type' | translate }}</th>
+          <th>{{ 'setup.paymentMethods.extraCharge' | translate }}</th>
+          <th>{{ 'setup.paymentMethods.minimumAmount' | translate }}</th>
+          <th>{{ 'common.status' | translate }}</th>
+          <th class="text-right">{{ 'common.actions' | translate }}</th>
         </tr>
       </thead>
       <tbody>
@@ -97,25 +97,25 @@
           <td>{{ m.description || '-' }}</td>
           <td>
             <span class="badge" [class.badge-digital]="m.isDigital" [class.badge-cash]="!m.isDigital">
-              {{ m.isDigital ? 'Digital' : 'Cash' }}
+              {{ (m.isDigital ? 'setup.paymentMethods.digital' : 'setup.paymentMethods.cash') | translate }}
             </span>
           </td>
           <td>{{ m.extraChargePercentage | number:'1.2-2' }}%</td>
           <td>৳{{ m.minimumAmount | number:'1.2-2' }}</td>
           <td>
             <span class="status-indicator" [class.active]="m.isActive">
-              {{ m.isActive ? 'Active' : 'Inactive' }}
+              {{ (m.isActive ? 'common.active' : 'common.inactive') | translate }}
             </span>
           </td>
           <td class="text-right">
             <div class="action-buttons">
-              <button class="icon-btn edit" (click)="editMethod(m)" title="Edit Method">
+              <button class="icon-btn edit" (click)="editMethod(m)" [attr.title]="'setup.paymentMethods.editMethod' | translate">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
               </button>
-              <button class="icon-btn info" (click)="showDetails(m)" title="View Details">
+              <button class="icon-btn info" (click)="showDetails(m)" [attr.title]="'common.viewDetails' | translate">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
               </button>
-              <button class="icon-btn delete" (click)="deleteMethod(m.methodId)" title="Delete Method">
+              <button class="icon-btn delete" (click)="deleteMethod(m.methodId)" [attr.title]="'setup.paymentMethods.deleteMethod' | translate">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
               </button>
             </div>
@@ -129,40 +129,40 @@
   <div class="modal-backdrop" *ngIf="selectedMethodForDetails" (click)="closeDetails()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>Payment Method Details</h2>
+        <h2>{{ 'setup.paymentMethods.detailsTitle' | translate }}</h2>
         <button class="modal-close-btn" (click)="closeDetails()">×</button>
       </div>
       <div class="modal-body">
         <div class="detail-grid">
-          <div class="detail-label">Method ID</div>
+          <div class="detail-label">{{ 'setup.paymentMethods.methodId' | translate }}</div>
           <div class="detail-value">#{{ selectedMethodForDetails.methodId }}</div>
 
-          <div class="detail-label">Method Name</div>
+          <div class="detail-label">{{ 'setup.paymentMethods.methodName' | translate }}</div>
           <div class="detail-value"><strong>{{ selectedMethodForDetails.methodName }}</strong></div>
 
-          <div class="detail-label">Description</div>
+          <div class="detail-label">{{ 'common.description' | translate }}</div>
           <div class="detail-value">{{ selectedMethodForDetails.description || '-' }}</div>
 
-          <div class="detail-label">Account Number</div>
+          <div class="detail-label">{{ 'setup.paymentMethods.accountNumber' | translate }}</div>
           <div class="detail-value">{{ selectedMethodForDetails.accountNumber || '-' }}</div>
 
-          <div class="detail-label">Is Digital?</div>
+          <div class="detail-label">{{ 'setup.paymentMethods.isDigitalLabel' | translate }}</div>
           <div class="detail-value">
             <span class="badge" [class.badge-digital]="selectedMethodForDetails.isDigital" [class.badge-cash]="!selectedMethodForDetails.isDigital">
-              {{ selectedMethodForDetails.isDigital ? 'Yes (Digital)' : 'No (Cash)' }}
+              {{ (selectedMethodForDetails.isDigital ? 'setup.paymentMethods.yesDigital' : 'setup.paymentMethods.noCash') | translate }}
             </span>
           </div>
 
-          <div class="detail-label">Extra Charge</div>
+          <div class="detail-label">{{ 'setup.paymentMethods.extraCharge' | translate }}</div>
           <div class="detail-value">{{ selectedMethodForDetails.extraChargePercentage }}%</div>
 
-          <div class="detail-label">Minimum Amount</div>
+          <div class="detail-label">{{ 'setup.paymentMethods.minimumAmount' | translate }}</div>
           <div class="detail-value">৳{{ selectedMethodForDetails.minimumAmount | number:'1.2-2' }}</div>
 
-          <div class="detail-label">Status</div>
+          <div class="detail-label">{{ 'common.status' | translate }}</div>
           <div class="detail-value">
             <span class="badge" [ngClass]="selectedMethodForDetails.isActive ? 'badge-success' : 'badge-error'">
-              {{ selectedMethodForDetails.isActive ? 'Active' : 'Inactive' }}
+              {{ (selectedMethodForDetails.isActive ? 'common.active' : 'common.inactive') | translate }}
             </span>
           </div>
         </div>

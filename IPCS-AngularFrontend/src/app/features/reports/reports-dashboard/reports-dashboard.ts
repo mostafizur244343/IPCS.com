@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 /**
  * ReportsDashboardComponent
@@ -11,7 +12,7 @@ import { FormsModule } from '@angular/forms';
 @Component({
   selector: 'app-reports-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './reports-dashboard.html'
 })
 export class ReportsDashboardComponent implements OnInit {
@@ -86,10 +87,11 @@ export class ReportsDashboardComponent implements OnInit {
   }
 
   /**
-   * Utility to get Month Name for display
+   * Returns the i18n key for a month name; the template renders it
+   * through the translate pipe.
    */
   getMonthName(monthNum: number): string {
-    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const months = ['reports.month.january', 'reports.month.february', 'reports.month.march', 'reports.month.april', 'reports.month.may', 'reports.month.june', 'reports.month.july', 'reports.month.august', 'reports.month.september', 'reports.month.october', 'reports.month.november', 'reports.month.december'];
     return months[monthNum - 1];
   }
 }

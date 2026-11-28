@@ -5,16 +5,16 @@
       <button class="back-btn" routerLink="/dashboard/setup/customers">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
       </button>
-      <h1>Customer Statement</h1>
-      <p *ngIf="customer">Transaction history for <strong>{{ customer.name }}</strong></p>
+      <h1>{{ 'setup.customers.ledgerTitle' | translate }}</h1>
+      <p *ngIf="customer">{{ 'setup.customers.ledgerSubtitle' | translate }} <strong>{{ customer.name }}</strong></p>
     </div>
     <div class="summary-cards" *ngIf="customer">
       <div class="stat-card">
-        <span class="label">Total Due</span>
+        <span class="label">{{ 'setup.customers.totalDue' | translate }}</span>
         <span class="value text-danger">৳{{ getTotalDue() | number:'1.2-2' }}</span>
       </div>
       <div class="stat-card">
-        <span class="label">Advance / Wallet</span>
+        <span class="label">{{ 'setup.customers.advanceWallet' | translate }}</span>
         <span class="value text-success">৳{{ customer.advanceBalance | number:'1.2-2' }}</span>
       </div>
     </div>
@@ -29,12 +29,12 @@
     <table *ngIf="!isLoading" class="data-table">
       <thead>
         <tr>
-          <th>Date</th>
-          <th>Invoice No</th>
-          <th class="text-right">Net Amount</th>
-          <th class="text-right">Paid</th>
-          <th class="text-right">Due</th>
-          <th>Status</th>
+          <th>{{ 'common.date' | translate }}</th>
+          <th>{{ 'setup.customers.invoiceNo' | translate }}</th>
+          <th class="text-right">{{ 'setup.customers.netAmount' | translate }}</th>
+          <th class="text-right">{{ 'common.paid' | translate }}</th>
+          <th class="text-right">{{ 'common.due' | translate }}</th>
+          <th>{{ 'common.status' | translate }}</th>
         </tr>
       </thead>
       <tbody>
@@ -54,7 +54,7 @@
     </table>
 
     <div *ngIf="!isLoading && (!salesHistory || salesHistory.length === 0)" class="empty-state">
-      <p>No sales history found for this customer.</p>
+      <p>{{ 'setup.customers.noHistory' | translate }}</p>
     </div>
   </div>
 </div>

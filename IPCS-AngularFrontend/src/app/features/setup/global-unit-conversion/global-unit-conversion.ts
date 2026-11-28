@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ApiService } from '../../../core/services/api';
 
 /**
@@ -12,7 +13,7 @@ import { ApiService } from '../../../core/services/api';
 @Component({
   selector: 'app-global-unit-conversion',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   templateUrl: './global-unit-conversion.html'
 })
 export class GlobalUnitConversionComponent implements OnInit {
@@ -33,7 +34,7 @@ export class GlobalUnitConversionComponent implements OnInit {
   // Details state
   selectedConversionForDetails: any = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private translate: TranslateService) {}
 
   showDetails(conversion: any) {
     this.selectedConversionForDetails = conversion;
@@ -78,7 +79,7 @@ export class GlobalUnitConversionComponent implements OnInit {
 
   addConversion() {
     if (!this.newConversion.fromUnitId || !this.newConversion.toUnitId || !this.newConversion.conversionFactor) {
-      alert("Please fill all required fields.");
+      alert(this.translate.instant('validation.fillRequired'));
       return;
     }
     
@@ -90,14 +91,14 @@ export class GlobalUnitConversionComponent implements OnInit {
         this.loadConversions();
       },
       error: (err) => { 
-        alert(err.error?.message || "Failed to save conversion rule"); 
+        alert(err.error?.message || this.translate.instant('setup.globalConversions.saveFailed')); 
         this.isLoading = false; 
       }
     });
   }
 
   deleteConversion(id: number) {
-    if (confirm("Delete this global conversion rule?")) {
+    if (confirm(this.translate.instant('setup.globalConversions.deleteConfirm'))) {
       this.api.delete(`GlobalUnitConversion/${id}`).subscribe(() => this.loadConversions());
     }
   }

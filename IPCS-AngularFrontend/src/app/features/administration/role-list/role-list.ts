@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-role-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, TranslatePipe],
   templateUrl: './role-list.html'
 })
 export class RoleListComponent implements OnInit {
@@ -23,7 +24,7 @@ export class RoleListComponent implements OnInit {
   // Details state
   public selectedRoleForDetails: any = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private translate: TranslateService) {}
 
   public showDetails(role: any): void {
     this.selectedRoleForDetails = role;
@@ -46,7 +47,7 @@ export class RoleListComponent implements OnInit {
         this.isLoading = false;
       },
       error: (err) => {
-        this.errorMessage = 'Failed to load roles.';
+        this.errorMessage = this.translate.instant('admin.roles.loadFailed');
         this.isLoading = false;
         console.error(err);
       }
@@ -62,7 +63,7 @@ export class RoleListComponent implements OnInit {
         this.loadRoles();
       },
       error: (err) => {
-        this.errorMessage = 'Error creating role.';
+        this.errorMessage = this.translate.instant('admin.roles.createFailed');
         this.isLoading = false;
       }
     });
@@ -89,14 +90,14 @@ export class RoleListComponent implements OnInit {
         this.loadRoles();
       },
       error: (err) => {
-        this.errorMessage = 'Update failed.';
+        this.errorMessage = this.translate.instant('admin.roles.updateFailed');
         this.isLoading = false;
       }
     });
   }
 
   public deleteRole(id: string): void {
-    if (id && confirm('Are you sure you want to delete this role?')) {
+    if (id && confirm(this.translate.instant('admin.roles.deleteConfirm'))) {
       this.api.delete(`Role/delete-role/${id}`).subscribe(() => {
         this.loadRoles();
       });

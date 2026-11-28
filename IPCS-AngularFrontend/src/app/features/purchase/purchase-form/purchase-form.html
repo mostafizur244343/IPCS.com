@@ -5,7 +5,7 @@
       <button class="back-btn" routerLink="/dashboard/purchase">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
       </button>
-      <h1>New Stock Purchase</h1>
+      <h1>{{ 'purchase.form.title' | translate }}</h1>
     </div>
   </div>
 
@@ -15,17 +15,17 @@
       <div class="card header-card">
         <div class="form-row">
           <div class="input-group">
-            <label>Supplier Invoice No *</label>
+            <label>{{ 'purchase.form.supplierInvoiceNo' | translate }} *</label>
             <input type="text" [(ngModel)]="purchase.supplierInvoiceNo" placeholder="INV-12345" required>
           </div>
           <div class="input-group">
-            <label>Purchase Date *</label>
+            <label>{{ 'purchase.form.purchaseDate' | translate }} *</label>
             <input type="date" [(ngModel)]="purchase.purchaseDate" required>
           </div>
           <div class="input-group">
-            <label>Supplier *</label>
+            <label>{{ 'purchase.form.supplier' | translate }} *</label>
             <select [(ngModel)]="purchase.supplierId" required>
-              <option [ngValue]="null">Select Supplier</option>
+              <option [ngValue]="null">{{ 'purchase.form.selectSupplier' | translate }}</option>
               <option *ngFor="let s of suppliers" [value]="s.supplierId">{{ s.supplierName }}</option>
             </select>
           </div>
@@ -40,7 +40,7 @@
               <input 
                 type="text" 
                 class="premium-search-input"
-                placeholder="Search by product name, SKU or generic name..." 
+                [placeholder]="'purchase.form.searchPlaceholder' | translate" 
                 [(ngModel)]="searchTerm"
                 (input)="searchProduct()"
               >
@@ -49,10 +49,10 @@
               </button>
             </div>
             
-            <button class="mega-add-btn" (click)="openQuickProductModal()" title="Quick Add New Product">
+            <button class="mega-add-btn" (click)="openQuickProductModal()" [title]="'purchase.form.quickAddTitle' | translate">
               <div class="btn-content">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                <span>Add Product</span>
+                <span>{{ 'purchase.form.addProduct' | translate }}</span>
               </div>
             </button>
           </div>
@@ -70,7 +70,7 @@
               <div class="product-meta">
                 <div class="stock-badge" [class.low]="p.currentStock < 10">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8V21H3V8"></path><path d="M1 3H23V8H1V3Z"></path><path d="M10 12H14"></path></svg>
-                  {{ p.currentStock }} in stock
+                  {{ p.currentStock }} {{ 'purchase.form.inStock' | translate }}
                 </div>
                 <div class="price-tag">৳{{ p.salesPrice | number:'1.2-2' }}</div>
               </div>
@@ -82,13 +82,13 @@
           <table class="items-table">
             <thead>
               <tr>
-                <th>Product</th>
-                <th width="120">Batch No</th>
-                <th width="130">Expiry</th>
-                <th width="80">Qty</th>
-                <th width="80">Free</th>
-                <th width="120">P.Price</th>
-                <th width="120">Total</th>
+                <th>{{ 'purchase.form.product' | translate }}</th>
+                <th width="120">{{ 'purchase.form.batchNo' | translate }}</th>
+                <th width="130">{{ 'purchase.form.expiry' | translate }}</th>
+                <th width="80">{{ 'purchase.form.qty' | translate }}</th>
+                <th width="80">{{ 'purchase.form.free' | translate }}</th>
+                <th width="120">{{ 'purchase.form.purchasePriceShort' | translate }}</th>
+                <th width="120">{{ 'common.total' | translate }}</th>
                 <th width="40"></th>
               </tr>
             </thead>
@@ -98,7 +98,7 @@
                   <strong>{{ item.productName }}</strong>
                   <small>{{ item.sku }}</small>
                 </td>
-                <td><input type="text" [(ngModel)]="item.batchNo" class="table-input" placeholder="Batch #"></td>
+                <td><input type="text" [(ngModel)]="item.batchNo" class="table-input" [placeholder]="'purchase.form.batchPlaceholder' | translate"></td>
                 <td><input type="date" [(ngModel)]="item.expiryDate" class="table-input"></td>
                 <td><input type="number" [(ngModel)]="item.qty" (change)="calculateLineTotal(item)" class="table-input center"></td>
                 <td><input type="number" [(ngModel)]="item.freeQty" class="table-input center"></td>
@@ -109,13 +109,13 @@
                   </div>
                 </td>
                 <td class="line-total-cell">৳{{ item.lineTotal | number:'1.2-2' }}</td>
-                <td><button class="remove-btn" (click)="removeItem(i)" title="Remove Item">&times;</button></td>
+                <td><button class="remove-btn" (click)="removeItem(i)" [title]="'purchase.form.removeItem' | translate">&times;</button></td>
               </tr>
               <tr *ngIf="purchase.purchaseDetails.length === 0">
                 <td colspan="8" class="empty-msg">
                   <div class="empty-state">
                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-                    <p>No items added yet. Search a product to begin.</p>
+                    <p>{{ 'purchase.form.noItems' | translate }}</p>
                   </div>
                 </td>
               </tr>
@@ -128,16 +128,16 @@
     <!-- Sidebar Section (Totals and Actions) -->
     <div class="sidebar-form">
       <div class="card total-card premium-shadow">
-        <h3 class="section-title">Summary & Payment</h3>
+        <h3 class="section-title">{{ 'purchase.form.summaryPayment' | translate }}</h3>
         
         <div class="billing-summary">
           <div class="summary-line">
-            <span class="label">Subtotal</span>
+            <span class="label">{{ 'common.subtotal' | translate }}</span>
             <span class="value">৳{{ purchase.totalAmount | number:'1.2-2' }}</span>
           </div>
           
           <div class="summary-line discount-line">
-            <span class="label">Discount</span>
+            <span class="label">{{ 'common.discount' | translate }}</span>
             <div class="currency-input highlighted">
               <span class="prefix">৳</span>
               <input type="number" [(ngModel)]="purchase.discountAmount" (change)="calculateTotals()" placeholder="0.00">
@@ -147,24 +147,24 @@
           <div class="divider"></div>
           
           <div class="summary-line grand-total">
-            <span class="label">Net Payable</span>
+            <span class="label">{{ 'purchase.form.netPayable' | translate }}</span>
             <span class="value">৳{{ purchase.netAmount | number:'1.2-2' }}</span>
           </div>
         </div>
         
         <div class="payment-section">
           <div class="input-group">
-            <label>Payment Method</label>
+            <label>{{ 'purchase.form.paymentMethod' | translate }}</label>
             <div class="select-wrapper">
               <select [(ngModel)]="purchase.methodId" (change)="calculateTotals()">
-                <option *ngFor="let m of paymentMethods" [value]="m.paymentMethodId">{{ m.methodName }} {{ m.isDigital ? '(Digital)' : '' }}</option>
+                <option *ngFor="let m of paymentMethods" [value]="m.paymentMethodId">{{ m.methodName }} {{ m.isDigital ? ('common.digitalTag' | translate) : '' }}</option>
               </select>
               <svg class="select-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </div>
           </div>
           
           <div class="input-group">
-            <label>Paid Amount</label>
+            <label>{{ 'purchase.form.paidAmount' | translate }}</label>
             <div class="currency-input large">
               <span class="prefix">৳</span>
               <input type="number" [(ngModel)]="purchase.paidAmount" (input)="calculateTotals()" placeholder="0.00">
@@ -172,13 +172,13 @@
           </div>
 
           <div class="due-display-card" [class.has-due]="purchase.dueAmount > 0">
-            <span class="label">Balance Due</span>
+            <span class="label">{{ 'purchase.form.balanceDue' | translate }}</span>
             <span class="value">৳{{ purchase.dueAmount | number:'1.2-2' }}</span>
           </div>
           
           <div *ngIf="purchase.extraChargeAmount > 0" class="extra-charge-alert">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-            <span>Extra Charge: ৳{{ purchase.extraChargeAmount | number:'1.2-2' }} Included</span>
+            <span>{{ 'purchase.form.extraCharge' | translate }}: ৳{{ purchase.extraChargeAmount | number:'1.2-2' }} {{ 'purchase.form.included' | translate }}</span>
           </div>
         </div>
 
@@ -187,12 +187,12 @@
             <label class="custom-checkbox">
               <input type="checkbox" [(ngModel)]="purchase.isShipment">
               <span class="box"></span>
-              <span class="label-text">Mark as Shipment (In Transit)</span>
+              <span class="label-text">{{ 'purchase.form.markShipment' | translate }}</span>
             </label>
           </div>
 
           <button class="btn btn-primary submit-btn premium-btn" (click)="onSubmit()" [disabled]="isLoading">
-            <span *ngIf="!isLoading">Confirm & Save Purchase</span>
+            <span *ngIf="!isLoading">{{ 'purchase.form.confirmSave' | translate }}</span>
             <span *ngIf="isLoading" class="loader"></span>
           </button>
         </div>
@@ -207,7 +207,7 @@
     <div class="modal-header">
       <div class="header-title">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-        <h2>Quick Add New Product</h2>
+        <h2>{{ 'purchase.form.quickAddTitle' | translate }}</h2>
       </div>
       <button class="close-btn" (click)="showQuickProductModal = false">&times;</button>
     </div>
@@ -215,26 +215,26 @@
     <div class="modal-body custom-scrollbar">
       <div class="form-grid">
         <div class="input-group full">
-          <label>Product Name *</label>
+          <label>{{ 'purchase.form.productName' | translate }} *</label>
           <input type="text" [(ngModel)]="quickProduct.productName" placeholder="e.g. Napa Extend 665mg" class="premium-input">
         </div>
         
         <div class="input-group">
-          <label>SKU (Optional)</label>
+          <label>{{ 'purchase.form.skuOptional' | translate }}</label>
           <input type="text" [(ngModel)]="quickProduct.sku" placeholder="SKU-001" class="premium-input">
         </div>
         
         <div class="input-group">
-          <label>Product Unit (UOM) *</label>
+          <label>{{ 'purchase.form.productUnit' | translate }} *</label>
           <div class="nested-input-group">
             <div class="select-wrapper" *ngIf="!showNewUOMInput">
               <select [(ngModel)]="quickProduct.uomId">
-                <option [ngValue]="null">Select Unit</option>
+                <option [ngValue]="null">{{ 'purchase.form.selectUnit' | translate }}</option>
                 <option *ngFor="let u of units" [value]="u.uomId">{{ u.uomName }}</option>
               </select>
             </div>
-            <input type="text" [(ngModel)]="quickProduct.newUOMName" *ngIf="showNewUOMInput" placeholder="New Unit Name" class="premium-input">
-            <button class="toggle-nested-btn" (click)="showNewUOMInput = !showNewUOMInput" [title]="showNewUOMInput ? 'Select from list' : 'Create new unit'">
+            <input type="text" [(ngModel)]="quickProduct.newUOMName" *ngIf="showNewUOMInput" [placeholder]="'purchase.form.newUnitName' | translate" class="premium-input">
+            <button class="toggle-nested-btn" (click)="showNewUOMInput = !showNewUOMInput" [title]="(showNewUOMInput ? 'purchase.form.selectFromList' : 'purchase.form.createNewUnit') | translate">
               <svg *ngIf="!showNewUOMInput" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               <svg *ngIf="showNewUOMInput" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
             </button>
@@ -242,14 +242,14 @@
         </div>
 
         <div class="input-group">
-          <label>MRP *</label>
+          <label>{{ 'purchase.form.mrp' | translate }} *</label>
           <div class="currency-input">
             <span class="prefix">৳</span>
             <input type="number" [(ngModel)]="quickProduct.mrp" class="no-border">
           </div>
         </div>
         <div class="input-group">
-          <label>Sales Price *</label>
+          <label>{{ 'purchase.form.salesPrice' | translate }} *</label>
           <div class="currency-input">
             <span class="prefix">৳</span>
             <input type="number" [(ngModel)]="quickProduct.salesPrice" class="no-border">
@@ -257,15 +257,15 @@
         </div>
 
         <div class="input-group">
-          <label>Category *</label>
+          <label>{{ 'purchase.form.category' | translate }} *</label>
           <div class="nested-input-group">
             <div class="select-wrapper" *ngIf="!showNewCategoryInput">
               <select [(ngModel)]="quickProduct.categoryId">
-                <option [ngValue]="null">Select Category</option>
+                <option [ngValue]="null">{{ 'purchase.form.selectCategory' | translate }}</option>
                 <option *ngFor="let c of categories" [value]="c.categoryId">{{ c.categoryName }}</option>
               </select>
             </div>
-            <input type="text" [(ngModel)]="quickProduct.newCategoryName" *ngIf="showNewCategoryInput" placeholder="New Category Name" class="premium-input">
+            <input type="text" [(ngModel)]="quickProduct.newCategoryName" *ngIf="showNewCategoryInput" [placeholder]="'purchase.form.newCategoryName' | translate" class="premium-input">
             <button class="toggle-nested-btn" (click)="showNewCategoryInput = !showNewCategoryInput">
                <svg *ngIf="!showNewCategoryInput" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                <svg *ngIf="showNewCategoryInput" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
@@ -274,15 +274,15 @@
         </div>
 
         <div class="input-group">
-          <label>Brand/Manufacturer *</label>
+          <label>{{ 'purchase.form.brand' | translate }} *</label>
           <div class="nested-input-group">
             <div class="select-wrapper" *ngIf="!showNewBrandInput">
               <select [(ngModel)]="quickProduct.brandId">
-                <option [ngValue]="null">Select Brand</option>
+                <option [ngValue]="null">{{ 'purchase.form.selectBrand' | translate }}</option>
                 <option *ngFor="let m of brands" [value]="m.manufacturerId">{{ m.brandName }}</option>
               </select>
             </div>
-            <input type="text" [(ngModel)]="quickProduct.newBrandName" *ngIf="showNewBrandInput" placeholder="New Brand Name" class="premium-input">
+            <input type="text" [(ngModel)]="quickProduct.newBrandName" *ngIf="showNewBrandInput" [placeholder]="'purchase.form.newBrandName' | translate" class="premium-input">
             <button class="toggle-nested-btn" (click)="showNewBrandInput = !showNewBrandInput">
               <svg *ngIf="!showNewBrandInput" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               <svg *ngIf="showNewBrandInput" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
@@ -291,15 +291,15 @@
         </div>
 
         <div class="input-group">
-          <label>Generic Info *</label>
+          <label>{{ 'purchase.form.generic' | translate }} *</label>
           <div class="nested-input-group">
             <div class="select-wrapper" *ngIf="!showNewGenericInput">
               <select [(ngModel)]="quickProduct.genericId">
-                <option [ngValue]="null">Select Generic</option>
+                <option [ngValue]="null">{{ 'purchase.form.selectGeneric' | translate }}</option>
                 <option *ngFor="let g of generics" [value]="g.genericId">{{ g.genericName }}</option>
               </select>
             </div>
-            <input type="text" [(ngModel)]="quickProduct.newGenericName" *ngIf="showNewGenericInput" placeholder="New Generic Name" class="premium-input">
+            <input type="text" [(ngModel)]="quickProduct.newGenericName" *ngIf="showNewGenericInput" [placeholder]="'purchase.form.newGenericName' | translate" class="premium-input">
             <button class="toggle-nested-btn" (click)="showNewGenericInput = !showNewGenericInput">
               <svg *ngIf="!showNewGenericInput" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               <svg *ngIf="showNewGenericInput" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
@@ -308,15 +308,15 @@
         </div>
 
         <div class="input-group">
-          <label>Store Location</label>
+          <label>{{ 'purchase.form.storeLocation' | translate }}</label>
           <div class="nested-input-group">
             <div class="select-wrapper" *ngIf="!showNewLocationInput">
               <select [(ngModel)]="quickProduct.locationId">
-                <option [ngValue]="null">Select Location</option>
-                <option [ngValue]="1">Default Shelf</option>
+                <option [ngValue]="null">{{ 'purchase.form.selectLocation' | translate }}</option>
+                <option [ngValue]="1">{{ 'purchase.form.defaultShelf' | translate }}</option>
               </select>
             </div>
-            <input type="text" [(ngModel)]="quickProduct.newLocationName" *ngIf="showNewLocationInput" placeholder="New Shelf Name" class="premium-input">
+            <input type="text" [(ngModel)]="quickProduct.newLocationName" *ngIf="showNewLocationInput" [placeholder]="'purchase.form.newShelfName' | translate" class="premium-input">
              <button class="toggle-nested-btn" (click)="showNewLocationInput = !showNewLocationInput">
               <svg *ngIf="!showNewLocationInput" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               <svg *ngIf="showNewLocationInput" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
@@ -327,9 +327,9 @@
     </div>
 
     <div class="modal-footer">
-      <button class="btn-text" (click)="showQuickProductModal = false">Discard</button>
+      <button class="btn-text" (click)="showQuickProductModal = false">{{ 'purchase.form.discard' | translate }}</button>
       <button class="btn btn-primary premium-btn" (click)="saveQuickProduct()" [disabled]="isSavingQuickProduct">
-        <span *ngIf="!isSavingQuickProduct">Create & Add Product</span>
+        <span *ngIf="!isSavingQuickProduct">{{ 'purchase.form.createAddProduct' | translate }}</span>
         <span *ngIf="isSavingQuickProduct" class="loader"></span>
       </button>
     </div>

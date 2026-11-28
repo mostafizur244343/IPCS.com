@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import { NotificationService } from '../../core/services/notification';
 import { ApiService } from '../../core/services/api';
 import Swal from 'sweetalert2';
@@ -11,7 +12,8 @@ export abstract class BaseFeatureComponent {
     protected router = inject(Router);
     protected notification = inject(NotificationService);
     protected api = inject(ApiService);
-    
+    protected translate = inject(TranslateService);
+
     isLoading = false;
 
     ngOnInit(): void {}
@@ -19,15 +21,16 @@ export abstract class BaseFeatureComponent {
     /**
      * Common alert for confirmation before deletion
      */
-    async confirmDelete(title: string = 'Are you sure?', text: string = "You won't be able to revert this!"): Promise<boolean> {
+    async confirmDelete(title?: string, text?: string): Promise<boolean> {
         const result = await Swal.fire({
-            title,
-            text,
+            title: title ?? this.translate.instant('notify.confirmTitle'),
+            text: text ?? this.translate.instant('notify.confirmDeleteText'),
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
             cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, delete it!'
+            confirmButtonText: this.translate.instant('notify.yesDelete'),
+            cancelButtonText: this.translate.instant('notify.cancel')
         });
         return result.isConfirmed;
     }

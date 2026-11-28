@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 /**
  * PaginationComponent
@@ -12,26 +13,26 @@ import { FormsModule } from '@angular/forms';
 @Component({
   selector: 'app-pagination',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
     <div class="pagination-bar" *ngIf="totalCount > 0">
       <div class="pagination-info">
-        Showing {{ startItem }}&ndash;{{ endItem }} of {{ totalCount }}
+        {{ 'pagination.showing' | translate:{start: startItem, end: endItem, total: totalCount} }}
       </div>
       <div class="pagination-controls">
-        <button class="page-btn" [disabled]="page <= 1" (click)="goTo(page - 1)" title="Previous page">
-          &lsaquo; Prev
+        <button class="page-btn" [disabled]="page <= 1" (click)="goTo(page - 1)" [attr.title]="'pagination.prevPage' | translate">
+          &lsaquo; {{ 'pagination.prev' | translate }}
         </button>
         <ng-container *ngFor="let p of pages">
           <button *ngIf="p !== '...'" class="page-btn" [class.active]="p === page" (click)="goTo(p)">{{ p }}</button>
           <span *ngIf="p === '...'" class="page-ellipsis">&hellip;</span>
         </ng-container>
-        <button class="page-btn" [disabled]="page >= totalPages" (click)="goTo(page + 1)" title="Next page">
-          Next &rsaquo;
+        <button class="page-btn" [disabled]="page >= totalPages" (click)="goTo(page + 1)" [attr.title]="'pagination.nextPage' | translate">
+          {{ 'pagination.next' | translate }} &rsaquo;
         </button>
       </div>
       <div class="pagination-size">
-        <label for="page-size-select">Per page</label>
+        <label for="page-size-select">{{ 'pagination.perPage' | translate }}</label>
         <select id="page-size-select" [ngModel]="pageSize" (ngModelChange)="onPageSizeChange($event)">
           <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }}</option>
         </select>

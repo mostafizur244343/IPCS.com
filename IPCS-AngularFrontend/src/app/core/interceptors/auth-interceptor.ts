@@ -1,6 +1,7 @@
 import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import { catchError, throwError } from 'rxjs';
 import { NotificationService } from '../services/notification';
 
@@ -15,6 +16,7 @@ let lastSessionExpiredTime = 0;
 export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
   const router = inject(Router);
   const notification = inject(NotificationService);
+  const translate = inject(TranslateService);
   const token = localStorage.getItem('token');
 
   // Clone the request and add the Authorization header if token exists
@@ -30,29 +32,29 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
   // Handle the response and catch errors
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      let errorMessage = 'An unexpected error occurred.';
-      
+      let errorMessage = translate.instant('common.unexpectedError');
+
       if (error.status === 401) {
         // Token expired or unauthorized -> logout and redirect
         localStorage.removeItem('token');
         localStorage.removeItem('user_data');
-        
+
         const now = Date.now();
         if (now - lastSessionExpiredTime > 5000) {
           lastSessionExpiredTime = now;
-          notification.error('Your session has expired. Please login again.');
+          notification.error(translate.instant('common.sessionExpired'));
         }
         router.navigate(['/login']);
         errorMessage = 'Session expired';
       } else if (error.status === 403) {
-        errorMessage = 'You do not have permission to perform this action.';
+        errorMessage = translate.instant('common.noPermission');
         notification.error(errorMessage);
       } else if (error.status === 0) {
-        errorMessage = 'Cannot connect to the server. Please check your connection.';
+        errorMessage = translate.instant('common.cannotConnect');
         notification.error(errorMessage);
       } else {
         // Server-side errors or other
-        errorMessage = error.error?.message || error.error?.Message || error.message || 'An unexpected error occurred.';
+        errorMessage = error.error?.message || error.error?.Message || error.message || translate.instant('common.unexpectedError');
         notification.error(errorMessage);
       }
       

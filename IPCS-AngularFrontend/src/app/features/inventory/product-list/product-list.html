@@ -2,25 +2,25 @@
   <!-- Page Header -->
   <div class="page-header">
     <div class="title-section">
-      <h1>Product Inventory</h1>
-      <p>Manage your pharmacy items, stock levels and pricing.</p>
+      <h1>{{ 'inventory.products.title' | translate }}</h1>
+      <p>{{ 'inventory.products.subtitle' | translate }}</p>
     </div>
     <div class="action-section">
       <button class="btn btn-secondary" routerLink="/dashboard/inventory/trash">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-right: 4px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-        Trash
+        {{ 'inventory.products.trash' | translate }}
       </button>
       <button 
         class="btn btn-secondary" 
         routerLink="/dashboard/purchase/new"
       >
-        <span class="icon">🛒</span> New Purchase
+        <span class="icon">🛒</span> {{ 'inventory.products.newPurchase' | translate }}
       </button>
       <button 
         class="btn btn-primary" 
         routerLink="/dashboard/inventory/add"
       >
-        <span class="icon">+</span> Create New Product
+        <span class="icon">+</span> {{ 'inventory.products.createNew' | translate }}
       </button>
     </div>
   </div>
@@ -31,7 +31,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
       <input 
         type="text" 
-        placeholder="Search by name or SKU..." 
+        [placeholder]="'inventory.products.searchPlaceholder' | translate" 
         [(ngModel)]="searchTerm"
         (input)="onSearch()"
       >
@@ -42,20 +42,20 @@
   <div class="card table-card">
     <div *ngIf="isLoading" class="loading-state">
       <div class="spinner-blue"></div>
-      <p>Loading Products...</p>
+      <p>{{ 'inventory.products.loading' | translate }}</p>
     </div>
 
     <table *ngIf="!isLoading" class="data-table">
       <thead>
         <tr>
-          <th>Picture</th>
-          <th>Product Name</th>
-          <th>SKU</th>
-          <th>Category</th>
-          <th>Price</th>
-          <th>Stock</th>
-          <th>Status</th>
-          <th class="text-right">Actions</th>
+          <th>{{ 'inventory.products.picture' | translate }}</th>
+          <th>{{ 'inventory.products.productName' | translate }}</th>
+          <th>{{ 'inventory.products.sku' | translate }}</th>
+          <th>{{ 'inventory.products.category' | translate }}</th>
+          <th>{{ 'inventory.products.price' | translate }}</th>
+          <th>{{ 'inventory.products.stock' | translate }}</th>
+          <th>{{ 'common.status' | translate }}</th>
+          <th class="text-right">{{ 'common.actions' | translate }}</th>
         </tr>
       </thead>
       <tbody>
@@ -83,20 +83,20 @@
           </td>
           <td>
             <span class="status-indicator" [class.active]="product.isActive">
-              {{ product.isActive ? 'Active' : 'Inactive' }}
+              {{ (product.isActive ? 'common.active' : 'common.inactive') | translate }}
             </span>
           </td>
           <td class="text-right">
             <div class="action-buttons">
               <!-- Details button -->
-              <button class="icon-btn info" (click)="showDetails(product)" title="Details">
+              <button class="icon-btn info" (click)="showDetails(product)" [attr.title]="'common.viewDetails' | translate">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
               </button>
               <!-- Edit button -->
               <button 
                 class="icon-btn edit" 
                 [routerLink]="['/dashboard/inventory/edit', product.productId]"
-                title="Edit Product"
+                [attr.title]="'inventory.products.editProduct' | translate"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
               </button>
@@ -104,7 +104,7 @@
               <button 
                 class="icon-btn delete" 
                 (click)="deleteProduct(product.productId)"
-                title="Delete Product"
+                [attr.title]="'inventory.products.deleteProduct' | translate"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
               </button>
@@ -127,58 +127,58 @@
   <div class="modal-backdrop" *ngIf="selectedProductForDetails" (click)="closeDetails()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>Product Details</h2>
+        <h2>{{ 'inventory.products.detailsTitle' | translate }}</h2>
         <button class="modal-close-btn" (click)="closeDetails()">×</button>
       </div>
       <div class="modal-body">
         <div class="detail-grid">
-          <div class="detail-label">Picture</div>
+          <div class="detail-label">{{ 'inventory.products.picture' | translate }}</div>
           <div class="detail-value image-val">
-            <img *ngIf="selectedProductForDetails.picturePath" [src]="getImageUrl(selectedProductForDetails.picturePath)" alt="Product Image">
-            <span *ngIf="!selectedProductForDetails.picturePath">No Image</span>
+            <img *ngIf="selectedProductForDetails.picturePath" [src]="getImageUrl(selectedProductForDetails.picturePath)" [attr.alt]="'inventory.products.productImageAlt' | translate">
+            <span *ngIf="!selectedProductForDetails.picturePath">{{ 'inventory.products.noImage' | translate }}</span>
           </div>
 
-          <div class="detail-label">Product ID</div>
+          <div class="detail-label">{{ 'inventory.products.productId' | translate }}</div>
           <div class="detail-value">#{{ selectedProductForDetails.productId }}</div>
 
-          <div class="detail-label">Product Name</div>
+          <div class="detail-label">{{ 'inventory.products.productName' | translate }}</div>
           <div class="detail-value"><strong>{{ selectedProductForDetails.productName }}</strong></div>
 
-          <div class="detail-label">SKU</div>
+          <div class="detail-label">{{ 'inventory.products.sku' | translate }}</div>
           <div class="detail-value">{{ selectedProductForDetails.sku || selectedProductForDetails.sKU }}</div>
 
-          <div class="detail-label">Category</div>
+          <div class="detail-label">{{ 'inventory.products.category' | translate }}</div>
           <div class="detail-value">{{ selectedProductForDetails.categoryName }}</div>
 
-          <div class="detail-label">Generic Name</div>
+          <div class="detail-label">{{ 'inventory.products.genericName' | translate }}</div>
           <div class="detail-value">{{ selectedProductForDetails.genericName || '-' }}</div>
 
-          <div class="detail-label">Manufacturer</div>
+          <div class="detail-label">{{ 'inventory.products.manufacturer' | translate }}</div>
           <div class="detail-value">{{ selectedProductForDetails.brandName || '-' }}</div>
 
-          <div class="detail-label">Purchase Price</div>
+          <div class="detail-label">{{ 'inventory.products.purchasePrice' | translate }}</div>
           <div class="detail-value">৳{{ selectedProductForDetails.costPrice | number:'1.2-2' }}</div>
 
-          <div class="detail-label">Sales Price</div>
+          <div class="detail-label">{{ 'inventory.products.salesPrice' | translate }}</div>
           <div class="detail-value">৳{{ selectedProductForDetails.salesPrice | number:'1.2-2' }}</div>
 
-          <div class="detail-label">Current Stock</div>
+          <div class="detail-label">{{ 'inventory.products.currentStock' | translate }}</div>
           <div class="detail-value">
             <span class="stock-badge" [class.low]="selectedProductForDetails.currentStock <= selectedProductForDetails.reorderLevel">
-              {{ selectedProductForDetails.currentStock }} (Reorder Level: {{ selectedProductForDetails.reorderLevel }})
+              {{ selectedProductForDetails.currentStock }} ({{ 'inventory.products.reorderLevel' | translate }}: {{ selectedProductForDetails.reorderLevel }})
             </span>
           </div>
 
-          <div class="detail-label">UOM (Sales)</div>
+          <div class="detail-label">{{ 'inventory.products.uomSales' | translate }}</div>
           <div class="detail-value">{{ selectedProductForDetails.uomName || '-' }}</div>
 
-          <div class="detail-label">UOM (Purchase)</div>
+          <div class="detail-label">{{ 'inventory.products.uomPurchase' | translate }}</div>
           <div class="detail-value">{{ selectedProductForDetails.baseUOMName || '-' }}</div>
 
-          <div class="detail-label">Status</div>
+          <div class="detail-label">{{ 'common.status' | translate }}</div>
           <div class="detail-value">
             <span class="badge" [ngClass]="selectedProductForDetails.isActive ? 'badge-success' : 'badge-error'">
-              {{ selectedProductForDetails.isActive ? 'Active' : 'Inactive' }}
+              {{ (selectedProductForDetails.isActive ? 'common.active' : 'common.inactive') | translate }}
             </span>
           </div>
         </div>

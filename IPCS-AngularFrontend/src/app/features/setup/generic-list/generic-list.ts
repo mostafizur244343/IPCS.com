@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../core/services/api';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 /**
  * GenericListComponent
@@ -12,7 +13,7 @@ import { RouterModule } from '@angular/router';
 @Component({
   selector: 'app-generic-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   templateUrl: './generic-list.html'
 })
 export class GenericListComponent implements OnInit {
@@ -30,7 +31,7 @@ export class GenericListComponent implements OnInit {
   // Details state
   selectedGenericForDetails: any = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private translate: TranslateService) {}
 
   ngOnInit() {
     this.loadGenerics();
@@ -122,7 +123,7 @@ export class GenericListComponent implements OnInit {
    * Removes a generic name entry
    */
   deleteGeneric(id: number) {
-    if (confirm('Delete this generic entry?')) {
+    if (confirm(this.translate.instant('setup.generics.deleteConfirm'))) {
       this.api.delete(`GenericInfo/${id}`).subscribe(() => this.loadGenerics());
     }
   }

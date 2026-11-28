@@ -2,12 +2,12 @@
   <!-- Page header with title and date filters -->
   <div class="page-header">
     <div class="title-section">
-      <h1>Analytics & Reports</h1>
-      <p>Analyze sales performance, inventory health, and financial summaries.</p>
+      <h1>{{ 'reports.title' | translate }}</h1>
+      <p>{{ 'reports.subtitle' | translate }}</p>
     </div>
     <div class="filter-controls">
       <select [(ngModel)]="selectedMonth" (change)="loadMonthlyReport()">
-        <option *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]" [value]="m">{{ getMonthName(m) }}</option>
+        <option *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]" [value]="m">{{ getMonthName(m) | translate }}</option>
       </select>
       <select [(ngModel)]="selectedYear" (change)="loadMonthlyReport()">
         <option [value]="2026">2026</option>
@@ -21,21 +21,21 @@
     <div class="card stat-box blue">
       <div class="icon">📈</div>
       <div class="content">
-        <span class="label">Total Products</span>
+        <span class="label">{{ 'reports.totalProducts' | translate }}</span>
         <span class="value">{{ inventoryStats.totalItems }}</span>
       </div>
     </div>
     <div class="card stat-box orange">
       <div class="icon">⚠️</div>
       <div class="content">
-        <span class="label">Low Stock Items</span>
+        <span class="label">{{ 'reports.lowStockItems' | translate }}</span>
         <span class="value">{{ inventoryStats.lowStock }}</span>
       </div>
     </div>
     <div class="card stat-box red">
       <div class="icon">🚫</div>
       <div class="content">
-        <span class="label">Out of Stock</span>
+        <span class="label">{{ 'reports.outOfStock' | translate }}</span>
         <span class="value">{{ inventoryStats.outOfStock }}</span>
       </div>
     </div>
@@ -45,8 +45,8 @@
   <div class="main-report-grid">
     <div class="card report-card">
       <div class="card-header">
-        <h3>Daily Performance ({{ getMonthName(selectedMonth) }} {{ selectedYear }})</h3>
-        <button class="btn btn-secondary btn-sm" (click)="exportToCSV()">Export CSV</button>
+        <h3>{{ 'reports.dailyPerformance' | translate }} ({{ getMonthName(selectedMonth) | translate }} {{ selectedYear }})</h3>
+        <button class="btn btn-secondary btn-sm" (click)="exportToCSV()">{{ 'reports.exportCsv' | translate }}</button>
       </div>
       
       <div *ngIf="isLoading" class="loading-state">
@@ -56,11 +56,11 @@
       <table *ngIf="!isLoading" class="report-table">
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Total Sales</th>
-            <th>Total Purchase</th>
-            <th>Expense</th>
-            <th>Net Profit</th>
+            <th>{{ 'common.date' | translate }}</th>
+            <th>{{ 'reports.totalSales' | translate }}</th>
+            <th>{{ 'reports.totalPurchase' | translate }}</th>
+            <th>{{ 'reports.expense' | translate }}</th>
+            <th>{{ 'reports.netProfit' | translate }}</th>
           </tr>
         </thead>
         <tbody>
@@ -75,7 +75,7 @@
           </tr>
           <!-- Empty state if no data for the month -->
           <tr *ngIf="monthlyStats.length === 0">
-            <td colspan="5" class="empty-msg">No data available for the selected month.</td>
+            <td colspan="5" class="empty-msg">{{ 'reports.noDataForMonth' | translate }}</td>
           </tr>
         </tbody>
       </table>
@@ -84,19 +84,19 @@
     <div class="side-panel">
       <!-- Quick Alerts Section -->
       <div class="card alert-card">
-        <h3>Quick Alerts</h3>
+        <h3>{{ 'reports.quickAlerts' | translate }}</h3>
         <div class="alert-list">
           <div *ngIf="inventoryStats.lowStock > 0" class="alert-item warning">
              <span class="dot"></span>
-             <span>{{ inventoryStats.lowStock }} items are below reorder level.</span>
+             <span>{{ 'reports.lowStockAlert' | translate:{count: inventoryStats.lowStock} }}</span>
           </div>
           <div *ngIf="inventoryStats.outOfStock > 0" class="alert-item danger">
              <span class="dot"></span>
-             <span>{{ inventoryStats.outOfStock }} items are currently out of stock.</span>
+             <span>{{ 'reports.outOfStockAlert' | translate:{count: inventoryStats.outOfStock} }}</span>
           </div>
           <div class="alert-item info" *ngIf="inventoryStats.lowStock === 0 && inventoryStats.outOfStock === 0">
              <span class="dot"></span>
-             <span>Inventory levels are healthy.</span>
+             <span>{{ 'reports.inventoryHealthy' | translate }}</span>
           </div>
         </div>
       </div>

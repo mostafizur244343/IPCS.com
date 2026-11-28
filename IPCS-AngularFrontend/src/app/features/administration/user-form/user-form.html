@@ -2,7 +2,7 @@
   <!-- Page Header -->
   <div class="page-header">
     <div class="title-section">
-      <button class="back-btn" routerLink="/dashboard/administration/users">
+      <button class="back-btn" routerLink="/dashboard/administration/users" [attr.aria-label]="'common.back' | translate">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="20"
@@ -18,7 +18,7 @@
           <polyline points="12 19 5 12 12 5"></polyline>
         </svg>
       </button>
-      <h1>Register New User</h1>
+      <h1>{{ 'admin.users.registerTitle' | translate }}</h1>
     </div>
   </div>
 
@@ -27,17 +27,17 @@
       <div class="form-grid">
         <!-- Personnel Details -->
         <div class="input-group">
-          <label>Full Name *</label>
+          <label>{{ 'admin.users.fullName' | translate }} *</label>
           <input
             type="text"
             [(ngModel)]="user.fullName"
             name="fullName"
             required
-            placeholder="e.g. John Doe"
+            [placeholder]="'admin.users.fullNamePlaceholder' | translate"
           />
         </div>
         <div class="input-group">
-          <label>Email Address *</label>
+          <label>{{ 'admin.users.emailAddress' | translate }} *</label>
           <input
             type="email"
             [(ngModel)]="user.email"
@@ -48,7 +48,7 @@
         </div>
 
         <div class="input-group">
-          <label>Mobile Number *</label>
+          <label>{{ 'admin.users.mobileNumber' | translate }} *</label>
           <input
             type="tel"
             [(ngModel)]="user.mobileNumber"
@@ -59,7 +59,7 @@
         </div>
 
         <div class="input-group">
-          <label>Password *</label>
+          <label>{{ 'auth.password' | translate }} *</label>
           <input
             type="password"
             [(ngModel)]="user.password"
@@ -70,7 +70,7 @@
         </div>
 
         <div class="input-group">
-          <label>Confirm Password *</label>
+          <label>{{ 'admin.users.confirmPassword' | translate }} *</label>
           <input
             type="password"
             [(ngModel)]="user.confirmPassword"
@@ -82,17 +82,17 @@
 
         <!-- Role & Branch Selection -->
         <div class="input-group">
-          <label>Security Role *</label>
+          <label>{{ 'admin.users.securityRole' | translate }} *</label>
           <select [(ngModel)]="user.roleName" name="roleName" required>
-            <option value="">--Select Role--</option>
+            <option value="">{{ 'admin.users.selectRole' | translate }}</option>
             <option *ngFor="let r of roles" [value]="r.roleName">{{ r.roleName }}</option>
           </select>
         </div>
 
         <div class="input-group">
-          <label>Assigned Branch *</label>
+          <label>{{ 'admin.users.assignedBranch' | translate }} *</label>
           <select [(ngModel)]="user.branchId" name="branchId" required>
-            <option value="">--Select Branch--</option>
+            <option value="">{{ 'admin.users.selectBranch' | translate }}</option>
             <option *ngFor="let b of branches" [value]="b.branchId">{{ b.branchName }}</option>
           </select>
         </div>
@@ -104,10 +104,10 @@
           class="btn btn-secondary"
           routerLink="/dashboard/administration/users"
         >
-          Cancel
+          {{ 'common.cancel' | translate }}
         </button>
         <button type="submit" class="btn btn-primary" [disabled]="!userForm.valid || isLoading">
-          <span *ngIf="!isLoading">Create User Account</span>
+          <span *ngIf="!isLoading">{{ 'admin.users.createAccount' | translate }}</span>
           <span *ngIf="isLoading" class="spinner"></span>
         </button>
       </div>

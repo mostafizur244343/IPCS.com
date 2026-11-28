@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api';
 import { NotificationService } from '../../../core/services/notification';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 /**
  * Trash column definition (passed via route `data`).
@@ -47,7 +48,7 @@ export interface TrashConfig {
 @Component({
   selector: 'app-trash-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   templateUrl: './trash-list.html',
 })
 export class TrashListComponent implements OnInit {
@@ -61,6 +62,7 @@ export class TrashListComponent implements OnInit {
     private route: ActivatedRoute,
     private api: ApiService,
     private notification: NotificationService,
+    private translate: TranslateService,
   ) {}
 
   ngOnInit() {
@@ -122,7 +124,10 @@ export class TrashListComponent implements OnInit {
       case 'money':
         return Number(raw).toFixed(2);
       case 'bool':
-        return raw ? (col.trueText ?? 'Yes') : (col.falseText ?? 'No');
+        // trueText/falseText are translation keys (route data), resolved live.
+        return raw
+          ? (col.trueText ? this.translate.instant(col.trueText) : this.translate.instant('common.yes'))
+          : (col.falseText ? this.translate.instant(col.falseText) : this.translate.instant('common.no'));
       case 'count':
         return Array.isArray(raw) ? String(raw.length) : String(raw);
       default:
@@ -139,17 +144,17 @@ export class TrashListComponent implements OnInit {
   async restoreRow(row: any) {
     const id = this.resolve(row, this.config.idField);
     const confirmed = await this.notification.confirm(
-      'This will restore the record and re-apply its stock and accounting effects.',
-      'Restore this record?',
-      'Yes, restore it',
-      'Cancel',
+      this.translate.instant('trash.restoreConfirmText'),
+      this.translate.instant('trash.restoreConfirmTitle'),
+      this.translate.instant('trash.yesRestore'),
+      this.translate.instant('notify.cancel'),
       false,
     );
     if (!confirmed) return;
     this.isLoading = true;
     this.api.post<any>(`${this.config.restoreEndpoint}/${id}`, {}).subscribe({
       next: (res) => {
-        this.notification.success(res?.message || 'Restored successfully.');
+        this.notification.success(res?.message || this.translate.instant('notify.restored'));
         this.loadTrash();
       },
       error: () => {

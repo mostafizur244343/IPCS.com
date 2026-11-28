@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 /**
  * UserFormComponent
@@ -12,7 +13,7 @@ import { ApiService } from '../../../core/services/api';
 @Component({
   selector: 'app-user-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   templateUrl: './user-form.html',
 })
 export class UserFormComponent implements OnInit {
@@ -35,6 +36,7 @@ export class UserFormComponent implements OnInit {
   constructor(
     private api: ApiService,
     private router: Router,
+    private translate: TranslateService,
   ) {}
 
   ngOnInit() {
@@ -60,7 +62,7 @@ export class UserFormComponent implements OnInit {
         this.router.navigate(['/dashboard/administration/users']);
       },
       error: (err) => {
-        alert(err.error?.message || err.error?.Message || 'Failed to create user');
+        alert(err.error?.message || err.error?.Message || this.translate.instant('admin.users.createFailed'));
         this.isLoading = false;
       },
     });

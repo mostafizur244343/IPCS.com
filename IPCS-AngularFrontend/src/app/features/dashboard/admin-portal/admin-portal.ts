@@ -1,16 +1,17 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-admin-portal',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, TranslatePipe],
   template: `
     <div class="portal-container animate-fade-in">
       <div class="portal-header">
-        <h1>Administrative Control Panel</h1>
-        <p>Manage system security, users, roles, and global configuration.</p>
+        <h1>{{ 'dashboard.admin.title' | translate }}</h1>
+        <p>{{ 'dashboard.admin.subtitle' | translate }}</p>
       </div>
 
       <div class="portal-grid">
@@ -18,11 +19,11 @@ import { RouterModule } from '@angular/router';
         <div class="portal-card glass">
           <div class="card-icon blue">🛡️</div>
           <div class="card-content">
-            <h3>Security & Access</h3>
-            <p>Manage user accounts, roles, and granular permissions.</p>
+            <h3>{{ 'dashboard.admin.securityTitle' | translate }}</h3>
+            <p>{{ 'dashboard.admin.securityDesc' | translate }}</p>
             <div class="card-actions">
-              <a routerLink="/dashboard/administration/users" class="portal-btn">User Management</a>
-              <a routerLink="/dashboard/administration/roles" class="portal-btn">Role Definitions</a>
+              <a routerLink="/dashboard/administration/users" class="portal-btn">{{ 'dashboard.admin.userManagement' | translate }}</a>
+              <a routerLink="/dashboard/administration/roles" class="portal-btn">{{ 'dashboard.admin.roleDefinitions' | translate }}</a>
             </div>
           </div>
         </div>
@@ -31,12 +32,12 @@ import { RouterModule } from '@angular/router';
         <div class="portal-card glass">
           <div class="card-icon teal">⚙️</div>
           <div class="card-content">
-            <h3>Global Configuration</h3>
-            <p>Setup branches, categories, units, and system lookups.</p>
+            <h3>{{ 'dashboard.admin.configTitle' | translate }}</h3>
+            <p>{{ 'dashboard.admin.configDesc' | translate }}</p>
             <div class="card-actions">
-              <a routerLink="/dashboard/setup/branches" class="portal-btn">Branches</a>
-              <a routerLink="/dashboard/setup/categories" class="portal-btn">Categories</a>
-              <a routerLink="/dashboard/setup/uoms" class="portal-btn">Units (UOM)</a>
+              <a routerLink="/dashboard/setup/branches" class="portal-btn">{{ 'nav.branches' | translate }}</a>
+              <a routerLink="/dashboard/setup/categories" class="portal-btn">{{ 'nav.categories' | translate }}</a>
+              <a routerLink="/dashboard/setup/uoms" class="portal-btn">{{ 'dashboard.admin.unitsUom' | translate }}</a>
             </div>
           </div>
         </div>
@@ -45,12 +46,12 @@ import { RouterModule } from '@angular/router';
         <div class="portal-card glass">
           <div class="card-icon amber">🤝</div>
           <div class="card-content">
-            <h3>Masters & Partners</h3>
-            <p>Manage manufacturers, suppliers, and customer lists.</p>
+            <h3>{{ 'dashboard.admin.mastersTitle' | translate }}</h3>
+            <p>{{ 'dashboard.admin.mastersDesc' | translate }}</p>
             <div class="card-actions">
-              <a routerLink="/dashboard/setup/manufacturers" class="portal-btn">Manufacturers</a>
-              <a routerLink="/dashboard/setup/suppliers" class="portal-btn">Suppliers</a>
-              <a routerLink="/dashboard/setup/customers" class="portal-btn">Customers</a>
+              <a routerLink="/dashboard/setup/manufacturers" class="portal-btn">{{ 'nav.manufacturers' | translate }}</a>
+              <a routerLink="/dashboard/setup/suppliers" class="portal-btn">{{ 'nav.suppliers' | translate }}</a>
+              <a routerLink="/dashboard/setup/customers" class="portal-btn">{{ 'nav.customers' | translate }}</a>
             </div>
           </div>
         </div>
@@ -59,10 +60,10 @@ import { RouterModule } from '@angular/router';
         <div class="portal-card glass highlight">
           <div class="card-icon primary">📊</div>
           <div class="card-content">
-            <h3>Operational Dashboard</h3>
-            <p>Go to the main inventory and sales dashboard.</p>
+            <h3>{{ 'dashboard.admin.opsTitle' | translate }}</h3>
+            <p>{{ 'dashboard.admin.opsDesc' | translate }}</p>
             <div class="card-actions">
-              <a routerLink="/dashboard/home" class="portal-btn primary">Go to Dashboard →</a>
+              <a routerLink="/dashboard/home" class="portal-btn primary">{{ 'dashboard.admin.goToDashboard' | translate }}</a>
             </div>
           </div>
         </div>

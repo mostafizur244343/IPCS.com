@@ -1,17 +1,17 @@
 <div class="list-container animate-fade-in">
   <div class="page-header">
     <div class="title-section">
-      <h1>Customer Management</h1>
-      <p>Manage customer profiles, contact info and credit balances.</p>
+      <h1>{{ 'setup.customers.title' | translate }}</h1>
+      <p>{{ 'setup.customers.subtitle' | translate }}</p>
     </div>
     <div class="action-section">
       <button class="btn btn-secondary" routerLink="/dashboard/setup/customers/trash">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-right: 4px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-        Trash
+        {{ 'setup.trash' | translate }}
       </button>
       <button class="btn btn-primary-action" (click)="toggleForm()">
         <span class="icon">{{ showForm ? '×' : '+' }}</span>
-        {{ showForm ? 'Cancel' : 'Register Customer' }}
+        {{ (showForm ? 'common.cancel' : 'setup.customers.registerCustomer') | translate }}
       </button>
     </div>
   </div>
@@ -34,33 +34,33 @@
           <circle cx="12" cy="7" r="4"></circle>
         </svg>
       </div>
-      <h3>{{ isEditing ? 'Edit Customer Details' : 'Register New Customer' }}</h3>
+      <h3>{{ (isEditing ? 'setup.customers.editDetails' : 'setup.customers.registerNew') | translate }}</h3>
     </div>
 
     <div class="modern-form-grid">
       <div class="input-group-modern col-span-2">
-        <label>Full Name <span class="required">*</span></label>
+        <label>{{ 'setup.customers.fullName' | translate }} <span class="required">*</span></label>
         <div class="input-wrapper">
-          <input type="text" [(ngModel)]="newCustomer.customerName" placeholder="e.g. John Doe" />
+          <input type="text" [(ngModel)]="newCustomer.customerName" [placeholder]="'setup.customers.namePlaceholder' | translate" />
         </div>
       </div>
 
       <div class="input-group-modern col-span-2">
-        <label>Phone Number <span class="required">*</span></label>
+        <label>{{ 'setup.customers.phoneNumber' | translate }} <span class="required">*</span></label>
         <div class="input-wrapper">
-          <input type="text" [(ngModel)]="newCustomer.mobile" placeholder="e.g. +88017XXXXXXXX" />
+          <input type="text" [(ngModel)]="newCustomer.mobile" [placeholder]="'setup.customers.phonePlaceholder' | translate" />
         </div>
       </div>
 
       <div class="input-group-modern col-span-4">
-        <label>Address</label>
+        <label>{{ 'common.address' | translate }}</label>
         <div class="input-wrapper">
-          <input type="text" [(ngModel)]="newCustomer.address" placeholder="Enter full address" />
+          <input type="text" [(ngModel)]="newCustomer.address" [placeholder]="'setup.customers.addressPlaceholder' | translate" />
         </div>
       </div>
 
       <div class="input-group-modern col-span-2">
-        <label>Opening Balance</label>
+        <label>{{ 'setup.customers.openingBalance' | translate }}</label>
         <div class="input-wrapper prefix-amount">
           <span class="currency-symbol">৳</span>
           <input type="number" [(ngModel)]="newCustomer.openingBalance" placeholder="0.00" />
@@ -71,12 +71,12 @@
         <label class="custom-toggle-container">
           <input type="checkbox" [(ngModel)]="newCustomer.isDue" />
           <span class="custom-toggle-switch"></span>
-          <span class="toggle-label-text">Opening balance is due</span>
+          <span class="toggle-label-text">{{ 'setup.customers.openingBalanceIsDue' | translate }}</span>
         </label>
       </div>
 
       <div class="input-group-modern col-span-4 image-upload-section">
-        <label>Customer Picture</label>
+        <label>{{ 'setup.customers.customerPicture' | translate }}</label>
         <div class="modern-upload-wrapper">
           <app-image-upload
             [imageUrl]="newCustomer.picturePath"
@@ -89,7 +89,7 @@
 
     <div class="form-actions-modern">
       <button *ngIf="isEditing" class="btn-modern btn-modern-secondary" (click)="resetForm()">
-        Cancel
+        {{ 'common.cancel' | translate }}
       </button>
       <button
         class="btn-modern btn-modern-primary"
@@ -97,7 +97,7 @@
         [disabled]="isLoading || isUploading"
       >
         <span *ngIf="!isLoading && !isUploading">
-          {{ isEditing ? 'Update Customer Record' : 'Confirm & Save' }}
+          {{ (isEditing ? 'setup.customers.updateRecord' : 'setup.customers.confirmSave') | translate }}
         </span>
         <span *ngIf="isLoading || isUploading" class="spinner"></span>
       </button>
@@ -122,7 +122,7 @@
       </svg>
       <input
         type="text"
-        placeholder="Search by name or mobile..."
+        [placeholder]="'setup.customers.searchPlaceholder' | translate"
         [(ngModel)]="searchTerm"
         (input)="onSearch()"
       />
@@ -141,18 +141,18 @@
           margin: 0 auto;
         "
       ></div>
-      <p style="color: var(--text-muted); margin-top: 12px">Loading...</p>
+      <p style="color: var(--text-muted); margin-top: 12px">{{ 'common.loading' | translate }}</p>
     </div>
     <div class="data-table-wrapper" *ngIf="!isLoading">
       <table class="data-table">
         <thead>
           <tr>
-            <th>Picture</th>
-            <th>Name</th>
-            <th>Phone</th>
-            <th>Address</th>
-            <th>Credit/Advance</th>
-            <th class="text-right">Actions</th>
+            <th>{{ 'setup.picture' | translate }}</th>
+            <th>{{ 'common.name' | translate }}</th>
+            <th>{{ 'common.phone' | translate }}</th>
+            <th>{{ 'common.address' | translate }}</th>
+            <th>{{ 'setup.customers.creditAdvance' | translate }}</th>
+            <th class="text-right">{{ 'common.actions' | translate }}</th>
           </tr>
         </thead>
         <tbody>
@@ -193,18 +193,18 @@
                 *ngIf="(c.isDue && c.currentDue === 0) || (!c.isDue && c.advanceBalance === 0)"
                 class="balance-badge text-muted"
               >
-                0 Balance
+                {{ 'setup.customers.zeroBalance' | translate }}
               </span>
               <span *ngIf="!c.isDue && c.advanceBalance > 0" class="balance-badge positive">
                 ৳{{ c.advanceBalance | number: '1.2-2' }}
               </span>
               <span *ngIf="c.isDue && c.currentDue > 0" class="balance-badge negative">
-                (Due) ৳{{ c.currentDue | number: '1.2-2' }}
+                ({{ 'common.due' | translate }}) ৳{{ c.currentDue | number: '1.2-2' }}
               </span>
             </td>
             <td class="text-right">
               <div class="action-buttons">
-                <button class="icon-btn edit" (click)="editCustomer(c)" title="Edit Customer">
+                <button class="icon-btn edit" (click)="editCustomer(c)" [attr.title]="'setup.customers.editCustomer' | translate">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="16"
@@ -220,7 +220,7 @@
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                   </svg>
                 </button>
-                <button class="icon-btn info" (click)="showDetails(c)" title="View Details">
+                <button class="icon-btn info" (click)="showDetails(c)" [attr.title]="'common.viewDetails' | translate">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="16"
@@ -239,7 +239,7 @@
                 <button
                   class="icon-btn"
                   [routerLink]="['/dashboard/setup/customer-ledger', c.customerId]"
-                  title="View Statement"
+                  [attr.title]="'setup.customers.viewStatement' | translate"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -262,7 +262,7 @@
                 <button
                   class="icon-btn delete"
                   (click)="deleteCustomer(c.customerId)"
-                  title="Delete Customer"
+                  [attr.title]="'setup.customers.deleteCustomer' | translate"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -300,57 +300,57 @@
   <div class="modal-backdrop" *ngIf="selectedCustomerForDetails" (click)="closeDetails()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>Customer Details</h2>
+        <h2>{{ 'setup.customers.detailsTitle' | translate }}</h2>
         <button class="modal-close-btn" (click)="closeDetails()">×</button>
       </div>
       <div class="modal-body">
         <div class="detail-grid">
-          <div class="detail-label">Picture</div>
+          <div class="detail-label">{{ 'setup.picture' | translate }}</div>
           <div class="detail-value image-val">
             <img
               *ngIf="selectedCustomerForDetails.picturePath"
               [src]="getImageUrl(selectedCustomerForDetails.picturePath)"
-              alt="Customer Image"
+              [attr.alt]="'setup.customers.imageAlt' | translate"
             />
-            <span *ngIf="!selectedCustomerForDetails.picturePath">No Image</span>
+            <span *ngIf="!selectedCustomerForDetails.picturePath">{{ 'setup.noImage' | translate }}</span>
           </div>
 
-          <div class="detail-label">Customer ID</div>
+          <div class="detail-label">{{ 'setup.customers.customerId' | translate }}</div>
           <div class="detail-value">#{{ selectedCustomerForDetails.customerId }}</div>
 
-          <div class="detail-label">Customer Name</div>
+          <div class="detail-label">{{ 'setup.customers.customerName' | translate }}</div>
           <div class="detail-value">
             <strong>{{ selectedCustomerForDetails.customerName }}</strong>
           </div>
 
-          <div class="detail-label">Phone Number</div>
+          <div class="detail-label">{{ 'setup.customers.phoneNumber' | translate }}</div>
           <div class="detail-value">{{ selectedCustomerForDetails.mobile || '-' }}</div>
 
-          <div class="detail-label">Address</div>
+          <div class="detail-label">{{ 'common.address' | translate }}</div>
           <div class="detail-value">{{ selectedCustomerForDetails.address || '-' }}</div>
 
-          <div class="detail-label">Opening Balance</div>
+          <div class="detail-label">{{ 'setup.customers.openingBalance' | translate }}</div>
           <div class="detail-value">
             ৳{{ selectedCustomerForDetails.openingBalance | number: '1.2-2' }}
           </div>
 
-          <div class="detail-label">Advance Balance</div>
+          <div class="detail-label">{{ 'setup.customers.advanceBalance' | translate }}</div>
           <div class="detail-value">
             ৳{{ selectedCustomerForDetails.advanceBalance | number: '1.2-2' }}
           </div>
 
-          <div class="detail-label">Current Due</div>
+          <div class="detail-label">{{ 'setup.customers.currentDue' | translate }}</div>
           <div class="detail-value">
             ৳{{ selectedCustomerForDetails.currentDue | number: '1.2-2' }}
           </div>
 
-          <div class="detail-label">Status</div>
+          <div class="detail-label">{{ 'common.status' | translate }}</div>
           <div class="detail-value">
             <span
               class="badge"
               [ngClass]="selectedCustomerForDetails.isActive ? 'badge-success' : 'badge-error'"
             >
-              {{ selectedCustomerForDetails.isActive ? 'Active' : 'Inactive' }}
+              {{ (selectedCustomerForDetails.isActive ? 'common.active' : 'common.inactive') | translate }}
             </span>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -13,7 +14,7 @@ import Swal from 'sweetalert2';
 @Component({
   selector: 'app-sales-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   templateUrl: './sales-form.html'
 })
 export class SalesFormComponent implements OnInit {
@@ -46,7 +47,7 @@ export class SalesFormComponent implements OnInit {
   searchResults: any[] = [];
   isLoading = false;
 
-  constructor(private api: ApiService, private router: Router) {}
+  constructor(private api: ApiService, private router: Router, private translate: TranslateService) {}
 
   ngOnInit() {
     this.loadLookups();
@@ -78,7 +79,7 @@ export class SalesFormComponent implements OnInit {
    */
   onBranchChange() {
     if (this.sale.salesDetails.length > 0) {
-      if (confirm('Changing branch will reset your current items. Continue?')) {
+      if (confirm(this.translate.instant('sales.messages.branchChangeConfirm'))) {
         this.sale.salesDetails = [];
         this.calculateTotals();
       }
@@ -112,7 +113,7 @@ export class SalesFormComponent implements OnInit {
     }
     
     if (!this.sale.branchId) {
-      alert('Please select a branch first');
+      alert(this.translate.instant('sales.messages.selectBranchFirst'));
       this.searchTerm = '';
       return;
     }
@@ -213,14 +214,14 @@ export class SalesFormComponent implements OnInit {
    */
   onSubmit() {
     if (this.sale.salesDetails.length === 0) {
-      alert('Please add at least one product');
+      alert(this.translate.instant('sales.messages.addAtLeastOneProduct'));
       return;
     }
 
     // Ensure all items have a lot selected
     const missingLot = this.sale.salesDetails.find((d: any) => !d.lotId);
     if (missingLot) {
-      alert(`Please select a lot for ${missingLot.productName}`);
+      alert(this.translate.instant('sales.messages.selectLotFor', { product: missingLot.productName }));
       return;
     }
 
@@ -238,8 +239,8 @@ export class SalesFormComponent implements OnInit {
       next: (res: any) => {
         Swal.fire({
           icon: 'success',
-          title: 'Sale Completed',
-          text: res.message || 'Invoice generated successfully!',
+          title: this.translate.instant('sales.messages.saleCompletedTitle'),
+          text: res.message || this.translate.instant('sales.messages.invoiceGenerated'),
           timer: 2000,
           showConfirmButton: false
         });
@@ -248,7 +249,7 @@ export class SalesFormComponent implements OnInit {
       },
       error: (err) => {
         console.error('Full Error Trace:', err);
-        let errorMsg = 'Error processing sale';
+        let errorMsg = this.translate.instant('sales.messages.errorProcessingSale');
         
         if (err.error) {
           if (typeof err.error === 'string') {
@@ -258,15 +259,15 @@ export class SalesFormComponent implements OnInit {
               .map(key => `${key}: ${err.error.errors[key].join(', ')}`)
               .join('\n');
           } else {
-            errorMsg = err.error.message || err.error.Message || 'Insufficient stock or data inconsistency';
+            errorMsg = err.error.message || err.error.Message || this.translate.instant('sales.messages.insufficientStockFallback');
           }
         }
         
         Swal.fire({
           icon: 'error',
-          title: 'Transaction failed',
+          title: this.translate.instant('sales.messages.transactionFailedTitle'),
           text: errorMsg,
-          footer: 'Please check stock availability and customer selection.'
+          footer: this.translate.instant('sales.messages.checkStockFooter')
         });
         this.isLoading = false;
       }
@@ -280,19 +281,19 @@ export class SalesFormComponent implements OnInit {
     const printContent = `
       <div style="font-family: 'Courier New', Courier, monospace; width: 80mm; padding: 10px; font-size: 12px;">
         <h2 style="text-align: center; margin-bottom: 5px;">PharmaCare</h2>
-        <p style="text-align: center; margin: 0;">Multi-Branch Pharmacy System</p>
-        <p style="text-align: center; margin: 0;">Dhaka, Bangladesh</p>
+        <p style="text-align: center; margin: 0;">${this.translate.instant('sales.receipt.system')}</p>
+        <p style="text-align: center; margin: 0;">${this.translate.instant('sales.receipt.address')}</p>
         <hr style="border-top: 1px dashed #000;">
-        <p><strong>Invoice:</strong> ${saleResponse.invoiceNo || 'N/A'}</p>
-        <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
-        <p><strong>Customer:</strong> ${this.customers.find(c => c.customerId === this.sale.customerId)?.name || 'Walk-in'}</p>
+        <p><strong>${this.translate.instant('sales.receipt.invoice')}:</strong> ${saleResponse.invoiceNo || 'N/A'}</p>
+        <p><strong>${this.translate.instant('sales.receipt.date')}:</strong> ${new Date().toLocaleString()}</p>
+        <p><strong>${this.translate.instant('sales.receipt.customer')}:</strong> ${this.customers.find(c => c.customerId === this.sale.customerId)?.name || this.translate.instant('sales.receipt.walkIn')}</p>
         <hr style="border-top: 1px dashed #000;">
         <table style="width: 100%; border-collapse: collapse;">
           <thead>
             <tr>
-              <th style="text-align: left;">Item</th>
-              <th style="text-align: center;">Qty</th>
-              <th style="text-align: right;">Total</th>
+              <th style="text-align: left;">${this.translate.instant('sales.receipt.item')}</th>
+              <th style="text-align: center;">${this.translate.instant('sales.receipt.qty')}</th>
+              <th style="text-align: right;">${this.translate.instant('sales.receipt.total')}</th>
             </tr>
           </thead>
           <tbody>
@@ -307,34 +308,34 @@ export class SalesFormComponent implements OnInit {
         </table>
         <hr style="border-top: 1px dashed #000;">
         <div style="display: flex; justify-content: space-between;">
-          <span>Sub Total:</span>
+          <span>${this.translate.instant('sales.receipt.subtotal')}:</span>
           <span>৳${this.sale.totalAmount.toFixed(2)}</span>
         </div>
         <div style="display: flex; justify-content: space-between;">
-          <span>Discount:</span>
+          <span>${this.translate.instant('sales.receipt.discount')}:</span>
           <span>৳${this.sale.discountAmount.toFixed(2)}</span>
         </div>
         <div style="display: flex; justify-content: space-between; font-weight: bold;">
-          <span>Net Total:</span>
+          <span>${this.translate.instant('sales.receipt.netTotal')}:</span>
           <span>৳${this.sale.netAmount.toFixed(2)}</span>
         </div>
         ${this.sale.extraChargeAmount > 0 ? `
         <div style="display: flex; justify-content: space-between; color: #ef4444;">
-          <span>Extra Charge:</span>
+          <span>${this.translate.instant('sales.receipt.extraCharge')}:</span>
           <span>৳${this.sale.extraChargeAmount.toFixed(2)}</span>
         </div>
         ` : ''}
         <div style="display: flex; justify-content: space-between;">
-          <span>Paid:</span>
+          <span>${this.translate.instant('sales.receipt.paid')}:</span>
           <span>৳${this.sale.paidAmount.toFixed(2)}</span>
         </div>
         <div style="display: flex; justify-content: space-between;">
-          <span>Change:</span>
+          <span>${this.translate.instant('sales.receipt.change')}:</span>
           <span>৳${this.sale.changeAmount.toFixed(2)}</span>
         </div>
         <hr style="border-top: 1px dashed #000;">
-        <p style="text-align: center; margin-top: 10px;">Thank you for shopping with us!</p>
-        <p style="text-align: center; font-size: 10px;">Software by PharmaCare AI</p>
+        <p style="text-align: center; margin-top: 10px;">${this.translate.instant('sales.receipt.thankYou')}</p>
+        <p style="text-align: center; font-size: 10px;">${this.translate.instant('sales.receipt.softwareBy')}</p>
       </div>
     `;
 
@@ -342,7 +343,7 @@ export class SalesFormComponent implements OnInit {
     if (printWindow) {
       printWindow.document.write(`
         <html>
-          <head><title>Print Receipt</title></head>
+          <head><title>${this.translate.instant('sales.receipt.printTitle')}</title></head>
           <body onload="window.print();window.close()">${printContent}</body>
         </html>
       `);

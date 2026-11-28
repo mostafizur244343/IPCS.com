@@ -19,21 +19,22 @@
 
   <!-- Top bar: brand mark + wordmark -->
   <header class="topbar">
-    <a class="brand" href="#" aria-label="PharmaCare home">
+    <a class="brand" href="#" [attr.aria-label]="'auth.homeAria' | translate">
       <app-logo [size]="35"></app-logo>
       <span class="brand-name">Pharma<span>Care</span></span>
     </a>
+    <app-language-switcher></app-language-switcher>
   </header>
 
   <section class="experience experience-atelier">
     <!-- Editorial side panel (desktop only) -->
     <aside class="atelier-side">
-      <div class="atelier-index">PHARMACY / INVENTORY / 001</div>
+      <div class="atelier-index">{{ 'auth.index' | translate }}</div>
       <div class="atelier-editorial">
-        <span class="editorial-label">A BETTER WAY TO KEEP</span>
-        <h1>Care,<br><em>in balance.</em></h1>
+        <span class="editorial-label">{{ 'auth.editorialLabel' | translate }}</span>
+        <h1>{{ 'auth.headline1' | translate }}<br><em>{{ 'auth.headlineEm' | translate }}</em></h1>
         <div class="editorial-rule"></div>
-        <p>Good care is made of a thousand small details. Keep every one in view.</p>
+        <p>{{ 'auth.editorialCopy' | translate }}</p>
       </div>
       <div class="atelier-stamp"><span>PC</span><small>EST. FOR<br>PHARMACY</small></div>
     </aside>
@@ -41,22 +42,22 @@
     <!-- Access card -->
     <div class="atelier-main">
       <div class="atelier-mobile-brand">
-        <a class="brand" href="#" aria-label="PharmaCare home">
+        <a class="brand" href="#" [attr.aria-label]="'auth.homeAria' | translate">
           <app-logo [size]="28"></app-logo>
           <span class="brand-name">Pharma<span>Care</span></span>
         </a>
       </div>
 
-      <section class="credential-card" aria-label="Sign in to PharmaCare">
-        <div class="card-kicker"><span class="live-dot"></span> PHARMACARE ACCESS</div>
-        <h2>Welcome<br class="mobile-heading-break"> back<span>.</span></h2>
-        <p class="tagline">Sign in to manage stock, expiry &amp; orders</p>
+      <section class="credential-card" [attr.aria-label]="'auth.signInAria' | translate">
+        <div class="card-kicker"><span class="live-dot"></span> {{ 'auth.kicker' | translate }}</div>
+        <h2>{{ 'auth.welcomeText' | translate }}<span>{{ 'auth.welcomeDot' | translate }}</span></h2>
+        <p class="tagline">{{ 'auth.tagline' | translate }}</p>
 
         <!-- Login Form (unchanged behaviour) -->
         <form (ngSubmit)="onSubmit()" #loginForm="ngForm" [class.shake]="!!errorMsg" class="login-form">
           <!-- Email / Mobile Input -->
           <div class="field-group">
-            <label for="username">Email or Mobile</label>
+            <label for="username">{{ 'auth.emailOrMobile' | translate }}</label>
             <div class="input-wrap">
               <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
               <input
@@ -64,7 +65,7 @@
                 id="username"
                 name="emailOrMobile"
                 [(ngModel)]="loginData.emailOrMobile"
-                placeholder="you@pharmacy.com"
+                [placeholder]="'auth.emailPlaceholder' | translate"
                 required
                 autocomplete="username"
               >
@@ -74,8 +75,8 @@
           <!-- Password Input (show/hide) -->
           <div class="field-group">
             <div class="password-label-row">
-              <label for="password">Password</label>
-              <a href="#" class="forgot-link">Forgot password?</a>
+              <label for="password">{{ 'auth.password' | translate }}</label>
+              <a href="#" class="forgot-link">{{ 'auth.forgotPassword' | translate }}</a>
             </div>
             <div class="input-wrap">
               <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="16" r="1"></circle><rect x="3" y="10" width="18" height="12" rx="2"></rect><path d="M7 10V7a5 5 0 0 1 10 0v3"></path></svg>
@@ -84,12 +85,12 @@
                 id="password"
                 name="password"
                 [(ngModel)]="loginData.password"
-                placeholder="Enter your password"
+                [placeholder]="'auth.passwordPlaceholder' | translate"
                 required
                 autocomplete="current-password"
               >
               <button type="button" class="visibility-toggle" (click)="togglePassword()" tabindex="-1"
-                      [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
+                      [attr.aria-label]="(showPassword ? 'auth.hidePassword' : 'auth.showPassword') | translate">
                 <svg *ngIf="!showPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                 <svg *ngIf="showPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
               </button>
@@ -103,10 +104,10 @@
 
           <!-- Submit Button: Disabled while loading or if form is invalid -->
           <button type="submit" class="btn btn-primary submit-button w-full" [disabled]="isLoading || !loginForm.valid">
-            <span *ngIf="!isLoading">Sign in</span>
+            <span *ngIf="!isLoading">{{ 'auth.signIn' | translate }}</span>
             <svg *ngIf="!isLoading" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
             <span *ngIf="isLoading" class="spinner"></span>
-            <span *ngIf="isLoading">Signing in…</span>
+            <span *ngIf="isLoading">{{ 'auth.signingIn' | translate }}</span>
           </button>
         </form>
 
@@ -119,11 +120,11 @@
         </div>
         <div class="secure-note">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg>
-          Protected pharmacy workspace
+          {{ 'auth.secureNote' | translate }}
         </div>
       </section>
     </div>
   </section>
 
-  <footer class="bottom-bar"><span>© 2025 PHARMACARE</span><span class="bottom-caption">INVENTORY, IN GOOD HANDS</span><a href="#">NEED HELP?</a></footer>
+  <footer class="bottom-bar"><span>{{ 'auth.footerCopyright' | translate }}</span><span class="bottom-caption">{{ 'auth.footerCaption' | translate }}</span><a href="#">{{ 'auth.needHelp' | translate }}</a></footer>
 </div>

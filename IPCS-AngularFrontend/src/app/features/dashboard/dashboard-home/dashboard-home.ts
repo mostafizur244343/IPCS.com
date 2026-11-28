@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { forkJoin } from 'rxjs';
 import { ApiService } from '../../../core/services/api';
 
@@ -12,7 +13,7 @@ import { ApiService } from '../../../core/services/api';
 @Component({
   selector: 'app-dashboard-home',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, TranslatePipe],
   templateUrl: './dashboard-home.html'
 })
 export class DashboardHomeComponent implements OnInit {
@@ -20,11 +21,12 @@ export class DashboardHomeComponent implements OnInit {
   currentTime: Date = new Date();
   isLoading = false;
   
+  // `name` holds an i18n key; the template renders it through the translate pipe.
   stats = [
-    { name: 'Today\'s Sales', value: '৳0.00', icon: 'trending-up', color: 'blue', delta: '+0%' },
-    { name: 'Total Products', value: '0', icon: 'package', color: 'teal' },
-    { name: 'Low Stock', value: '0', icon: 'alert-triangle', color: 'amber' },
-    { name: 'Out of Stock', value: '0', icon: 'shopping-bag', color: 'red' }
+    { name: 'dashboard.home.todaySales', value: '৳0.00', icon: 'trending-up', color: 'blue', delta: '+0%' },
+    { name: 'dashboard.home.totalProducts', value: '0', icon: 'package', color: 'teal' },
+    { name: 'dashboard.home.lowStock', value: '0', icon: 'alert-triangle', color: 'amber' },
+    { name: 'dashboard.home.outOfStock', value: '0', icon: 'shopping-bag', color: 'red' }
   ];
 
   recentTransactions: any[] = [];
@@ -80,7 +82,8 @@ export class DashboardHomeComponent implements OnInit {
 
         this.recentTransactions = (sales.recentSales || []).map((s: any) => ({
           id: s.invoiceNo,
-          customer: s.customerName || 'Walk-in',
+          // null customer falls back to the translated 'Walk-in' label in the template
+          customer: s.customerName || null,
           date: new Date(s.salesDate).toLocaleDateString(),
           amount: `৳${s.netAmount.toFixed(2)}`,
           status: s.dueAmount > 0 ? 'Due' : 'Paid'
