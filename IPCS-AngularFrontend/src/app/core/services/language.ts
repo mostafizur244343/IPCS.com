@@ -1,5 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
+import { firstValueFrom, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 export type SupportedLang = 'en' | 'bn';
 
@@ -26,7 +28,19 @@ export class LanguageService {
     const saved = localStorage.getItem(LANG_STORAGE_KEY);
     const lang: SupportedLang = saved === 'bn' ? 'bn' : 'en';
     this.currentLang.set(lang);
-    this.translate.use(lang);
+  }
+
+  /**
+   * Load the startup language file BEFORE the app renders (called by
+   * APP_INITIALIZER). Without this, components render while the JSON is
+   * still loading and raw keys (e.g. "auth.headline1") flash on screen.
+   * A failed fetch never blocks startup — the app still starts (and
+   * falls back to showing keys, same as before the fix).
+   */
+  init(): Promise<void> {
+    return firstValueFrom(
+      this.translate.use(this.currentLang()).pipe(catchError(() => of({})))
+    ).then(() => undefined);
   }
 
   setLang(lang: SupportedLang): void {

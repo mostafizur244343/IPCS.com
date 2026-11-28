@@ -1,10 +1,11 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, APP_INITIALIZER, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideTranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth-interceptor';
+import { LanguageService } from './core/services/language';
 
 /**
  * Application Configuration
@@ -36,6 +37,14 @@ export const appConfig: ApplicationConfig = {
       }),
       fallbackLang: 'en',
       lang: 'en'
-    })
+    }),
+    // Block the first render until the startup language file is loaded,
+    // so raw translation keys never flash on screen on first load/reload.
+    {
+      provide: APP_INITIALIZER,
+      useFactory: (language: LanguageService) => () => language.init(),
+      deps: [LanguageService],
+      multi: true
+    }
   ]
 };
