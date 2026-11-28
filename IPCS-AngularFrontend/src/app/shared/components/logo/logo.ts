@@ -4,11 +4,13 @@ import { CommonModule } from '@angular/common';
 let logoInstance = 0;
 
 /**
- * LogoComponent — PharmaCare brand mark.
- * Inline SVG (mortar & pestle with a care cross) on a teal gradient tile.
- * No external image, no network fetch — safe to use on the login page
- * and in the dashboard sidebar. The gradient id is unique per instance
- * so several logos can live on one page.
+ * LogoComponent — PharmaCare brand mark (v2).
+ * A white pill/capsule tilted diagonally on a two-tone emerald gradient
+ * tile, with a small care cross at the top-right. The bright emerald
+ * gradient lives ONLY here (and in the login aurora band) — the rest of
+ * the app uses deep emerald, so the mark stays the one bright accent.
+ * Inline SVG, no external image, no network fetch. The gradient id is
+ * unique per instance so several logos can live on one page.
  */
 @Component({
   selector: 'app-logo',
@@ -18,33 +20,38 @@ let logoInstance = 0;
     <span class="pc-logo" [style.width.px]="size" [style.height.px]="size" role="img" aria-label="PharmaCare logo">
       <svg [attr.width]="size" [attr.height]="size" viewBox="0 0 48 48" fill="none" aria-hidden="true">
         <defs>
-          <linearGradient [id]="gradId" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-            <stop stop-color="#14b8a6" />
-            <stop offset="0.55" stop-color="#0d9488" />
-            <stop offset="1" stop-color="#0f766e" />
+          <linearGradient [id]="gradId" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#34D399" />
+            <stop offset="0.55" stop-color="#10B981" />
+            <stop offset="1" stop-color="#047857" />
           </linearGradient>
+          <radialGradient [id]="hlId" cx="0.32" cy="0.22" r="0.9" gradientUnits="objectBoundingBox">
+            <stop stop-color="#ffffff" stop-opacity="0.28" />
+            <stop offset="0.55" stop-color="#ffffff" stop-opacity="0" />
+          </radialGradient>
         </defs>
         <rect width="48" height="48" rx="12" [attr.fill]="'url(#' + gradId + ')'" />
-        <!-- care cross -->
-        <path d="M15 9.5v6M12 12.5h6" stroke="#99f6e4" stroke-width="2.4" stroke-linecap="round" />
-        <!-- pestle -->
-        <path d="M30.5 8.5 37 15" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round" />
-        <!-- mortar bowl -->
-        <path d="M11 24h26l-3.2 8.6a5 5 0 0 1-4.7 3.4H18.9a5 5 0 0 1-4.7-3.4L11 24Z" fill="#ffffff" />
-        <!-- mortar base -->
-        <path d="M19 40.5h10" stroke="#99f6e4" stroke-width="2.6" stroke-linecap="round" />
+        <rect width="48" height="48" rx="12" [attr.fill]="'url(#' + hlId + ')'" />
+        <rect x="0.75" y="0.75" width="46.5" height="46.5" rx="11.5" stroke="#ffffff" stroke-opacity="0.28" stroke-width="1.5" />
+        <!-- pill: white capsule, tilted diagonally, with a divider line -->
+        <g transform="rotate(-45 24 25)">
+          <rect x="19.5" y="10" width="9" height="30" rx="4.5" fill="#ffffff" />
+          <line x1="19.5" y1="25" x2="28.5" y2="25" stroke="#047857" stroke-width="2" stroke-linecap="round" />
+        </g>
+        <!-- care cross, top-right -->
+        <path d="M38.5 9v5M36 11.5h5" stroke="#D1FAE5" stroke-width="2.2" stroke-linecap="round" />
       </svg>
     </span>
   `,
   styles: [`
     .pc-logo {
-      display: inline-flex;
+      display: flex;
       align-items: center;
       justify-content: center;
       flex: none;
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 6px 16px rgba(15, 118, 110, 0.28);
+      box-shadow: 0 6px 16px rgba(4, 120, 87, 0.25);
     }
     .pc-logo svg { display: block; }
   `],
@@ -52,4 +59,5 @@ let logoInstance = 0;
 export class LogoComponent {
   @Input() size = 40;
   gradId = `pcLogoGrad${++logoInstance}`;
+  hlId = `pcLogoHl${logoInstance}`;
 }

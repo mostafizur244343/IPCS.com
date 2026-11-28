@@ -1,310 +1,129 @@
 <!--
-  Login Screen UI
-  Premium first look: layered teal gradient with soft floating blobs and a
-  dot texture, glass card with a staggered entrance, floating labels,
-  show/hide password, loading state and a gentle shake on failed login.
-  The test-credentials note below is kept exactly as it was.
+  Login Screen UI — Atelier (v0 design, 2026-11-27).
+  The user picked v0's variation 02 "Atelier" (warm cream paper,
+  "Care, in balance.") over v1/v2/Stitch/v3 and the other v0 designs.
+  This is a faithful translation of v0's Atelier theme into Angular:
+  warm paper background, thin vertical divider, serif editorial panel
+  on the left, white access card on the right, mono index line and
+  "PC" stamp. Fonts are system fonts (Georgia serif, Courier New
+  mono, Arial/Helvetica sans) — no downloads needed.
+  The test-credentials note text below is byte-identical to before.
+  Form fields, show/hide, validation and login behaviour are
+  unchanged — look only. No scroll at any viewport (shell is 100dvh,
+  overflow hidden; short screens tighten via media queries).
 -->
-<div class="login-container">
-  <div class="login-bg-decor" aria-hidden="true">
-    <span class="blob b1"></span>
-    <span class="blob b2"></span>
-    <span class="dots"></span>
-  </div>
+<div class="login-shell theme-atelier">
+  <!-- Ambient background glows: slow drift, transform only -->
+  <div class="background-glow glow-one" aria-hidden="true"></div>
+  <div class="background-glow glow-two" aria-hidden="true"></div>
 
-  <div class="login-card" [class.shake]="!!errorMsg">
-    <!-- Logo and Title Section -->
-    <div class="logo-section">
-      <app-logo [size]="72"></app-logo>
-      <h1>PharmaCare</h1>
-      <p>Inventory Management System</p>
+  <!-- Top bar: brand mark + wordmark -->
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="PharmaCare home">
+      <app-logo [size]="35"></app-logo>
+      <span class="brand-name">Pharma<span>Care</span></span>
+    </a>
+  </header>
+
+  <section class="experience experience-atelier">
+    <!-- Editorial side panel (desktop only) -->
+    <aside class="atelier-side">
+      <div class="atelier-index">PHARMACY / INVENTORY / 001</div>
+      <div class="atelier-editorial">
+        <span class="editorial-label">A BETTER WAY TO KEEP</span>
+        <h1>Care,<br><em>in balance.</em></h1>
+        <div class="editorial-rule"></div>
+        <p>Good care is made of a thousand small details. Keep every one in view.</p>
+      </div>
+      <div class="atelier-stamp"><span>PC</span><small>EST. FOR<br>PHARMACY</small></div>
+    </aside>
+
+    <!-- Access card -->
+    <div class="atelier-main">
+      <div class="atelier-mobile-brand">
+        <a class="brand" href="#" aria-label="PharmaCare home">
+          <app-logo [size]="28"></app-logo>
+          <span class="brand-name">Pharma<span>Care</span></span>
+        </a>
+      </div>
+
+      <section class="credential-card" aria-label="Sign in to PharmaCare">
+        <div class="card-kicker"><span class="live-dot"></span> PHARMACARE ACCESS</div>
+        <h2>Welcome<br class="mobile-heading-break"> back<span>.</span></h2>
+        <p class="tagline">Sign in to manage stock, expiry &amp; orders</p>
+
+        <!-- Login Form (unchanged behaviour) -->
+        <form (ngSubmit)="onSubmit()" #loginForm="ngForm" [class.shake]="!!errorMsg" class="login-form">
+          <!-- Email / Mobile Input -->
+          <div class="field-group">
+            <label for="username">Email or Mobile</label>
+            <div class="input-wrap">
+              <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+              <input
+                type="text"
+                id="username"
+                name="emailOrMobile"
+                [(ngModel)]="loginData.emailOrMobile"
+                placeholder="you@pharmacy.com"
+                required
+                autocomplete="username"
+              >
+            </div>
+          </div>
+
+          <!-- Password Input (show/hide) -->
+          <div class="field-group">
+            <div class="password-label-row">
+              <label for="password">Password</label>
+              <a href="#" class="forgot-link">Forgot password?</a>
+            </div>
+            <div class="input-wrap">
+              <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="16" r="1"></circle><rect x="3" y="10" width="18" height="12" rx="2"></rect><path d="M7 10V7a5 5 0 0 1 10 0v3"></path></svg>
+              <input
+                [type]="showPassword ? 'text' : 'password'"
+                id="password"
+                name="password"
+                [(ngModel)]="loginData.password"
+                placeholder="Enter your password"
+                required
+                autocomplete="current-password"
+              >
+              <button type="button" class="visibility-toggle" (click)="togglePassword()" tabindex="-1"
+                      [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
+                <svg *ngIf="!showPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                <svg *ngIf="showPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Error message displayed for invalid credentials -->
+          <div class="error-msg" *ngIf="errorMsg">
+            {{ errorMsg }}
+          </div>
+
+          <!-- Submit Button: Disabled while loading or if form is invalid -->
+          <button type="submit" class="btn btn-primary submit-button w-full" [disabled]="isLoading || !loginForm.valid">
+            <span *ngIf="!isLoading">Sign in</span>
+            <svg *ngIf="!isLoading" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+            <span *ngIf="isLoading" class="spinner"></span>
+            <span *ngIf="isLoading">Signing in…</span>
+          </button>
+        </form>
+
+        <!-- Demo credentials note — text byte-identical -->
+        <div class="demo-box">
+          <span class="demo-spark" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>
+          </span>
+          <p>NOTE: For system testing, please use these login credentials: Email: superadmin@ipcs.com Password: Admin@1234</p>
+        </div>
+        <div class="secure-note">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg>
+          Protected pharmacy workspace
+        </div>
+      </section>
     </div>
+  </section>
 
-    <!-- Highlighted Test Credentials Note -->
-    <div class="test-credentials-note">
-      <strong>NOTE: For system testing, please use these login credentials:</strong>
-      <div class="credentials-details">
-        <span><strong>Email:</strong> superadmin@ipcs.com</span>
-        <span><strong>Password:</strong> Admin@1234</span>
-      </div>
-    </div>
-
-    <!-- Login Form -->
-    <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
-      <!-- Email / Mobile Input (floating label) -->
-      <div class="float-field">
-        <input
-          type="text"
-          id="username"
-          name="emailOrMobile"
-          [(ngModel)]="loginData.emailOrMobile"
-          placeholder=" "
-          required
-          autocomplete="username"
-        >
-        <label for="username">Email or Mobile Number</label>
-      </div>
-
-      <!-- Password Input (floating label + show/hide) -->
-      <div class="float-field">
-        <input
-          [type]="showPassword ? 'text' : 'password'"
-          id="password"
-          name="password"
-          [(ngModel)]="loginData.password"
-          placeholder=" "
-          required
-          autocomplete="current-password"
-        >
-        <label for="password">Password</label>
-        <button type="button" class="pw-toggle" (click)="togglePassword()" tabindex="-1"
-                [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
-          <svg *ngIf="!showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-          <svg *ngIf="showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-        </button>
-      </div>
-
-      <!-- Error message displayed for invalid credentials -->
-      <div class="error-msg" *ngIf="errorMsg">
-        {{ errorMsg }}
-      </div>
-
-      <!-- Submit Button: Disabled while loading or if form is invalid -->
-      <button type="submit" class="btn btn-primary w-full" [disabled]="isLoading || !loginForm.valid">
-        <span *ngIf="!isLoading">Login to System</span>
-        <span *ngIf="isLoading" class="spinner"></span>
-        <span *ngIf="isLoading">Signing in…</span>
-      </button>
-    </form>
-
-    <div class="footer-links">
-      <a href="#">Forgot Password?</a>
-    </div>
-  </div>
+  <footer class="bottom-bar"><span>© 2025 PHARMACARE</span><span class="bottom-caption">INVENTORY, IN GOOD HANDS</span><a href="#">NEED HELP?</a></footer>
 </div>
-
-<style>
-  /*
-    Login page styles — premium first look.
-    Brand teal gradient, soft floating blobs, glass card.
-  */
-  .login-container {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(140deg, #0f766e 0%, #115e59 45%, #134e4a 100%);
-    overflow: hidden;
-    position: relative;
-    padding: 24px;
-  }
-
-  /* Soft background decor: blurred blobs drifting slowly + dot texture */
-  .login-bg-decor { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-  .login-bg-decor .blob {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(70px);
-    animation: pc-float-soft 11s ease-in-out infinite;
-  }
-  .login-bg-decor .b1 { width: 480px; height: 480px; background: rgba(45, 212, 191, 0.28); top: -140px; right: -80px; }
-  .login-bg-decor .b2 { width: 380px; height: 380px; background: rgba(14, 165, 233, 0.20); bottom: -120px; left: -60px; animation-delay: -4s; }
-  .login-bg-decor .dots {
-    position: absolute; inset: 0;
-    background-image: radial-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1px);
-    background-size: 22px 22px;
-    mask-image: radial-gradient(ellipse 90% 80% at 50% 50%, black 30%, transparent 75%);
-  }
-
-  .login-card {
-    background: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(255, 255, 255, 0.55);
-    padding: 40px 44px 36px;
-    border-radius: 24px;
-    width: 100%;
-    max-width: 460px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
-    z-index: 10;
-    animation: loginCardIn 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) both;
-  }
-
-  @keyframes loginCardIn {
-    from { opacity: 0; transform: translateY(16px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-
-  /* Gentle shake on a failed login (replays: errorMsg is cleared on submit) */
-  .login-card.shake { animation: pc-shake 0.35s ease-out; }
-
-  .logo-section {
-    text-align: center;
-    margin-bottom: 24px;
-    animation: pc-page-in 0.4s 0.08s ease-out both;
-  }
-
-  .logo-section app-logo { display: inline-block; margin-bottom: 16px; }
-
-  .logo-section h1 {
-    font-size: 30px;
-    margin-bottom: 4px;
-    color: #1e293b;
-    letter-spacing: -0.02em;
-  }
-
-  .logo-section p {
-    color: #64748b;
-    font-size: 14px;
-    margin: 0;
-  }
-
-  /* Red Highlighted Note Styling (kept as-is) */
-  .test-credentials-note {
-    background-color: #fef2f2;
-    border: 2px dashed #dc2626;
-    border-radius: 12px;
-    padding: 14px;
-    margin-bottom: 24px;
-    color: #dc2626;
-    text-align: center;
-    font-size: 13.5px;
-    line-height: 1.5;
-    animation: pc-page-in 0.4s 0.14s ease-out both;
-  }
-
-  .credentials-details {
-    margin-top: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    font-size: 14px;
-  }
-
-  /* Floating-label fields */
-  .float-field {
-    position: relative;
-    margin-bottom: 20px;
-  }
-
-  .float-field input {
-    width: 100%;
-    padding: 14px 16px;
-    border: 1.5px solid #cbd5e1;
-    border-radius: 10px;
-    background: #f8fafc;
-    font-size: 15px;
-    box-sizing: border-box;
-    transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
-    outline: none;
-    color: #1e293b;
-  }
-
-  .float-field input:focus {
-    border-color: #0f766e;
-    background: white;
-    box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.1);
-  }
-
-  .float-field label {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    padding: 0 6px;
-    font-size: 15px;
-    color: #64748b;
-    pointer-events: none;
-    transition: all 0.18s ease-out;
-  }
-
-  .float-field input:focus + label,
-  .float-field input:not(:placeholder-shown) + label {
-    top: -1px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #0f766e;
-    background: white;
-  }
-
-  /* Password fields need room for the eye button */
-  .float-field input[type="password"],
-  .float-field input[type="text"] { padding-right: 48px; }
-  .float-field input[type="text"]#username { padding-right: 16px; }
-
-  .pw-toggle {
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 36px;
-    height: 36px;
-    border: none;
-    background: none;
-    color: #94a3b8;
-    cursor: pointer;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: color 0.2s, background-color 0.2s;
-  }
-  .pw-toggle:hover { color: #0f766e; background: #f0fdfa; }
-  .pw-toggle:active { transform: translateY(-50%) scale(0.92); }
-
-  /* Button look comes from the global .btn / .btn-primary rules; only the
-     disabled state is local so an invalid form reads clearly. */
-  .btn-primary:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  .w-full {
-    width: 100%;
-  }
-
-  .error-msg {
-    background: #fef2f2;
-    color: #b91c1c;
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 14px;
-    margin-bottom: 16px;
-    text-align: center;
-    border: 1px solid #fee2e2;
-    animation: pc-error-in 0.2s ease-out both;
-  }
-
-  .footer-links {
-    margin-top: 24px;
-    text-align: center;
-  }
-
-  .footer-links a {
-    color: #64748b;
-    font-size: 14px;
-    text-decoration: none;
-    transition: color 0.2s;
-  }
-
-  .footer-links a:hover {
-    color: #0f766e;
-  }
-
-  .spinner {
-    width: 20px;
-    height: 20px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    border-top-color: white;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  @media (max-width: 480px) {
-    .login-card { padding: 32px 24px 28px; }
-  }
-</style>
